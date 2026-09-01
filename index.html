@@ -1,1653 +1,1188 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#2E7D32">
-<meta name="description" content="Controle de Suprimentos e Compras - Sítio Recanto da Limeira">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2E7D32">
+  <meta name="description" content="Controle de Suprimentos e Compras - Sítio Recanto da Limeira">
 
-<link rel="manifest" href="./manifest.json">
-<link rel="icon" href="./icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon-192.png">
 
-<title>Sítio Recanto da Limeira</title>
+  <title>Sítio Recanto da Limeira</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-<script>
-tailwind.config={
- theme:{
-  extend:{
-   colors:{
-    campo:"#2E7D32",
-    campoDark:"#1B5E20",
-    campoLight:"#E8F5E9"
-   }
-  }
- }
-}
-</script>
+  <!-- html2pdf -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
 
-<style>
-*{
- box-sizing:border-box;
- -webkit-tap-highlight-color:transparent;
-}
+    body {
+      background: #f3f6f4;
+      color: #263238;
+      font-family: Arial, Helvetica, sans-serif;
+    }
 
-body{
- margin:0;
- background:#f3f5f4;
- color:#263238;
- font-family:Arial,Helvetica,sans-serif;
-}
+    button {
+      touch-action: manipulation;
+    }
 
-button,input,select{
- min-height:46px;
-}
+    .modal-backdrop {
+      background: rgba(0,0,0,.65);
+    }
 
-.safe-bottom{
- padding-bottom:110px;
-}
+    .pdf-page {
+      width: 794px;
+      min-height: 1123px;
+      background: white;
+      position: relative;
+      padding: 42px;
+      color: #263238;
+      font-family: Arial, Helvetica, sans-serif;
+    }
 
-.modal-bg{
- background:rgba(15,23,42,.65);
- backdrop-filter:blur(5px);
-}
+    .pdf-header {
+      border-bottom: 3px solid #2E7D32;
+      padding-bottom: 15px;
+      margin-bottom: 18px;
+    }
 
-.toast{
- animation:toast .2s ease;
-}
+    .pdf-header.urgent {
+      border-color: #c62828;
+    }
 
-@keyframes toast{
- from{opacity:0;transform:translateY(10px)}
- to{opacity:1;transform:translateY(0)}
-}
+    .pdf-category {
+      margin-top: 14px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
 
-/* =========================
-   PDF A4
-========================= */
+    .pdf-category-title {
+      background: #E8F5E9;
+      border-left: 5px solid #2E7D32;
+      padding: 7px 9px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #1B5E20;
+    }
 
-.pdf-page{
- width:794px;
- height:1123px;
- background:#fff;
- color:#263238;
- position:relative;
- overflow:hidden;
- padding:38px;
- font-family:Arial,Helvetica,sans-serif;
-}
+    .pdf-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
 
-.pdf-header{
- border-bottom:3px solid #2E7D32;
- padding-bottom:14px;
- margin-bottom:14px;
-}
+    .pdf-table th,
+    .pdf-table td {
+      border: 1px solid #d5ddd8;
+      padding: 7px;
+      text-align: left;
+    }
 
-.pdf-header.urgent{
- border-color:#c62828;
-}
+    .pdf-table th {
+      background: #f3f6f4;
+    }
 
-.pdf-title{
- font-size:25px;
- font-weight:800;
- color:#1B5E20;
-}
+    .pdf-footer {
+      position: absolute;
+      bottom: 25px;
+      left: 42px;
+      right: 42px;
+      border-top: 1px solid #d5ddd8;
+      padding-top: 7px;
+      font-size: 9px;
+      color: #78909c;
+      display: flex;
+      justify-content: space-between;
+    }
 
-.pdf-subtitle{
- font-size:12px;
- color:#607D8B;
- margin-top:3px;
-}
+    #pdfRenderArea {
+      position: fixed;
+      left: -100000px;
+      top: 0;
+      width: 794px;
+      background: white;
+    }
 
-.pdf-meta{
- display:flex;
- justify-content:space-between;
- align-items:center;
- gap:15px;
- margin-top:12px;
- font-size:11px;
-}
-
-.pdf-status{
- padding:6px 10px;
- border-radius:5px;
- background:#E8F5E9;
- color:#1B5E20;
- font-weight:bold;
-}
-
-.pdf-status.urgent{
- background:#FFEBEE;
- color:#B71C1C;
-}
-
-.pdf-category{
- margin-top:12px;
-}
-
-.pdf-category-title{
- background:#E8F5E9;
- color:#1B5E20;
- border-left:4px solid #2E7D32;
- padding:6px 8px;
- font-size:12px;
- font-weight:bold;
-}
-
-.pdf-table{
- width:100%;
- border-collapse:collapse;
- font-size:10.5px;
-}
-
-.pdf-table th{
- background:#f5f7f6;
- text-align:left;
-}
-
-.pdf-table th,
-.pdf-table td{
- border:1px solid #dce3df;
- padding:5px 7px;
-}
-
-.pdf-footer{
- position:absolute;
- left:38px;
- right:38px;
- bottom:22px;
- border-top:1px solid #d9dfdc;
- padding-top:7px;
- font-size:9px;
- color:#78909C;
- display:flex;
- justify-content:space-between;
-}
-
-.pdf-page.compact{
- padding:28px;
-}
-
-.pdf-page.compact .pdf-title{
- font-size:21px;
-}
-
-.pdf-page.compact .pdf-header{
- padding-bottom:9px;
- margin-bottom:8px;
-}
-
-.pdf-page.compact .pdf-category{
- margin-top:6px;
-}
-
-.pdf-page.compact .pdf-category-title{
- padding:4px 6px;
- font-size:10px;
-}
-
-.pdf-page.compact .pdf-table{
- font-size:8.8px;
-}
-
-.pdf-page.compact .pdf-table th,
-.pdf-page.compact .pdf-table td{
- padding:3px 5px;
-}
-
-.pdf-page.compact .pdf-footer{
- left:28px;
- right:28px;
- bottom:14px;
- font-size:7px;
-}
-
-.hidden{
- display:none!important;
-}
-</style>
-
+    .safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  </style>
 </head>
 
 <body>
 
-<div id="app" class="safe-bottom">
+<!-- CABEÇALHO -->
+<header class="bg-green-800 text-white shadow-lg">
+  <div class="max-w-3xl mx-auto px-4 py-5">
 
-<header class="bg-campo text-white shadow-lg">
- <div class="max-w-3xl mx-auto px-4 py-5">
-
-  <div class="flex justify-between items-start gap-3">
-
-   <div>
     <h1 class="text-2xl font-extrabold">
-     Sítio Recanto da Limeira
+      Sítio Recanto da Limeira
     </h1>
 
-```
-<p class="text-green-50 text-sm mt-1">
- Controle de Suprimentos e Compras
-</p>
-```
+    <p class="text-sm opacity-90">
+      Controle de Suprimentos e Compras
+    </p>
 
-   </div>
+    <div class="grid grid-cols-2 gap-2 mt-4">
 
-   <div class="text-3xl">
-    🛒
-   </div>
+      <div class="bg-white/10 rounded-xl p-3">
+        <div class="text-[10px] uppercase opacity-75">
+          Data / Hora
+        </div>
 
-  </div>
+        <div id="headerDate" class="font-bold text-sm">
+          —
+        </div>
+      </div>
 
-  <div class="grid grid-cols-2 gap-2 mt-4">
+      <div id="headerUrgencyBox" class="bg-white/10 rounded-xl p-3">
+        <div class="text-[10px] uppercase opacity-75">
+          Urgência
+        </div>
 
-   <div class="bg-white/15 rounded-xl p-3">
-    <div class="text-[10px] uppercase">
-     Data/Hora
+        <div id="headerUrgency" class="font-bold text-sm">
+          —
+        </div>
+      </div>
+
     </div>
 
-```
-<div id="headerDate"
-     class="font-bold text-sm mt-1">
- —
-</div>
-```
-
-   </div>
-
-   <div id="urgencyBox"
-        class="bg-white/15 rounded-xl p-3">
-
-```
-<div class="text-[10px] uppercase">
- Urgência
-</div>
-
-<div id="headerUrgency"
-     class="font-bold text-sm mt-1">
- —
-</div>
-```
-
-   </div>
-
   </div>
-
- </div>
 </header>
 
-<main class="max-w-3xl mx-auto px-4 py-4 space-y-4">
 
-<section class="bg-white rounded-2xl shadow-sm border p-4">
+<!-- CONTEÚDO -->
+<main class="max-w-3xl mx-auto px-4 py-5 pb-32">
 
- <div class="flex justify-between items-center mb-4">
+  <!-- FORMULÁRIO -->
+  <section class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-4">
 
-  <div>
-   <h2 class="text-lg font-extrabold">
-    Adicionar suprimento
-   </h2>
+    <h2 class="text-lg font-extrabold">
+      Adicionar suprimento
+    </h2>
 
-   <p class="text-xs text-slate-500">
-    Informe o item, quantidade e categoria.
-   </p>
-  </div>
+    <p class="text-xs text-gray-500 mb-4">
+      Informe o item, quantidade e categoria.
+    </p>
 
-<span class="text-2xl">📦</span>
+    <form id="addForm">
 
- </div>
+      <label class="block text-sm font-bold mb-1">
+        Nome do item
+      </label>
 
- <form id="addForm" class="space-y-3">
+      <input
+        id="itemName"
+        type="text"
+        maxlength="100"
+        placeholder="Ex.: Arroz"
+        required
+        class="w-full h-12 border border-gray-300 rounded-xl px-3 outline-none focus:border-green-700"
+      >
 
-  <div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
 
-   <label class="block text-sm font-bold mb-1">
-    Nome do item
-   </label>
+        <div>
 
-<input
- id="itemName"
- required
- maxlength="100"
- autocomplete="off"
- class="w-full border border-slate-300 rounded-xl px-4 outline-none focus:ring-2 focus:ring-green-600"
- placeholder="Ex.: Arroz">
+          <label class="block text-sm font-bold mb-1">
+            Quantidade
+          </label>
 
-  </div>
+          <input
+            id="itemQuantity"
+            type="text"
+            maxlength="40"
+            placeholder="Ex.: 5 kg"
+            required
+            class="w-full h-12 border border-gray-300 rounded-xl px-3 outline-none focus:border-green-700"
+          >
 
-  <div class="grid sm:grid-cols-2 gap-3">
+        </div>
 
-   <div>
+        <div>
 
-```
-<label class="block text-sm font-bold mb-1">
- Quantidade
-</label>
+          <label class="block text-sm font-bold mb-1">
+            Categoria
+          </label>
 
-<input
- id="itemQuantity"
- required
- maxlength="40"
- autocomplete="off"
- class="w-full border border-slate-300 rounded-xl px-4 outline-none focus:ring-2 focus:ring-green-600"
- placeholder="Ex.: 5kg ou 2 unidades">
-```
+          <select
+            id="itemCategory"
+            class="w-full h-12 border border-gray-300 rounded-xl px-3 bg-white outline-none focus:border-green-700"
+          ></select>
 
-   </div>
+        </div>
 
-   <div>
+      </div>
 
-```
-<label class="block text-sm font-bold mb-1">
- Categoria
-</label>
+      <button
+        type="submit"
+        class="w-full h-12 bg-green-700 hover:bg-green-800 text-white font-bold rounded-xl mt-4"
+      >
+        ＋ Adicionar item
+      </button>
 
-<select
- id="itemCategory"
- required
- class="w-full border border-slate-300 rounded-xl px-3 bg-white">
-</select>
-```
+    </form>
 
-   </div>
+  </section>
 
-  </div>
 
-<button
-type="submit"
-class="w-full bg-campo hover:bg-campoDark text-white font-extrabold rounded-xl px-4 py-3">
-＋ Adicionar item </button>
+  <!-- LISTA -->
+  <section class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
 
- </form>
+    <div class="flex items-center justify-between gap-3 mb-3">
 
-</section>
+      <div>
+        <h2 class="text-lg font-extrabold">
+          Lista de compras
+        </h2>
 
-<section class="bg-white rounded-2xl shadow-sm border p-4">
+        <p id="itemCount" class="text-xs text-gray-500">
+          0 itens
+        </p>
+      </div>
 
- <div class="flex justify-between items-center mb-4">
+      <button
+        id="clearButton"
+        class="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded-xl font-bold"
+      >
+        Limpar
+      </button>
 
-  <div>
-   <h2 class="text-lg font-extrabold">
-    Lista de compras
-   </h2>
+    </div>
 
-   <p id="counter"
-      class="text-xs text-slate-500">
-    0 itens
-   </p>
-  </div>
+    <div id="shoppingList"></div>
 
-<button
-id="clearButton"
-class="text-sm font-bold text-red-700 bg-red-50 border border-red-200 rounded-xl px-3">
-Limpar </button>
+    <div
+      id="emptyState"
+      class="text-center py-10 text-gray-500"
+    >
+      <div class="text-5xl mb-3">
+        🛒
+      </div>
 
- </div>
+      <b>Nenhum item adicionado</b>
 
- <div id="shoppingList"></div>
+      <p class="text-xs mt-1">
+        A lista será salva automaticamente.
+      </p>
+    </div>
 
- <div id="empty"
-      class="text-center py-10 text-slate-500">
-
-  <div class="text-5xl mb-3">
-   🛒
-  </div>
-
-  <p class="font-bold">
-   Nenhum item adicionado.
-  </p>
-
-  <p class="text-xs mt-1">
-   Os dados são salvos automaticamente.
-  </p>
-
- </div>
-
-</section>
-
-<section class="bg-green-50 border border-green-100 rounded-2xl p-4">
-
- <div class="flex gap-3">
-
-<span class="text-xl">🔒</span>
-
-  <div>
-   <h3 class="font-extrabold text-green-900">
-    Lista protegida
-   </h3>
-
-   <p class="text-xs text-green-800 mt-1">
-    Editar não apaga o item. A exclusão sempre exige confirmação.
-   </p>
-  </div>
-
- </div>
-
-</section>
+  </section>
 
 </main>
 
+
+<!-- RODAPÉ FIXO -->
+<div class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-gray-200 z-30 safe-bottom">
+
+  <div class="max-w-3xl mx-auto p-3 grid grid-cols-2 gap-2">
+
+    <button
+      id="previewButton"
+      class="h-12 bg-gray-800 text-white rounded-xl font-bold"
+    >
+      👁️ Pré-visualizar
+    </button>
+
+    <button
+      id="generateButton"
+      class="h-12 bg-green-700 text-white rounded-xl font-bold"
+    >
+      📄 Gerar PDF
+    </button>
+
+  </div>
+
 </div>
 
-<!-- BARRA INFERIOR -->
-
-<div class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t shadow-lg z-30"
-     style="padding-bottom:env(safe-area-inset-bottom)">
-
- <div class="max-w-3xl mx-auto p-3 grid grid-cols-2 gap-2">
-
-<button
-id="previewButton"
-class="bg-slate-800 text-white font-extrabold rounded-xl py-3">
-👁️ Pré-visualizar </button>
-
-<button
-id="generateButton"
-class="bg-campo text-white font-extrabold rounded-xl py-3">
-📄 Gerar PDF </button>
-
- </div>
-
-</div>
 
 <!-- MODAL INICIAL -->
+<div
+  id="setupModal"
+  class="fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4"
+>
 
-<div id="setupModal"
-     class="fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl w-full max-w-md p-5 shadow-2xl">
 
- <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
+    <div class="text-center">
 
-  <div class="text-center">
+      <div class="text-5xl">
+        🌿
+      </div>
 
-   <div class="text-5xl">
-    🌿
-   </div>
+      <h2 class="text-2xl font-extrabold mt-2">
+        Novo pedido
+      </h2>
 
-   <h2 class="text-2xl font-extrabold mt-3">
-    Novo pedido
-   </h2>
+      <p class="text-sm text-gray-500">
+        A data e hora foram capturadas automaticamente.
+      </p>
 
-   <p class="text-sm text-slate-500 mt-2">
-    A data e hora foram capturadas automaticamente.
-   </p>
+    </div>
+
+    <div class="bg-gray-50 border rounded-xl p-4 text-center mt-5">
+
+      <div class="text-[10px] uppercase text-gray-500">
+        Data / Hora capturada
+      </div>
+
+      <div id="capturedDate" class="font-bold mt-1">
+        —
+      </div>
+
+    </div>
+
+    <p class="font-bold text-sm mt-5 mb-2">
+      Nível de urgência
+    </p>
+
+    <div class="grid grid-cols-2 gap-2">
+
+      <button
+        data-urgency="Normal"
+        class="urgencyButton border-2 border-gray-200 rounded-xl p-4 font-bold"
+      >
+        🟢 Normal
+      </button>
+
+      <button
+        data-urgency="Urgente"
+        class="urgencyButton border-2 border-gray-200 rounded-xl p-4 font-bold"
+      >
+        🔴 Urgente
+      </button>
+
+    </div>
+
+    <button
+      id="startButton"
+      disabled
+      class="w-full h-12 bg-green-700 disabled:bg-gray-300 text-white font-bold rounded-xl mt-5"
+    >
+      Iniciar pedido
+    </button>
 
   </div>
-
-  <div class="bg-slate-50 border rounded-2xl p-4 text-center mt-5">
-
-   <div class="text-xs text-slate-500 uppercase">
-    Data e hora
-   </div>
-
-   <div id="capturedDate"
-        class="text-lg font-extrabold mt-1">
-    —
-   </div>
-
-  </div>
-
-  <div class="mt-5">
-
-   <p class="font-bold text-sm mb-2">
-    Nível de urgência
-   </p>
-
-   <div class="grid grid-cols-2 gap-3">
-
-```
-<button
- data-urgency="Normal"
- class="urgencyButton border-2 border-green-600 bg-green-50 text-green-800 font-extrabold rounded-2xl py-4">
- 🟢 Normal
-</button>
-
-<button
- data-urgency="Urgente"
- class="urgencyButton border-2 border-slate-200 font-extrabold rounded-2xl py-4">
- 🔴 Urgente
-</button>
-```
-
-   </div>
-
-  </div>
-
-<button
-id="startButton"
-disabled
-class="w-full mt-5 bg-campo disabled:bg-slate-300 text-white font-extrabold rounded-2xl py-4">
-Iniciar pedido </button>
-
- </div>
 
 </div>
+
 
 <!-- MODAL EDITAR -->
+<div
+  id="editModal"
+  class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4"
+>
 
-<div id="editModal"
-     class="fixed inset-0 z-50 modal-bg hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl w-full max-w-md p-5">
 
- <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-5">
+    <div class="flex justify-between items-center">
 
-  <div class="flex justify-between items-center">
+      <h2 class="text-xl font-extrabold">
+        Editar item
+      </h2>
 
-   <h2 class="text-xl font-extrabold">
-    Editar item
-   </h2>
+      <button
+        id="closeEdit"
+        class="w-11 h-11 rounded-xl bg-gray-100"
+      >
+        ✕
+      </button>
 
-<button
- id="closeEdit"
- class="bg-slate-100 rounded-xl px-3">
-✕ </button>
+    </div>
+
+    <form id="editForm" class="mt-3">
+
+      <input id="editId" type="hidden">
+
+      <label class="block text-sm font-bold mb-1">
+        Nome
+      </label>
+
+      <input
+        id="editName"
+        required
+        class="w-full h-12 border rounded-xl px-3"
+      >
+
+      <label class="block text-sm font-bold mb-1 mt-3">
+        Quantidade
+      </label>
+
+      <input
+        id="editQuantity"
+        required
+        class="w-full h-12 border rounded-xl px-3"
+      >
+
+      <label class="block text-sm font-bold mb-1 mt-3">
+        Categoria
+      </label>
+
+      <select
+        id="editCategory"
+        class="w-full h-12 border rounded-xl px-3 bg-white"
+      ></select>
+
+      <button
+        class="w-full h-12 bg-green-700 text-white font-bold rounded-xl mt-4"
+      >
+        Salvar alterações
+      </button>
+
+    </form>
 
   </div>
 
-  <form id="editForm" class="space-y-3 mt-4">
-
-   <input id="editId" type="hidden">
-
-   <div>
-    <label class="block text-sm font-bold mb-1">
-     Nome
-    </label>
-
-```
-<input
- id="editName"
- required
- maxlength="100"
- class="w-full border rounded-xl px-4">
-```
-
-   </div>
-
-   <div>
-    <label class="block text-sm font-bold mb-1">
-     Quantidade
-    </label>
-
-```
-<input
- id="editQuantity"
- required
- maxlength="40"
- class="w-full border rounded-xl px-4">
-```
-
-   </div>
-
-   <div>
-    <label class="block text-sm font-bold mb-1">
-     Categoria
-    </label>
-
-```
-<select
- id="editCategory"
- class="w-full border rounded-xl px-3 bg-white">
-</select>
-```
-
-   </div>
-
-<button
- class="w-full bg-campo text-white font-extrabold rounded-xl py-3">
-Salvar alterações </button>
-
-  </form>
-
- </div>
-
 </div>
+
 
 <!-- MODAL CONFIRMAÇÃO -->
+<div
+  id="confirmModal"
+  class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4"
+>
 
-<div id="confirmModal"
-     class="fixed inset-0 z-[60] modal-bg hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl w-full max-w-md p-5">
 
- <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6">
+    <div class="text-4xl">
+      ⚠️
+    </div>
 
-  <div class="text-4xl">
-   ⚠️
-  </div>
-
-  <h2 id="confirmTitle"
-      class="text-xl font-extrabold mt-3">
-   Confirmar exclusão
-  </h2>
-
-  <p id="confirmText"
-     class="text-sm text-slate-600 mt-2">
-  </p>
-
-  <div class="grid grid-cols-2 gap-3 mt-5">
-
-<button
- id="cancelConfirm"
- class="border rounded-xl font-extrabold py-3">
-Cancelar </button>
-
-<button
- id="acceptConfirm"
- class="bg-red-700 text-white rounded-xl font-extrabold py-3">
-Excluir </button>
-
-  </div>
-
- </div>
-
-</div>
-
-<!-- MODAL PDF -->
-
-<div id="previewModal"
-     class="fixed inset-0 z-50 modal-bg hidden flex items-center justify-center p-2">
-
- <div class="bg-white rounded-2xl w-full max-w-5xl h-[96vh] shadow-2xl flex flex-col overflow-hidden">
-
-  <div class="p-3 border-b flex justify-between items-center">
-
-   <div>
-    <h2 class="font-extrabold">
-     Pré-visualização do PDF
+    <h2
+      id="confirmTitle"
+      class="text-xl font-extrabold mt-2"
+    >
+      Confirmar
     </h2>
 
-```
-<p class="text-xs text-slate-500">
- Formato A4 • uma página
-</p>
-```
+    <p
+      id="confirmMessage"
+      class="text-sm text-gray-500 mt-2"
+    ></p>
 
-   </div>
+    <div class="grid grid-cols-2 gap-2 mt-5">
 
-<button
- id="closePreview"
- class="bg-slate-100 rounded-xl px-3 py-2">
-✕ </button>
+      <button
+        id="cancelConfirm"
+        class="h-12 bg-gray-100 rounded-xl font-bold"
+      >
+        Cancelar
+      </button>
 
-  </div>
+      <button
+        id="acceptConfirm"
+        class="h-12 bg-red-600 text-white rounded-xl font-bold"
+      >
+        Confirmar
+      </button>
 
-  <div id="previewArea"
-       class="flex-1 overflow-auto bg-slate-300 p-3">
-
-   <div id="previewContent"></div>
-
-  </div>
-
-  <div class="p-3 border-t grid grid-cols-2 gap-2">
-
-<button
- id="backPreview"
- class="border rounded-xl font-extrabold py-3">
-Voltar </button>
-
-<button
- id="previewGenerate"
- class="bg-campo text-white rounded-xl font-extrabold py-3">
-Gerar PDF </button>
+    </div>
 
   </div>
-
- </div>
 
 </div>
 
-<div id="toastContainer"
-     class="fixed top-4 left-4 right-4 z-[100] flex flex-col items-center gap-2 pointer-events-none">
-</div>
 
-<script>
-"use strict";
+<!-- MODAL PDF -->
+<div
+  id="pdfModal"
+  class="hidden fixed inset-0 bg-black/70 z-50 flex flex-col"
+>
 
-/* ==========================================================
-   CONFIGURAÇÃO
-========================================================== */
-
-const STORAGE_KEY="recanto_limeira_compras_final_v1";
-
-const CATEGORIES=[
- {id:"mercearia",name:"🛒 Mercearia & Alimentos"},
- {id:"limpeza",name:"🧼 Limpeza & Lavanderia"},
- {id:"ferramentas",name:"🪚 Ferramentas & Manutenção"},
- {id:"horta",name:"🌱 Horta, Pomar & Animais"},
- {id:"utilidades",name:"🪵 Utilidades & Diversos"}
-];
-
-let state=loadState();
-let selectedUrgency=null;
-let pendingDelete=null;
-let editId=null;
-
-/* ==========================================================
-   UTILITÁRIOS
-========================================================== */
-
-function $(id){
- return document.getElementById(id);
-}
-
-function escapeHTML(value){
- return String(value).replace(/[&<>"']/g,function(c){
-  return {
-   "&":"&amp;",
-   "<":"&lt;",
-   ">":"&gt;",
-   '"':"&quot;",
-   "'":"&#039;"
-  }[c];
- });
-}
-
-function createId(){
- return Date.now().toString(36)+Math.random().toString(36).slice(2);
-}
-
-function formatDate(date){
- return new Intl.DateTimeFormat("pt-BR",{
-  dateStyle:"short",
-  timeStyle:"medium"
- }).format(date);
-}
-
-function formatDateLong(date){
- return new Intl.DateTimeFormat("pt-BR",{
-  dateStyle:"full",
-  timeStyle:"short"
- }).format(date);
-}
-
-function loadState(){
-
- try{
-
-  const saved=localStorage.getItem(STORAGE_KEY);
-
-  if(!saved){
-   return {
-    initialized:false,
-    orderDate:null,
-    urgency:null,
-    items:[]
-   };
-  }
-
-  const data=JSON.parse(saved);
-
-  return {
-   initialized:Boolean(data.initialized),
-   orderDate:data.orderDate||null,
-   urgency:data.urgency||null,
-   items:Array.isArray(data.items)?data.items:[]
-  };
-
- }catch(error){
-
-  console.error(error);
-
-  return {
-   initialized:false,
-   orderDate:null,
-   urgency:null,
-   items:[]
-  };
- }
-}
-
-function saveState(){
- localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
-}
-
-function showToast(message,error=false){
-
- const el=document.createElement("div");
-
- el.className=
-  "toast max-w-md w-full rounded-xl px-4 py-3 shadow-xl text-sm font-bold "+
-  (error
-   ?"bg-red-700 text-white"
-   :"bg-slate-900 text-white");
-
- el.textContent=message;
-
- $("toastContainer").appendChild(el);
-
- setTimeout(()=>el.remove(),2800);
-}
-
-/* ==========================================================
-   CATEGORIAS
-========================================================== */
-
-function populateCategories(){
-
- ["itemCategory","editCategory"].forEach(id=>{
-
-  $(id).innerHTML=CATEGORIES.map(category=>
-   `<option value="${category.id}">
-    ${escapeHTML(category.name)}
-   </option>`
-  ).join("");
-
- });
-
- $("itemCategory").value=CATEGORIES[0].id;
- $("editCategory").value=CATEGORIES[0].id;
-}
-
-/* ==========================================================
-   CABEÇALHO
-========================================================== */
-
-function updateHeader(){
-
- if(!state.orderDate){
-  $("headerDate").textContent="—";
-  $("headerUrgency").textContent="—";
-  return;
- }
-
- $("headerDate").textContent=
-  formatDate(new Date(state.orderDate));
-
- $("headerUrgency").textContent=
-  state.urgency;
-
- $("urgencyBox").classList.toggle(
-  "bg-red-600",
-  state.urgency==="Urgente"
- );
-}
-
-/* ==========================================================
-   LISTA
-========================================================== */
-
-function renderList(){
-
- const container=$("shoppingList");
-
- $("counter").textContent=
-  `${state.items.length} ${
-   state.items.length===1?"item":"itens"
-  }`;
-
- if(!state.items.length){
-
-  container.innerHTML="";
-  $("empty").classList.remove("hidden");
-  return;
-
- }
-
- $("empty").classList.add("hidden");
-
- let html="";
-
- CATEGORIES.forEach(category=>{
-
-  const items=state.items.filter(
-   item=>item.category===category.id
-  );
-
-  if(!items.length)return;
-
-  html+=`
-   <section class="mb-5">
-
-    <h3 class="border-l-4 border-campo pl-3 font-extrabold mb-2">
-     ${escapeHTML(category.name)}
-    </h3>
-
-    <div class="space-y-2">
-  `;
-
-  items.forEach(item=>{
-
-   html+=`
-    <div class="border border-slate-200 rounded-xl bg-slate-50 p-3 flex items-center gap-2">
-
-     <div class="flex-1 min-w-0">
-
-      <div class="font-extrabold truncate">
-       ${escapeHTML(item.name)}
-      </div>
-
-      <div class="text-xs text-slate-500 mt-1">
-       Quantidade:
-       <strong>${escapeHTML(item.quantity)}</strong>
-      </div>
-
-     </div>
-
-     <button
-      data-edit="${item.id}"
-      class="bg-white border border-slate-300 rounded-xl px-3 text-sm font-extrabold">
-      ✏️
-     </button>
-
-     <button
-      data-delete="${item.id}"
-      class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-3 text-lg">
-      🗑️
-     </button>
-
-    </div>
-   `;
-  });
-
-  html+=`
-    </div>
-   </section>
-  `;
- });
-
- container.innerHTML=html;
-
- container.querySelectorAll("[data-edit]").forEach(button=>{
-  button.addEventListener("click",()=>{
-   openEdit(button.dataset.edit);
-  });
- });
-
- container.querySelectorAll("[data-delete]").forEach(button=>{
-  button.addEventListener("click",()=>{
-   askDelete(button.dataset.delete);
-  });
- });
-}
-
-/* ==========================================================
-   MODAL INICIAL
-========================================================== */
-
-function openSetup(){
-
- const now=new Date();
-
- $("capturedDate").textContent=
-  formatDateLong(now);
-
- selectedUrgency=state.urgency||null;
-
- updateUrgencyButtons();
-
- $("startButton").disabled=!selectedUrgency;
-
- $("setupModal").classList.remove("hidden");
-}
-
-function updateUrgencyButtons(){
-
- document.querySelectorAll(".urgencyButton")
- .forEach(button=>{
-
-  const active=
-   button.dataset.urgency===selectedUrgency;
-
-  if(active){
-
-   if(selectedUrgency==="Urgente"){
-
-    button.className=
-     "urgencyButton border-2 border-red-600 bg-red-50 text-red-800 font-extrabold rounded-2xl py-4";
-
-   }else{
-
-    button.className=
-     "urgencyButton border-2 border-green-600 bg-green-50 text-green-800 font-extrabold rounded-2xl py-4";
-
-   }
-
-  }else{
-
-   button.className=
-    "urgencyButton border-2 border-slate-200 bg-white text-slate-700 font-extrabold rounded-2xl py-4";
-
-  }
-
- });
-}
-
-function finishSetup(){
-
- if(!selectedUrgency)return;
-
- state.initialized=true;
- state.orderDate=new Date().toISOString();
- state.urgency=selectedUrgency;
-
- saveState();
-
- updateHeader();
-
- $("setupModal").classList.add("hidden");
-
- showToast("Pedido iniciado.");
-}
-
-/* ==========================================================
-   ADICIONAR
-========================================================== */
-
-$("addForm").addEventListener("submit",function(event){
-
- event.preventDefault();
-
- const name=$("itemName").value.trim();
- const quantity=$("itemQuantity").value.trim();
- const category=$("itemCategory").value;
-
- if(!name||!quantity){
-
-  showToast("Preencha o nome e a quantidade.",true);
-  return;
- }
-
- state.items.push({
-  id:createId(),
-  name,
-  quantity,
-  category,
-  createdAt:new Date().toISOString()
- });
-
- saveState();
- renderList();
-
- $("addForm").reset();
- $("itemCategory").value=CATEGORIES[0].id;
-
- $("itemName").focus();
-
- showToast("Item adicionado e salvo.");
-});
-
-/* ==========================================================
-   EDITAR
-========================================================== */
-
-function openEdit(id){
-
- const item=state.items.find(
-  item=>item.id===id
- );
-
- if(!item)return;
-
- editId=id;
-
- $("editName").value=item.name;
- $("editQuantity").value=item.quantity;
- $("editCategory").value=item.category;
-
- $("editModal").classList.remove("hidden");
-
- setTimeout(()=>$("editName").focus(),100);
-}
-
-function closeEdit(){
- editId=null;
- $("editModal").classList.add("hidden");
-}
-
-$("closeEdit").addEventListener("click",closeEdit);
-
-$("editForm").addEventListener("submit",function(event){
-
- event.preventDefault();
-
- const item=state.items.find(
-  item=>item.id===editId
- );
-
- if(!item)return;
-
- const name=$("editName").value.trim();
- const quantity=$("editQuantity").value.trim();
- const category=$("editCategory").value;
-
- if(!name||!quantity){
-
-  showToast("Preencha todos os campos.",true);
-  return;
- }
-
- item.name=name;
- item.quantity=quantity;
- item.category=category;
- item.updatedAt=new Date().toISOString();
-
- saveState();
- renderList();
- closeEdit();
-
- showToast("Item atualizado.");
-});
-
-/* ==========================================================
-   EXCLUSÃO SEGURA
-========================================================== */
-
-function askDelete(id){
-
- const item=state.items.find(
-  item=>item.id===id
- );
-
- if(!item)return;
-
- pendingDelete={
-  type:"item",
-  id
- };
-
- $("confirmTitle").textContent=
-  "Excluir item?";
-
- $("confirmText").textContent=
-  `Deseja realmente excluir "${item.name}"? Esta ação não pode ser desfeita.`;
-
- $("confirmModal").classList.remove("hidden");
-}
-
-$("cancelConfirm").addEventListener("click",function(){
-
- pendingDelete=null;
- $("confirmModal").classList.add("hidden");
-
-});
-
-$("acceptConfirm").addEventListener("click",function(){
-
- if(!pendingDelete)return;
-
- if(pendingDelete.type==="item"){
-
-  state.items=state.items.filter(
-   item=>item.id!==pendingDelete.id
-  );
-
-  saveState();
-  renderList();
-
-  showToast("Item excluído.");
- }
-
- if(pendingDelete.type==="all"){
-
-  state.items=[];
-
-  saveState();
-  renderList();
-
-  showToast("Lista limpa.");
- }
-
- pendingDelete=null;
- $("confirmModal").classList.add("hidden");
-
- $("confirmTitle").textContent="Confirmar exclusão";
-});
-
-$("clearButton").addEventListener("click",function(){
-
- if(!state.items.length){
-
-  showToast("A lista já está vazia.");
-  return;
- }
-
- pendingDelete={type:"all"};
-
- $("confirmTitle").textContent=
-  "Limpar toda a lista?";
-
- $("confirmText").textContent=
-  "Todos os itens serão excluídos. Esta ação não pode ser desfeita.";
-
- $("confirmModal").classList.remove("hidden");
-
-});
-
-/* ==========================================================
-   PDF
-========================================================== */
-
-function buildPDF(){
-
- const urgent=state.urgency==="Urgente";
-
- let categoriesHTML="";
-
- CATEGORIES.forEach(category=>{
-
-  const items=state.items.filter(
-   item=>item.category===category.id
-  );
-
-  if(!items.length)return;
-
-  categoriesHTML+=`
-   <section class="pdf-category">
-
-    <div class="pdf-category-title">
-     ${escapeHTML(category.name)}
-    </div>
-
-    <table class="pdf-table">
-
-     <thead>
-      <tr>
-       <th style="width:70%">
-        Produto / Suprimento
-       </th>
-       <th>
-        Quantidade
-       </th>
-      </tr>
-     </thead>
-
-     <tbody>
-
-      ${items.map(item=>`
-       <tr>
-        <td>${escapeHTML(item.name)}</td>
-        <td>${escapeHTML(item.quantity)}</td>
-       </tr>
-      `).join("")}
-
-     </tbody>
-
-    </table>
-
-   </section>
-  `;
- });
-
- const compact=
-  state.items.length>15
-  ?"compact"
-  :"";
-
- return `
-
- <div id="pdfPage"
-      class="pdf-page ${compact}">
-
-  <div class="pdf-header ${urgent?"urgent":""}">
-
-   <div class="pdf-title">
-    Sítio Recanto da Limeira
-   </div>
-
-   <div class="pdf-subtitle">
-    Controle de Suprimentos e Compras
-   </div>
-
-   <div class="pdf-meta">
+  <div class="bg-white p-3 flex items-center justify-between">
 
     <div>
-     <strong>Data/Hora:</strong>
-     ${state.orderDate
-       ?escapeHTML(
-        formatDateLong(
-         new Date(state.orderDate)
-        )
-       )
-       :"—"}
+      <b>Pré-visualização do PDF</b>
+      <div class="text-xs text-gray-500">
+        Formato A4
+      </div>
     </div>
 
-    <div class="pdf-status ${urgent?"urgent":""}">
-     ${urgent?"🔴 URGENTE":"🟢 NORMAL"}
-    </div>
-
-   </div>
+    <button
+      id="closePdf"
+      class="w-11 h-11 rounded-xl bg-gray-100"
+    >
+      ✕
+    </button>
 
   </div>
 
-  ${categoriesHTML}
+  <div
+    id="pdfPreview"
+    class="flex-1 overflow-auto bg-gray-500 p-4"
+  ></div>
 
-  <div class="pdf-footer">
+  <div class="bg-white p-3 grid grid-cols-2 gap-2">
 
-   <span>
-    Sítio Recanto da Limeira
-   </span>
+    <button
+      id="backPdf"
+      class="h-12 bg-gray-200 rounded-xl font-bold"
+    >
+      Voltar
+    </button>
 
-   <span>
-    Pedido de suprimentos
-   </span>
+    <button
+      id="confirmPdf"
+      class="h-12 bg-green-700 text-white rounded-xl font-bold"
+    >
+      Gerar PDF
+    </button>
 
   </div>
 
- </div>
- `;
-}
+</div>
 
-function showPreview(){
 
- if(!state.items.length){
+<div
+  id="pdfRenderArea"
+  aria-hidden="true"
+></div>
 
-  showToast(
-   "Adicione pelo menos um item antes de visualizar o PDF.",
-   true
-  );
 
-  return;
- }
+<!-- TOAST -->
+<div
+  id="toast"
+  class="fixed top-4 left-4 right-4 z-[100] flex justify-center pointer-events-none"
+></div>
 
- $("previewContent").innerHTML=buildPDF();
 
- const page=$("pdfPage");
- const area=$("previewArea");
+<script>
 
- const availableWidth=
-  Math.max(
-   280,
-   area.clientWidth-24
-  );
+const STORAGE_KEY = "recanto_limeira_compras_v4";
 
- const scale=
-  Math.min(
-   1,
-   availableWidth/794
-  );
-
- page.style.transform=
-  `scale(${scale})`;
-
- page.style.transformOrigin="top left";
-
- $("previewContent").style.width="794px";
-
- $("previewContent").style.height=
-  `${1123*scale}px`;
-
- $("previewModal").classList.remove("hidden");
-}
-
-function closePreview(){
- $("previewModal").classList.add("hidden");
-}
-
-$("previewButton").addEventListener(
- "click",
- showPreview
-);
-
-$("closePreview").addEventListener(
- "click",
- closePreview
-);
-
-$("backPreview").addEventListener(
- "click",
- closePreview
-);
-
-$("previewGenerate").addEventListener(
- "click",
- async function(){
-
-  closePreview();
-
-  await generatePDF();
-
- }
-);
-
-/* ==========================================================
-   GERAR PDF
-========================================================== */
-
-async function generatePDF(){
-
- if(typeof html2pdf==="undefined"){
-
-  showToast(
-   "A biblioteca do PDF ainda não foi carregada. Abra o app online uma vez.",
-   true
-  );
-
-  return;
- }
-
- if(!state.items.length){
-
-  showToast(
-   "Adicione pelo menos um item.",
-   true
-  );
-
-  return;
- }
-
- const wrapper=document.createElement("div");
-
- wrapper.style.position="fixed";
- wrapper.style.left="-10000px";
- wrapper.style.top="0";
- wrapper.style.width="794px";
- wrapper.style.height="1123px";
- wrapper.style.background="#fff";
-
- wrapper.innerHTML=buildPDF();
-
- document.body.appendChild(wrapper);
-
- const page=wrapper.querySelector("#pdfPage");
-
- const filenameDate=
-  new Intl.DateTimeFormat("pt-BR")
-  .format(new Date())
-  .replaceAll("/","-");
-
- const options={
-
-  margin:0,
-
-  filename:
-   `Pedido_Suprimentos_Recanto_da_Limeira_${filenameDate}.pdf`,
-
-  image:{
-   type:"jpeg",
-   quality:.98
+const CATEGORIES = [
+  {
+    id: "mercearia",
+    name: "🛒 Mercearia & Alimentos"
   },
-
-  html2canvas:{
-   scale:2,
-   width:794,
-   height:1123,
-   windowWidth:794,
-   backgroundColor:"#ffffff",
-   useCORS:true,
-   logging:false
+  {
+    id: "limpeza",
+    name: "🧼 Limpeza & Lavanderia"
   },
-
-  jsPDF:{
-   unit:"mm",
-   format:"a4",
-   orientation:"portrait",
-   compress:true
+  {
+    id: "ferramentas",
+    name: "🪚 Ferramentas & Manutenção"
   },
-
-  pagebreak:{
-   mode:["avoid-all"]
+  {
+    id: "horta",
+    name: "🌱 Horta, Pomar & Animais"
+  },
+  {
+    id: "utilidades",
+    name: "🪵 Utilidades & Diversos"
   }
+];
 
- };
 
- try{
+let state = loadState();
 
-  await html2pdf()
-   .set(options)
-   .from(page)
-   .toPdf()
-   .get("pdf")
-   .then(pdf=>{
+let selectedUrgency = null;
 
-    /*
-      O layout foi construído com dimensões A4 fixas.
-      Se o navegador ainda adicionar uma página vazia,
-      removemos somente páginas excedentes.
-    */
+let pendingAction = null;
 
-    while(pdf.internal.getNumberOfPages()>1){
 
-     pdf.deletePage(
-      pdf.internal.getNumberOfPages()
-     );
+/* -----------------------------
+   ESTADO
+----------------------------- */
+
+function defaultState() {
+
+  return {
+    initialized: false,
+    orderDate: null,
+    urgency: null,
+    items: []
+  };
+
+}
+
+
+function loadState() {
+
+  try {
+
+    const saved =
+      JSON.parse(
+        localStorage.getItem(STORAGE_KEY)
+      );
+
+    if (
+      saved &&
+      Array.isArray(saved.items)
+    ) {
+
+      return saved;
 
     }
 
-   })
-   .save();
+  } catch (error) {
 
-  showToast("PDF gerado com sucesso.");
+    console.warn(error);
 
- }catch(error){
+  }
 
-  console.error(error);
+  return defaultState();
 
-  showToast(
-   "Erro ao gerar o PDF.",
-   true
+}
+
+
+function saveState() {
+
+  try {
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(state)
+    );
+
+  } catch (error) {
+
+    alert(
+      "Não foi possível salvar os dados neste dispositivo."
+    );
+
+  }
+
+}
+
+
+/* -----------------------------
+   UTILIDADES
+----------------------------- */
+
+function $(id) {
+
+  return document.getElementById(id);
+
+}
+
+
+function escapeHTML(value) {
+
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+}
+
+
+function generateId() {
+
+  if (
+    window.crypto &&
+    crypto.randomUUID
+  ) {
+
+    return crypto.randomUUID();
+
+  }
+
+  return (
+    Date.now().toString(36) +
+    Math.random().toString(36).slice(2)
   );
 
- }finally{
-
-  wrapper.remove();
-
- }
 }
 
-/* ==========================================================
-   URGÊNCIA
-========================================================== */
 
-document.querySelectorAll(".urgencyButton")
-.forEach(button=>{
+function formatDate(date) {
 
- button.addEventListener("click",function(){
-
-  selectedUrgency=
-   button.dataset.urgency;
-
-  updateUrgencyButtons();
-
-  $("startButton").disabled=false;
-
- });
-
-});
-
-$("startButton").addEventListener(
- "click",
- finishSetup
-);
-
-/* ==========================================================
-   MODAIS
-========================================================== */
-
-["editModal","confirmModal","previewModal"]
-.forEach(id=>{
-
- $(id).addEventListener("click",function(event){
-
-  if(event.target!==$(id))return;
-
-  if(id==="editModal")closeEdit();
-  if(id==="confirmModal"){
-
-   pendingDelete=null;
-   $(id).classList.add("hidden");
-
-  }
-
-  if(id==="previewModal")closePreview();
-
- });
-
-});
-
-/* ==========================================================
-   INICIALIZAÇÃO
-========================================================== */
-
-populateCategories();
-updateHeader();
-renderList();
-
-if(
- !state.initialized||
- !state.orderDate||
- !state.urgency
-){
-
- openSetup();
-
-}else{
-
- $("setupModal").classList.add("hidden");
+  return new Intl.DateTimeFormat(
+    "pt-BR",
+    {
+      dateStyle: "short",
+      timeStyle: "short"
+    }
+  ).format(new Date(date));
 
 }
 
-/* ==========================================================
-   SERVICE WORKER
-========================================================== */
 
-if("serviceWorker" in navigator){
+function formatDateLong(date) {
 
- window.addEventListener("load",async()=>{
-
-  try{
-
-   await navigator.serviceWorker.register(
-    "./service-worker.js",
-    {scope:"./"}
-   );
-
-   console.log(
-    "Service Worker registrado."
-   );
-
-  }catch(error){
-
-   console.warn(
-    "Falha no Service Worker:",
-    error
-   );
-
-  }
-
- });
+  return new Intl.DateTimeFormat(
+    "pt-BR",
+    {
+      dateStyle: "full",
+      timeStyle: "short"
+    }
+  ).format(new Date(date));
 
 }
 
-/* ==========================================================
-   ATUALIZAÇÃO DA TELA
-========================================================== */
 
-document.addEventListener(
- "visibilitychange",
- ()=>{
+function showToast(message) {
 
-  if(!document.hidden){
+  $("toast").innerHTML = `
+    <div class="
+      bg-gray-900
+      text-white
+      px-4
+      py-3
+      rounded-xl
+      shadow-xl
+      text-sm
+      font-bold
+    ">
+      ${escapeHTML(message)}
+    </div>
+  `;
 
-   state=loadState();
+  setTimeout(() => {
 
-   updateHeader();
-   renderList();
+    $("toast").innerHTML = "";
+
+  }, 2500);
+
+}
+
+
+/* -----------------------------
+   CATEGORIAS
+----------------------------- */
+
+function populateCategories() {
+
+  const html =
+    CATEGORIES
+      .map(category => `
+        <option value="${category.id}">
+          ${escapeHTML(category.name)}
+        </option>
+      `)
+      .join("");
+
+  $("itemCategory").innerHTML = html;
+
+  $("editCategory").innerHTML = html;
+
+}
+
+
+/* -----------------------------
+   CABEÇALHO
+----------------------------- */
+
+function updateHeader() {
+
+  $("headerDate").textContent =
+    state.orderDate
+      ? formatDate(state.orderDate)
+      : "—";
+
+  $("headerUrgency").textContent =
+    state.urgency || "—";
+
+  if (state.urgency === "Urgente") {
+
+    $("headerUrgencyBox").classList.remove(
+      "bg-white/10"
+    );
+
+    $("headerUrgencyBox").classList.add(
+      "bg-red-600"
+    );
+
+  } else {
+
+    $("headerUrgencyBox").classList.remove(
+      "bg-red-600"
+    );
+
+    $("headerUrgencyBox").classList.add(
+      "bg-white/10"
+    );
 
   }
 
- }
-);
+}
 
-</script>
 
-</body>
-</html>
+/* -----------------------------
+   LISTA
+----------------------------- */
+
+function renderList() {
+
+  const container =
+    $("shoppingList");
+
+  const empty =
+    $("emptyState");
+
+  $("itemCount").textContent =
+    `${state.items.length} ${
+      state.items.length === 1
+        ? "item"
+        : "itens"
+    }`;
+
+  empty.classList.toggle(
+    "hidden",
+    state.items.length > 0
+  );
+
+  let html = "";
+
+  CATEGORIES.forEach(category => {
+
+    const items =
+      state.items.filter(
+        item =>
+          item.category === category.id
+      );
+
+    if (!items.length) return;
+
+    html += `
+      <div class="mb-5">
+
+        <div class="
+          border-l-4
+          border-green-700
+          pl-2
+          font-extrabold
+          mb-2
+        ">
+          ${escapeHTML(category.name)}
+        </div>
+    `;
+
+    items.forEach(item => {
+
+      html += `
+        <div class="
+          flex
+          items-center
+          gap-2
+          bg-gray-50
+          border
+          border-gray-200
+          rounded-xl
+          p-3
+          mb-2
+        ">
+
+          <div class="flex-1 min-w-0">
+
+            <div class="
+              font-bold
+              break-words
+            ">
+              ${escapeHTML(item.name)}
+            </div>
+
+            <div class="
+              text-xs
+              text-gray-500
+              mt-1
+            ">
+              Quantidade:
+              <b>
+                ${escapeHTML(item.quantity)}
+              </b>
+            </div>
+
+          </div>
+
+          <button
+            data-edit="${item.id}"
+            class="
+              w-11
+              h-11
+              rounded-xl
+              border
+              bg-white
+            "
+            title="Editar"
+          >
+            ✏️
+          </button>
+
+          <button
+            data-delete="${item.id}"
+            class="
+              w-11
+              h-11
+              rounded-xl
+              border
+              border-red-200
+              bg-red-50
+              text-red-700
+            "
+            title="Excluir"
+          >
+            🗑️
+          </button>
+
+        </div>
+      `;
+
+    });
+
+    html += `</div>`;
+
+  });
+
+  container.innerHTML = html;
+
+  document
+    .querySelectorAll("[data-edit]")
+    .forEach(button => {
+
+      button.onclick = () =>
+        openEdit(button.dataset.edit);
+
+    });
+
+  document
+    .querySelectorAll("[data-delete]")
+    .forEach(button => {
+
+      button.onclick = () =>
+        requestDelete(button.dataset.delete);
+
+    });
+
+}
+
+
+/* -----------------------------
+   MODAL INICIAL
+----------------------------- */
+
+function openSetup() {
+
+  const now =
+    new Date();
+
+  $("capturedDate").textContent =
+    formatDateLong(now);
+
+  selectedUrgency =
+    state.urgency || null;
+
+  document
+    .querySelectorAll(".urgencyButton")
+    .forEach(button => {
+
+      button.classList.remove(
+        "border-green-700",
+        "bg-green-50",
+        "border-red-600",
+        "bg-red-50"
+      );
+
+      if (
+        button.dataset.urgency ===
+        selectedUrgency
+      ) {
+
+        if (
+          selectedUrgency ===
+          "Urgente"
+        ) {
+
+          button.classList.add(
+            "border-red-600",
+            "bg-red-50"
+          );
+
+        } else {
+
+          button.classList.add(
+            "border-green-700",
+            "bg-green-50"
+          );
+
+        }
+
+      }
+
+    });
+
+  $("startButton").disabled =
+    !selectedUrgency;
+
+}
+
+
+document
+  .querySelectorAll(".urgencyButton")
+  .forEach(button => {
+
+    button.onclick = () => {
+
+      selectedUrgency =
+        button.dataset.urgency;
+
+      openSetup();
+
+    };
+
+  });
+
+
+$("startButton").onclick = () => {
+
+  if (!selectedUrgency) return;
+
+  state.initialized = true;
+
+  state.orderDate =
+    new Date().toISOString();
+
+  state.urgency =
+    selectedUrgency;
+
+  saveState();
+
+  updateHeader();
+
+  $("setupModal")
+    .classList.add("hidden");
+
+  showToast(
+    "Pedido iniciado com sucesso."
+  );
+
+};
+
+
+/* -----------------------------
+   ADICIONAR
+----------------------------- */
+
+$("addForm").onsubmit = event => {
+
+  event.preventDefault();
+
+  const name =
+    $("itemName").value.trim();
+
+  const quantity =
+    $("itemQuantity").value.trim();
+
+  const category =
+    $("itemCategory").value;
+
+  if (!name || !quantity) {
+
+    showToast(
+      "Preencha nome e quantidade."
+    );
+
+    return;
+
+  }
+
+  state.items.push({
+
+    id: generateId(),
+
+    name,
+
+    quantity,
+
+    category
+
+  });
+
+  saveState();
+
+  renderList();
+
+  $("addForm").reset();
+
+  $("itemCategory").value =
+    CATEGORIES[0].id;
+
+  $("itemName").focus();
+
+  showToast(
+    "Item adicionado."
+  );
+
+};
+
+
+/* -----------------------------
+   EDITAR
+----------------------------- */
+
+function openEdit(itemId) {
+
+  const item =
+    state.items.find(
+      x => x.id === itemId
+    );
+
+  if (!item) return;
+
+  $("editId").value =
+    item.id;
+
+  $("editName").value =
+    item.name;
+
+  $("editQuantity").value =
+    item.quantity;
+
+  $("editCategory").value =
+    item.category;
+
+  $("editModal")
+    .classList.remove("hidden");
+
+}
+
+
+$("closeEdit").onclick = () => {
+
+  $("editModal")
+    .classList.add("hidden");
+
+};
+
+
+$("editForm").onsubmit = event => {
+
+  event.preventDefault();
+
+  const item =
+    state.items.find(
+      x =>
+        x.id ===
+        $("editId").value
+    );
+
+  if (!item) return;
+
+  item.name =
+    $("editName").value.trim();
+
+  item.quantity =
+    $("editQuantity").value.trim();
+
+  item.category =
+    $("editCategory").value;
+
+  saveState();
+
+  renderList();
+
+  $("editModal")
+    .classList.add("hidden");
+
+  showToast(
+ 
