@@ -1,111 +1,469 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Sítio Recanto da Limeira</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2E7D32">
-<style>
-:root{--p:#2E7D32;--d:#1B5E20;--bg:#F3F6F4;--b:#E0E4E2;--u:#C62828}
-*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial}
-body{background:var(--bg);padding-bottom:90px}
-header{background:linear-gradient(135deg,var(--p),var(--d));color:#fff;padding:20px 16px;border-radius:0 0 18px 18px;text-align:center}
-.badge{background:rgba(255,255,255,.22);padding:5px 12px;border-radius:20px;font-weight:700;font-size:.85rem}
-main{max-width:620px;margin:0 auto;padding:14px}
-.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.form-control{width:100%;padding:12px;border:2px solid var(--b);border-radius:10px;margin:4px 0 10px}
-.btn{width:100%;padding:14px;border:none;border-radius:10px;font-weight:800;cursor:pointer;display:flex;justify-content:center;gap:8px}
-.btn-p{background:var(--p);color:#fff}.btn-s{background:#CFD8DC}
-.footer{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;gap:8px;padding:10px;box-shadow:0 -4px 12px rgba(0,0,0,.08)}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:.2s;z-index:999}
-.modal.on{opacity:1;pointer-events:auto}.modal-card{background:#fff;border-radius:16px;width:100%;max-width:500px;padding:20px}
-.urg-sel{display:flex;gap:10px;margin:12px 0}.urg-opt{flex:1;border:2px solid var(--b);border-radius:10px;padding:12px;text-align:center;font-weight:800;cursor:pointer}
-.sel-n{border-color:var(--p);background:#E8F5E9}.sel-u{border-color:var(--u);background:#FFEBEE;color:var(--u)}
-#preview-viewport{max-height:70vh;overflow:auto;background:#546E7A;padding:10px;border-radius:10px}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Controle de Suprimentos e Compras do Sítio Recanto da Limeira. Monta a lista, pré-visualiza e gera PDF A4. Funciona offline.">
+  <meta name="theme-color" content="#1B5E20">
+  <title>Sítio Recanto da Limeira — Controle de Suprimentos e Compras</title>
 
-/* PDF ELABORADO */
-#pdf-render{width:190mm;background:#fff;color:#000;font-family:Inter,Arial,sans-serif}
-.pdf-header{border-left:8px solid var(--p);padding:12px 14px;background:#F3F6F4;margin-bottom:12px}
-.pdf-logo{font-size:20px;font-weight:900;color:var(--d)}.pdf-sub{font-size:11px;color:#555}
-.pdf-infos{display:flex;justify-content:space-between;gap:10px;margin:12px 0}
-.pdf-box{flex:1;border:1px solid #ddd;border-radius:8px;padding:8px 10px;font-size:10.5px}
-.pdf-badge{display:inline-block;padding:4px 10px;border-radius:20px;font-weight:900;font-size:10px}
-.pdf-badge.normal{background:#E8F5E9;color:var(--d);border:1px solid var(--p)}
-.pdf-badge.urgente{background:var(--u);color:#fff}
-.pdf-cat{margin-top:16px;page-break-inside:avoid;break-inside:avoid}
-.pdf-cat-title{background:var(--d);color:#fff;padding:7px 10px;font-size:10px;font-weight:800;text-transform:uppercase;border-radius:6px 6px 0 0}
-.pdf-table{width:100%;border-collapse:collapse}
-.pdf-table th{background:#ECEFF1;text-align:left;padding:8px 6px;font-size:9.5px;border-bottom:2px solid var(--d)}
-.pdf-table td{padding:8px 6px;font-size:10.5px;border-bottom:1px solid #eee}
-.pdf-table tr:nth-child(even) td{background:#F9FBF9}
-.pdf-footer{margin-top:22px;display:flex;justify-content:space-between;border-top:2px solid var(--p);padding-top:8px;font-size:9px;color:#666}
-</style>
-</head>
-<body>
-<header><h1>🌿 Sítio Recanto da Limeira</h1><p>Controle de Suprimentos e Compras</p>
-<div style="display:flex;justify-content:center;gap:8px;margin-top:10px"><span class="badge" id="bData"></span><span class="badge" id="bUrg"></span><span class="badge" id="bQtd"></span></div>
-</header>
-<main>
-<div class="card"><input id="inpNome" class="form-control" placeholder="Nome do item (ex: Arroz)"><input id="inpQtd" class="form-control" placeholder="Quantidade (ex: 5 kg, 2 sacos)"><select id="inpCat" class="form-control"><option>🛒 Mercearia & Alimentos</option><option>🧼 Limpeza & Lavanderia</option><option>🪚 Ferramentas & Manutenção</option><option>🌱 Horta, Pomar & Animais</option><option>🪵 Utilidades & Diversos</option></select><button class="btn btn-p" onclick="add()">+ ADICIONAR ITEM</button></div>
-<div id="lista"></div>
-</main>
-<div class="footer"><button class="btn btn-s" onclick="abrirPreview()">👁️ PRÉ-VISUALIZAR</button><button class="btn btn-p" onclick="gerarPDF()">📄 BAIXAR PDF</button></div>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231B5E20'/%3E%3Cpath d='M5 19.5C12.5 18.5 17.8 13.4 19.4 4.6' fill='none' stroke='%23A5D6A7' stroke-width='1.6' stroke-linecap='round'/%3E%3Cpath d='M10.6 15.6c-2.9.3-5-.9-6.3-3.8 3-.3 5.1.9 6.3 3.8Z' fill='%23A5D6A7'/%3E%3Cpath d='M13.6 12c-.3-2.9.8-5 3.5-6.5.5 2.9-.6 5-3.5 6.5Z' fill='%2366BB6A'/%3E%3C/svg%3E">
 
-<div class="modal on" id="mInit"><div class="modal-card"><h3>🌿 Novo pedido</h3><p id="initData" style="font-weight:800;margin:10px 0"></p><div class="urg-sel"><div class="urg-opt" id="oN" onclick="selUrg('NORMAL')">🟢 Normal</div><div class="urg-opt" id="oU" onclick="selUrg('URGENTE')">🔴 Urgente</div></div><button class="btn btn-p" id="btnInit" disabled onclick="init()">INICIAR PEDIDO</button></div></div>
-<div class="modal" id="mEdit"><div class="modal-card"><h3>✏️ Editar</h3><input id="eNome" class="form-control"><input id="eQtd" class="form-control"><select id="eCat" class="form-control"><option>🛒 Mercearia & Alimentos</option><option>🧼 Limpeza & Lavanderia</option><option>🪚 Ferramentas & Manutenção</option><option>🌱 Horta, Pomar & Animais</option><option>🪵 Utilidades & Diversos</option></select><div style="display:flex;gap:8px"><button class="btn btn-s" onclick="this.closest('.modal').classList.remove('on')">Cancelar</button><button class="btn btn-p" onclick="saveEdit()">Salvar</button></div></div></div>
-<div class="modal" id="mDel"><div class="modal-card"><h3>Excluir <span id="delN"></span>?</h3><div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-s" onclick="this.closest('.modal').classList.remove('on')">Cancelar</button><button class="btn btn-p" style="background:#EF5350" onclick="del()">Excluir</button></div></div></div>
-<div class="modal" id="mPrev"><div class="modal-card" style="max-width:640px"><h3>Prévia A4 - igual ao PDF</h3><div id="preview-viewport"><div id="previewContent"></div></div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-s" onclick="this.closest('.modal').classList.remove('on')">Voltar</button><button class="btn btn-p" onclick="gerarPDF()">📄 BAIXAR PDF</button></div></div></div>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
 
-<div style="position:absolute;left:-10000px;top:0;width:190mm">
-<div id="pdf-render">
-<div class="pdf-header"><div class="pdf-logo">🌿 SÍTIO RECANTO DA LIMEIRA</div><div class="pdf-sub">Controle de Suprimentos e Compras - Pedido Oficial</div></div>
-<div class="pdf-infos"><div class="pdf-box"><b>📅 Data/Hora</b><br><span id="pdfData"></span></div><div class="pdf-box"><b>📦 Status</b><br><span id="pdfStatus"></span></div><div class="pdf-box"><b>🔢 Total</b><br><span id="pdfTotal"></span> itens</div></div>
-<div id="pdfBody"></div>
-<div class="pdf-footer"><span>Sítio Recanto da Limeira - Pedido de Suprimentos</span><span id="pdfFooterData"></span></div>
-</div>
-</div>
+  <style>
+    /* ==========================================================
+       TOKENS — paleta oficial do projeto
+       ========================================================== */
+    :root{
+      --verde:#2E7D32;
+      --verde-escuro:#1B5E20;
+      --verde-tinta:#E7F2E8;
+      --fundo:#F3F6F4;
+      --superficie:#FFFFFF;
+      --texto:#263238;
+      --texto-suave:#5B6B66;
+      --linha:#DDE5E1;
+      --urgente:#C62828;
+      --urgente-tinta:#FBEAE9;
+      --raio:16px;
+      --sombra:0 1px 2px rgba(38,50,56,.06), 0 8px 24px rgba(38,50,56,.08);
+      --sombra-forte:0 24px 60px rgba(0,0,0,.45);
+    }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script src="html2pdf.bundle.min.js"></script>
-<script>
-const KEY='recanto_v4';let state=JSON.parse(localStorage.getItem(KEY)||'{"ini":false,"data":"","urg":"","itens":[]}');let eId=null,dId=null,tmpUrg='';
-function fmt(d){return d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}
-function save(){localStorage.setItem(KEY,JSON.stringify(state));render();}
-function selUrg(v){tmpUrg=v;document.getElementById('oN').className='urg-opt'+(v==='NORMAL'?' sel-n':'');document.getElementById('oU').className='urg-opt'+(v==='URGENTE'?' sel-u':'');document.getElementById('btnInit').disabled=false;}
-function init(){state.data=fmt(new Date());state.urg=tmpUrg;state.ini=true;save();document.getElementById('mInit').classList.remove('on');}
-function add(){const n=document.getElementById('inpNome').value.trim();const q=document.getElementById('inpQtd').value.trim();const c=document.getElementById('inpCat').value;if(!n){alert('Digite o nome');return}state.itens.push({id:Date.now(),nome:n,qtd:q||'1',cat:c});document.getElementById('inpNome').value='';document.getElementById('inpQtd').value='';save();}
-function render(){if(!state.ini){document.getElementById('initData').textContent=fmt(new Date());return}document.getElementById('bData').textContent='📅 '+state.data;document.getElementById('bUrg').textContent=state.urg==='URGENTE'?'🔴 URGENTE':'🟢 NORMAL';document.getElementById('bQtd').textContent=state.itens.length+' itens';const cats={};["🛒 Mercearia & Alimentos","🧼 Limpeza & Lavanderia","🪚 Ferramentas & Manutenção","🌱 Horta, Pomar & Animais","🪵 Utilidades & Diversos"].forEach(c=>cats[c]=[]);state.itens.forEach(i=>cats[i.cat].push(i));let h='';Object.keys(cats).forEach(cat=>{if(!cats[cat].length)return;h+=`<div class="card" style="padding:0;overflow:hidden"><div style="background:#ECEFF1;padding:10px 14px;font-weight:800;font-size:.85rem">${cat}</div>`;cats[cat].forEach(it=>{h+=`<div style="display:flex;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #eee"><div><b>${it.nome}</b><br><span style="font-size:.8rem;background:#F1F5F7;padding:2px 8px;border-radius:12px">${it.qtd}</span></div><div><button onclick="openEdit(${it.id})" style="background:none;border:none;font-size:1.2rem">✏️</button><button onclick="openDel(${it.id})" style="background:none;border:none;font-size:1.2rem">🗑️</button></div></div>`});h+=`</div>`});document.getElementById('lista').innerHTML=h||'<div class="card" style="text-align:center;color:#90A4AE">Lista vazia</div>';renderPDF();}
-function openEdit(id){const it=state.itens.find(x=>x.id===id);eId=id;document.getElementById('eNome').value=it.nome;document.getElementById('eQtd').value=it.qtd;document.getElementById('eCat').value=it.cat;document.getElementById('mEdit').classList.add('on');}
-function saveEdit(){const it=state.itens.find(x=>x.id===eId);it.nome=document.getElementById('eNome').value;it.qtd=document.getElementById('eQtd').value;it.cat=document.getElementById('eCat').value;save();document.getElementById('mEdit').classList.remove('on');}
-function openDel(id){dId=id;document.getElementById('delN').textContent=state.itens.find(x=>x.id===id).nome;document.getElementById('mDel').classList.add('on');}
-function del(){state.itens=state.itens.filter(x=>x.id!==dId);save();document.getElementById('mDel').classList.remove('on');}
-function renderPDF(){
-document.getElementById('pdfData').textContent=state.data;document.getElementById('pdfFooterData').textContent=state.data;document.getElementById('pdfTotal').textContent=state.itens.length;
-document.getElementById('pdfStatus').innerHTML=state.urg==='URGENTE'?'<span class="pdf-badge urgente">🔴 URGENTE</span>':'<span class="pdf-badge normal">🟢 NORMAL</span>';
-const porCat={};state.itens.forEach(i=>{(porCat[i.cat]=porCat[i.cat]||[]).push(i)});let body='';Object.keys(porCat).forEach(cat=>{
-body+=`<div class="pdf-cat"><div class="pdf-cat-title">${cat}</div><table class="pdf-table"><tr><th style="width:65%">Produto / Suprimento</th><th>Quantidade</th></tr>`;
-porCat[cat].forEach(it=>{body+=`<tr><td><b>${it.nome}</b></td><td>${it.qtd}</td></tr>`});
-body+=`</table></div>`});document.getElementById('pdfBody').innerHTML=body;document.getElementById('previewContent').innerHTML=document.getElementById('pdf-render').innerHTML;
-}
-function abrirPreview(){if(!state.itens.length){alert('Adicione um item');return}renderPDF();document.getElementById('mPrev').classList.add('on');}
-function gerarPDF(){
-if(!state.itens.length){alert('Adicione um item');return}
-renderPDF();
-const el=document.getElementById('pdf-render');
-const opt={
-  margin:[8,8,8,8],
-  filename:'Pedido_Suprimentos_Recanto_da_Limeira.pdf',
-  image:{type:'jpeg',quality:0.98},
-  html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',scrollY:0},
-  jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-  pagebreak:{mode:['css','legacy']}
-};
-// DOWNLOAD AUTOMÁTICO - SEM ABRIR PÁGINA
-html2pdf().set(opt).from(el).save().then(()=>{console.log('PDF baixado')});
-}
-render();
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./service-worker.js');}
-</script>
-</body>
-</html>
+    *{ box-sizing:border-box; margin:0; padding:0; }
+    html{ -webkit-text-size-adjust:100%; }
+    body{
+      font-family:'Archivo', Arial, sans-serif;
+      background:var(--fundo);
+      color:var(--texto);
+      min-height:100vh;
+      min-height:100dvh;
+      -webkit-font-smoothing:antialiased;
+    }
+    [hidden]{ display:none !important; }
+    button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
+    input, select{ font:inherit; color:inherit; }
+    svg{ display:block; }
+
+    :focus-visible{ outline:3px solid rgba(46,125,50,.45); outline-offset:2px; border-radius:8px; }
+
+    .sr-only{
+      position:absolute; width:1px; height:1px; overflow:hidden;
+      clip:rect(0 0 0 0); white-space:nowrap;
+    }
+
+    /* ==========================================================
+       CABEÇALHO
+       ========================================================== */
+    .cab{
+      position:relative;
+      background:var(--verde-escuro);
+      color:#fff;
+      padding:22px 18px 58px;
+      overflow:hidden;
+    }
+    .cab-marca{
+      display:flex; align-items:center; gap:12px;
+      max-width:680px; margin:0 auto;
+    }
+    .marca-icone{ width:34px; height:34px; color:#A5D6A7; flex-shrink:0; }
+    .cab-titulo{
+      font-family:'Fraunces', Georgia, serif;
+      font-weight:700; font-size:21px; line-height:1.12; letter-spacing:.2px;
+    }
+    .cab-subtitulo{
+      margin-top:4px;
+      font-size:10.5px; font-weight:600;
+      letter-spacing:.18em; text-transform:uppercase;
+      color:#A5D6A7;
+    }
+    .colina{
+      position:absolute; left:0; right:0; bottom:-1px;
+      width:100%; height:42px; pointer-events:none;
+    }
+
+    /* Cartão de status do pedido (data/hora + urgência) */
+    .cartao-status{
+      position:relative; z-index:2;
+      max-width:680px; margin:18px auto 0;
+      background:var(--superficie);
+      color:var(--texto);
+      border-radius:var(--raio);
+      box-shadow:var(--sombra);
+      padding:14px 16px;
+      display:flex; align-items:center; gap:12px;
+    }
+    .cartao-status .icone{ width:22px; height:22px; color:var(--verde); flex-shrink:0; }
+    .status-datahora{
+      flex:1; font-size:16px; font-weight:700;
+      font-variant-numeric:tabular-nums; letter-spacing:.2px;
+    }
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      font-size:11.5px; font-weight:800; letter-spacing:.1em;
+      padding:7px 13px; border-radius:999px;
+      background:var(--verde-tinta); color:var(--verde-escuro);
+    }
+    .badge .ponto{ width:9px; height:9px; border-radius:50%; background:currentColor; }
+    .badge-urgente{ background:var(--urgente-tinta); color:var(--urgente); }
+    .badge-urgente .ponto{ animation:pulsar 1.5s ease-in-out infinite; }
+    @keyframes pulsar{ 50%{ opacity:.3; } }
+
+    /* ==========================================================
+       ESTRUTURA / VISÕES
+       ========================================================== */
+    main{ padding:18px 16px 40px; }
+    body.com-pedido main{ padding-bottom:128px; }
+    .visao{ max-width:680px; margin:0 auto; }
+
+    /* Cartão genérico */
+    .cartao{
+      background:var(--superficie);
+      border-radius:var(--raio);
+      box-shadow:var(--sombra);
+      padding:18px;
+    }
+
+    /* ==========================================================
+       HOME
+       ========================================================== */
+    .home-hero{ text-align:center; padding:34px 22px 30px; }
+    .home-hero .marca-icone{ width:52px; height:52px; margin:0 auto 14px; color:var(--verde); }
+    .home-hero h2{
+      font-family:'Fraunces', Georgia, serif;
+      font-size:24px; font-weight:700; color:var(--verde-escuro);
+    }
+    .home-hero p{ margin-top:8px; color:var(--texto-suave); font-size:15px; line-height:1.5; }
+    .home-hero .btn{ margin-top:22px; width:100%; max-width:340px; }
+
+    /* ==========================================================
+       BOTÕES
+       ========================================================== */
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:10px;
+      min-height:54px; padding:0 20px;
+      border-radius:14px;
+      font-size:14px; font-weight:800; letter-spacing:.09em; text-transform:uppercase;
+      transition:transform .15s ease, background .15s ease, box-shadow .15s ease;
+      user-select:none;
+    }
+    .btn svg{ width:20px; height:20px; }
+    .btn:active{ transform:translateY(1px); }
+    .btn-primario{ background:var(--verde); color:#fff; box-shadow:0 6px 16px rgba(46,125,50,.28); }
+    .btn-primario:hover{ background:#27692B; }
+    .btn-perigo{ background:var(--urgente); color:#fff; box-shadow:0 6px 16px rgba(198,40,40,.25); }
+    .btn-perigo:hover{ background:#AB1F1F; }
+    .btn-fantasma{
+      background:var(--superficie); color:var(--verde-escuro);
+      box-shadow:inset 0 0 0 2px var(--linha);
+    }
+    .btn-fantasma:hover{ box-shadow:inset 0 0 0 2px var(--verde); }
+    .btn-fantasma-perigo{ background:var(--superficie); color:var(--urgente); box-shadow:inset 0 0 0 2px #F0D3D2; }
+    .btn-fantasma-perigo:hover{ box-shadow:inset 0 0 0 2px var(--urgente); }
+    .btn:disabled{
+      background:#CFD9D4; color:#8A9793; box-shadow:none; cursor:not-allowed; transform:none;
+    }
+    .btn-texto{
+      display:block; margin:14px auto 0;
+      color:var(--texto-suave); font-weight:700; font-size:13px;
+      letter-spacing:.06em; text-transform:uppercase;
+      padding:10px 16px; border-radius:10px;
+    }
+    .btn-texto:hover{ color:var(--texto); background:var(--fundo); }
+    .ocupado{ opacity:.65; pointer-events:none; }
+
+    /* ==========================================================
+       FORMULÁRIO DE ITEM
+       ========================================================== */
+    .form-item{ margin-bottom:14px; }
+    .form-titulo{
+      font-family:'Fraunces', Georgia, serif;
+      font-size:18px; font-weight:700; color:var(--verde-escuro);
+      margin-bottom:14px;
+    }
+    .campo{ margin-bottom:12px; }
+    .rotulo{
+      display:block; font-size:12.5px; font-weight:700;
+      letter-spacing:.04em; color:var(--texto-suave); margin-bottom:6px;
+    }
+    .campo input, .campo select{
+      width:100%; min-height:52px;
+      padding:12px 14px;
+      border:1.5px solid var(--linha); border-radius:12px;
+      background:var(--superficie); font-size:16px;
+      transition:border-color .15s ease, box-shadow .15s ease;
+    }
+    .campo input::placeholder{ color:#9FADA8; }
+    .campo input:focus, .campo select:focus{
+      outline:none; border-color:var(--verde);
+      box-shadow:0 0 0 3px rgba(46,125,50,.14);
+    }
+    .campo select{
+      appearance:none; -webkit-appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B6B66' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 14px center; background-size:17px;
+      padding-right:42px; cursor:pointer;
+    }
+    .linha-dupla{ display:grid; grid-template-columns:112px 1fr; gap:10px; }
+    .form-item .btn{ width:100%; margin-top:4px; }
+
+    /* ==========================================================
+       LISTA
+       ========================================================== */
+    .lista-topo{
+      display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+      margin-bottom:6px;
+    }
+    .lista-topo h2{
+      font-family:'Fraunces', Georgia, serif;
+      font-size:18px; font-weight:700; color:var(--verde-escuro);
+    }
+    .contador-geral{
+      font-size:12.5px; font-weight:700; color:var(--texto-suave);
+      background:var(--fundo); padding:4px 11px; border-radius:999px;
+      white-space:nowrap;
+    }
+
+    .cat-bloco{ margin-top:12px; }
+    .cat-cab{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:8px 2px 8px;
+      border-bottom:2px solid var(--verde);
+      margin-bottom:6px;
+    }
+    .cat-titulo{
+      font-size:12.5px; font-weight:800; letter-spacing:.09em;
+      text-transform:uppercase; color:var(--verde);
+    }
+    .cat-contador{
+      font-size:11.5px; font-weight:700; color:var(--texto-suave);
+      background:var(--fundo); padding:3px 9px; border-radius:999px; white-space:nowrap;
+    }
+
+    .item{
+      display:flex; align-items:center; gap:10px;
+      background:var(--superficie); border:1px solid var(--linha);
+      border-radius:14px; padding:11px 8px 11px 14px;
+      margin-bottom:8px;
+      animation:surgir .25s ease;
+    }
+    @keyframes surgir{ from{ opacity:0; transform:translateY(6px); } }
+    .item-info{ flex:1; min-width:0; }
+    .item-nome{ font-size:15.5px; font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
+    .item-qtd{
+      display:inline-block; margin-top:4px;
+      font-size:13px; font-weight:700; color:var(--texto-suave);
+      background:var(--fundo); padding:2px 9px; border-radius:999px;
+      font-variant-numeric:tabular-nums;
+    }
+    .item-acoes{ display:flex; gap:2px; flex-shrink:0; }
+    .acao{
+      width:44px; height:44px; border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--texto-suave); transition:background .15s ease, color .15s ease;
+    }
+    .acao svg{ width:20px; height:20px; }
+    .acao:hover{ background:var(--fundo); }
+    .acao-editar:hover{ color:var(--verde); }
+    .acao-excluir:hover{ background:var(--urgente-tinta); color:var(--urgente); }
+
+    .lista-vazia{ text-align:center; padding:30px 14px 22px; color:var(--texto-suave); }
+    .lista-vazia svg{ width:54px; height:54px; margin:0 auto 12px; color:#B9C6C0; }
+    .lista-vazia p{ font-size:14.5px; line-height:1.5; }
+
+    .lista-acoes{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+    .lista-acoes .btn{ min-height:50px; font-size:12.5px; }
+
+    /* ==========================================================
+       BARRA FIXA DE AÇÕES (rodapé)
+       ========================================================== */
+    .barra-acoes{
+      position:fixed; left:0; right:0; bottom:0; z-index:40;
+      display:flex; gap:10px;
+      padding:10px 14px calc(12px + env(safe-area-inset-bottom));
+      background:rgba(255,255,255,.94);
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      border-top:1px solid var(--linha);
+    }
+    .barra-acoes .btn{ flex:1; min-height:52px; font-size:12.5px; }
+    .barra-acoes .btn-previa{ flex:.9; }
+
+    .rodape-app{ text-align:center; padding:6px 0 26px; }
+    .link-discreto{
+      color:#93A19B; font-size:12.5px; font-weight:600;
+      padding:8px 14px; border-radius:10px;
+    }
+    .link-discreto:hover{ color:var(--texto-suave); background:var(--superficie); }
+
+    /* ==========================================================
+       MODAIS (bottom sheet)
+       ========================================================== */
+    body.modal-aberto{ overflow:hidden; }
+    .modal{
+      position:fixed; inset:0; z-index:60;
+      display:flex; align-items:flex-end; justify-content:center;
+    }
+    .modal-fundo{
+      position:absolute; inset:0;
+      background:rgba(16,26,18,.55);
+      opacity:0; transition:opacity .22s ease;
+    }
+    .modal.aberta .modal-fundo{ opacity:1; }
+    .folha-modal{
+      position:relative;
+      width:100%; max-width:560px;
+      background:var(--superficie);
+      border-radius:22px 22px 0 0;
+      padding:14px 20px calc(20px + env(safe-area-inset-bottom));
+      transform:translateY(100%);
+      transition:transform .26s cubic-bezier(.2,.8,.25,1);
+      max-height:88vh; max-height:88dvh; overflow-y:auto;
+    }
+    .modal.aberta .folha-modal{ transform:none; }
+    .alca{ width:34px; height:4px; border-radius:99px; background:var(--linha); margin:0 auto 14px; }
+    .modal-titulo{
+      font-family:'Fraunces', Georgia, serif;
+      font-size:20px; font-weight:700; color:var(--verde-escuro);
+      display:flex; align-items:center; gap:10px;
+    }
+    .modal-titulo svg{ width:22px; height:22px; color:var(--verde); flex-shrink:0; }
+    .modal-titulo.titulo-perigo{ color:var(--urgente); }
+    .modal-titulo.titulo-perigo svg{ color:var(--urgente); }
+    .modal-texto{ margin-top:8px; color:var(--texto-suave); font-size:14.5px; line-height:1.55; }
+    .modal-acoes{ display:flex; gap:10px; margin-top:20px; }
+    .modal-acoes .btn{ flex:1; }
+
+    .captura-hora{
+      margin-top:16px;
+      display:flex; align-items:center; gap:12px;
+      background:var(--fundo); border:1px solid var(--linha);
+      border-radius:14px; padding:14px 16px;
+    }
+    .captura-hora svg{ width:24px; height:24px; color:var(--verde); flex-shrink:0; }
+    .captura-hora strong{
+      font-size:19px; font-weight:700; font-variant-numeric:tabular-nums;
+    }
+    .captura-hora small{ display:block; font-size:11.5px; color:var(--texto-suave); font-weight:600; margin-top:2px; }
+
+    /* Cartões de urgência */
+    .urgentes{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+    .urg-card{
+      position:relative;
+      display:block; padding:14px 14px 13px;
+      border:2px solid var(--linha); border-radius:14px;
+      cursor:pointer; transition:border-color .15s ease, background .15s ease;
+    }
+    .urg-card input{ position:absolute; opacity:0; pointer-events:none; }
+    .urg-card .urg-topo{ display:flex; align-items:center; gap:8px; }
+    .urg-card .bola{ width:13px; height:13px; border-radius:50%; flex-shrink:0; }
+    .urg-normal .bola{ background:var(--verde); }
+    .urg-urgente .bola{ background:var(--urgente); }
+    .urg-card b{ font-size:15px; font-weight:800; }
+    .urg-card small{ display:block; margin-top:4px; font-size:12px; color:var(--texto-suave); line-height:1.4; }
+    .urg-card.selecionada{ border-color:var(--verde); background:var(--verde-tinta); }
+    .urg-card.urg-urgente.selecionada{ border-color:var(--urgente); background:var(--urgente-tinta); }
+    .urg-card input:focus-visible ~ .urg-topo{ outline:3px solid rgba(46,125,50,.45); outline-offset:4px; border-radius:6px; }
+
+    .destaque-excluir{
+      margin:14px 0 4px;
+      font-size:19px; font-weight:800; letter-spacing:.04em;
+      text-transform:uppercase; color:var(--urgente);
+      background:var(--urgente-tinta); border-radius:12px;
+      padding:14px 16px; text-align:center;
+      overflow-wrap:anywhere;
+    }
+    .nota-pequena{ margin-top:10px; font-size:12.5px; color:var(--texto-suave); }
+
+    /* ==========================================================
+       PRÉ-VISUALIZAÇÃO (tela cheia)
+       ========================================================== */
+    .modal.tela{ align-items:stretch; }
+    .modal.tela .modal-fundo{ display:none; }
+    .modal.tela{ background:#15241A; opacity:0; transition:opacity .22s ease; }
+    .modal.tela.aberta{ opacity:1; }
+    .tela-conteudo{
+      position:relative; display:flex; flex-direction:column;
+      width:100%; height:100%;
+      opacity:0; transform:translateY(12px);
+      transition:opacity .24s ease, transform .24s ease;
+    }
+    .modal.tela.aberta .tela-conteudo{ opacity:1; transform:none; }
+
+    .previa-topo{
+      display:flex; align-items:center; gap:12px;
+      padding:14px 16px calc(10px + env(safe-area-inset-top));
+      color:#fff;
+    }
+    .previa-topo strong{ flex:1; font-size:15px; font-weight:700; }
+    .previa-info{ font-size:12px; color:#9DBBA2; font-weight:600; white-space:nowrap; }
+    .previa-fechar{
+      width:42px; height:42px; border-radius:12px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      color:#CFE2D3; background:rgba(255,255,255,.08);
+    }
+    .previa-fechar svg{ width:20px; height:20px; }
+    .previa-fechar:hover{ background:rgba(255,255,255,.16); }
+
+    .previa-area{
+      flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+      padding:8px 16px 26px;
+      display:flex; flex-direction:column; align-items:center; gap:22px;
+    }
+    .previa-slot{ flex-shrink:0; }
+    .previa-papel{
+      width:794px; min-height:1123px; /* A4 em 96dpi: 210×297mm */
+      background:#fff; border-radius:3px;
+      box-shadow:var(--sombra-forte);
+      padding:38px;                   /* margem de 10mm do PDF real */
+      display:flex; flex-direction:column;
+      transform-origin:top left;
+    }
+    .previa-conteudo{ flex:0 0 auto; }
+    .previa-rodape{
+      margin-top:auto; padding-top:8px;
+      border-top:1px solid #D2DBD6;
+      display:flex; justify-content:space-between; gap:12px;
+      font-size:10.5px; font-weight:500; color:#60706A;
+    }
+    .previa-rodape-barra{
+      display:flex; gap:10px;
+      padding:12px 16px calc(14px + env(safe-area-inset-bottom));
+      background:rgba(255,255,255,.06);
+    }
+    .previa-rodape-barra .btn{ flex:1; min-height:52px; font-size:12.5px; }
+    .btn-claro{ background:rgba(255,255,255,.12); color:#fff; }
+    .btn-claro:hover{ background:rgba(255,255,255,.2); }
+
+    /* ==========================================================
+       MODAL DE ÍCONES DO PWA
+       ========================================================== */
+    .icones-preview{
+      display:flex; gap:18px; justify-content:center;
+      margin:18px 0 6px;
+    }
+    .icones-preview figure{ text-align:center; }
+    .icones-preview canvas{
+      width:76px; height:76px; border-radius:18px;
+      box-shadow:var(--sombra);
+    }
+    .icones-preview figcaption{ margin-top:8px; font-size:11.5px; font-weight:700; color:var(--texto-suave); }
+    .icones-acoes{ display:grid; gap:10px; margin-top:16px; }
+
+    /* ==========================================================
+       TOASTS
+       ========================================================== */
+    .toasts{
+      position:fixed; left:0; right:0; z-index:90;
+      bottom:calc(96px + env(safe-area-inset-bottom));
+      display:flex; flex-direction:column; align-items:center; gap:8px;
+      pointer-events:none; padding:0 16px;
+    }
+    body:not(.com-pedido) .toasts{ bottom:24px; }
+    .toast{
+      display:flex; align-items:center; gap:9px;
+      max-width:420px;
+      background:var(--te
