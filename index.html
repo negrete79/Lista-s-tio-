@@ -1,1188 +1,299 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#2E7D32">
-  <meta name="description" content="Controle de Suprimentos e Compras - Sítio Recanto da Limeira">
-
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="icon-192.png">
-
-  <title>Sítio Recanto da Limeira</title>
-
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- html2pdf -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-  <style>
-    * {
-      -webkit-tap-highlight-color: transparent;
-      box-sizing: border-box;
-    }
-
-    body {
-      background: #f3f6f4;
-      color: #263238;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-
-    button {
-      touch-action: manipulation;
-    }
-
-    .modal-backdrop {
-      background: rgba(0,0,0,.65);
-    }
-
-    .pdf-page {
-      width: 794px;
-      min-height: 1123px;
-      background: white;
-      position: relative;
-      padding: 42px;
-      color: #263238;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-
-    .pdf-header {
-      border-bottom: 3px solid #2E7D32;
-      padding-bottom: 15px;
-      margin-bottom: 18px;
-    }
-
-    .pdf-header.urgent {
-      border-color: #c62828;
-    }
-
-    .pdf-category {
-      margin-top: 14px;
-      page-break-inside: avoid;
-      break-inside: avoid;
-    }
-
-    .pdf-category-title {
-      background: #E8F5E9;
-      border-left: 5px solid #2E7D32;
-      padding: 7px 9px;
-      font-size: 13px;
-      font-weight: bold;
-      color: #1B5E20;
-    }
-
-    .pdf-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11px;
-    }
-
-    .pdf-table th,
-    .pdf-table td {
-      border: 1px solid #d5ddd8;
-      padding: 7px;
-      text-align: left;
-    }
-
-    .pdf-table th {
-      background: #f3f6f4;
-    }
-
-    .pdf-footer {
-      position: absolute;
-      bottom: 25px;
-      left: 42px;
-      right: 42px;
-      border-top: 1px solid #d5ddd8;
-      padding-top: 7px;
-      font-size: 9px;
-      color: #78909c;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    #pdfRenderArea {
-      position: fixed;
-      left: -100000px;
-      top: 0;
-      width: 794px;
-      background: white;
-    }
-
-    .safe-bottom {
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sítio Recanto da Limeira</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2E7D32">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{--primary:#2E7D32;--dark:#1B5E20;--bg:#F3F6F4;--surface:#fff;--text:#263238;--urgent:#C62828;--border:#E0E4E2}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);line-height:1.5;padding-bottom:88px}
+header{background:linear-gradient(135deg,var(--primary),var(--dark));color:#fff;padding:20px 16px 16px;text-align:center;border-radius:0 0 18px 18px;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+header h1{font-size:1.35rem;font-weight:800} header p{opacity:.9;font-size:.9rem;margin:4px 0 10px}
+.header-meta{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;font-size:.85rem;font-weight:600}
+.badge{background:rgba(255,255,255,.22);padding:5px 12px;border-radius:20px}
+.badge.urg{animation:pulse 1.6s infinite}.badge.urg.on{background:var(--urgent)}
+@keyframes pulse{50%{transform:scale(1.06)}}
+main{max-width:620px;margin:0 auto;padding:14px}
+.card{background:var(--surface);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.card-title{font-weight:800;color:var(--dark);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.form-group{margin-bottom:12px}.form-group label{font-size:.82rem;font-weight:700;color:#546E7A;margin-bottom:4px;display:block}
+.form-control{width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-size:1rem;outline:none}
+.form-control:focus{border-color:var(--primary)}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-weight:800;cursor:pointer;display:flex;justify-content:center;align-items:center;gap:8px}
+.btn:active{transform:scale(.98)}.btn-primary{background:var(--primary);color:#fff}.btn-primary:disabled{opacity:.5}
+.btn-danger{background:#EF5350;color:#fff}.btn-sec{background:#CFD8DC;color:var(--text)}
+.urg-sel{display:flex;gap:10px;margin:12px 0}
+.urg-opt{flex:1;border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;font-weight:800;cursor:pointer}
+.urg-opt.sel-normal{border-color:var(--primary);background:#E8F5E9;color:var(--dark)}
+.urg-opt.sel-urg{border-color:var(--urgent);background:#FFEBEE;color:var(--urgent)}
+.category-block{background:var(--surface);border-radius:12px;overflow:hidden;margin-bottom:16px;box-shadow:0 2px 6px rgba(0,0,0,.04);page-break-inside:avoid;break-inside:avoid}
+.category-header{background:#ECEFF1;padding:10px 14px;font-weight:800;font-size:.9rem;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.item-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border)}
+.item-name{font-weight:600}.item-qty{font-size:.82rem;color:#78909C;background:#F1F5F7;padding:2px 8px;border-radius:12px;display:inline-block;margin-top:3px}
+.item-actions{display:flex;gap:6px}.icon-btn{background:none;border:none;font-size:1.2rem;padding:8px;border-radius:8px;cursor:pointer}
+.icon-btn:hover{background:#ECEFF1}
+.empty{text-align:center;padding:28px;color:#90A4AE}
+.footer{position:fixed;bottom:0;left:0;right:0;height:76px;background:#fff;display:flex;gap:8px;padding:10px;box-shadow:0 -4px 12px rgba(0,0,0,.08);z-index:50}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:.2s;z-index:1000}
+.modal.on{opacity:1;pointer-events:auto}.modal-card{background:#fff;border-radius:16px;width:100%;max-width:460px;padding:20px;transform:translateY(12px);transition:.2s}
+.modal.on.modal-card{transform:translateY(0)}.modal-title{font-weight:800;color:var(--dark);font-size:1.15rem;margin-bottom:10px}
+.modal-btns{display:flex;gap:10px;margin-top:16px}
+#preview-viewport{max-height:68vh;overflow:auto;border:1px solid var(--border);background:#546E7A;padding:12px;border-radius:10px;margin-bottom:12px}
+.a4-preview{background:#fff;width:100%;aspect-ratio:1/1.4142;margin:0 auto;padding:18px;color:#000;box-shadow:0 4px 12px rgba(0,0,0,.3);font-size:11px;overflow:hidden}
+.pdf-render{width:210mm;background:#fff;color:#000;padding:10mm;font-family:Arial,sans-serif}
+.pdf-header-table{width:100%;border-bottom:2px solid #000;margin-bottom:12px;padding-bottom:8px}
+.pdf-title{font-size:18px;font-weight:bold}.pdf-sub{font-size:12px;color:#333}
+.pdf-meta{margin:8px 0;font-size:11px}.pdf-status{font-weight:bold}.pdf-status.urg{color:var(--urgent)}
+.pdf-cat{margin-top:16px;page-break-inside:avoid;break-inside:avoid}
+.pdf-cat-title{background:#f0f0f0;padding:6px 10px;font-weight:bold;text-transform:uppercase;font-size:11px}
+.pdf-table{width:100%;border-collapse:collapse}.pdf-table th{text-align:left;border-bottom:1.5px solid #000;padding:6px;font-size:10px}
+.pdf-table td{padding:5px 6px;font-size:10.5px;border-bottom:1px solid #ddd}
+.pdf-footer{margin-top:24px;text-align:center;font-size:9px;color:#666;border-top:1px solid #ccc;padding-top:8px}
+</style>
 </head>
-
 <body>
-
-<!-- CABEÇALHO -->
-<header class="bg-green-800 text-white shadow-lg">
-  <div class="max-w-3xl mx-auto px-4 py-5">
-
-    <h1 class="text-2xl font-extrabold">
-      Sítio Recanto da Limeira
-    </h1>
-
-    <p class="text-sm opacity-90">
-      Controle de Suprimentos e Compras
-    </p>
-
-    <div class="grid grid-cols-2 gap-2 mt-4">
-
-      <div class="bg-white/10 rounded-xl p-3">
-        <div class="text-[10px] uppercase opacity-75">
-          Data / Hora
-        </div>
-
-        <div id="headerDate" class="font-bold text-sm">
-          —
-        </div>
-      </div>
-
-      <div id="headerUrgencyBox" class="bg-white/10 rounded-xl p-3">
-        <div class="text-[10px] uppercase opacity-75">
-          Urgência
-        </div>
-
-        <div id="headerUrgency" class="font-bold text-sm">
-          —
-        </div>
-      </div>
-
-    </div>
-
+<header>
+  <h1>🌿 Sítio Recanto da Limeira</h1>
+  <p>Controle de Suprimentos e Compras</p>
+  <div class="header-meta">
+    <span class="badge" id="badgeData">📅 --/--/---- --:--</span>
+    <span class="badge" id="badgeStatus">🟢 NORMAL</span>
+    <span class="badge" id="badgeCount">0 itens</span>
   </div>
 </header>
-
-
-<!-- CONTEÚDO -->
-<main class="max-w-3xl mx-auto px-4 py-5 pb-32">
-
-  <!-- FORMULÁRIO -->
-  <section class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-4">
-
-    <h2 class="text-lg font-extrabold">
-      Adicionar suprimento
-    </h2>
-
-    <p class="text-xs text-gray-500 mb-4">
-      Informe o item, quantidade e categoria.
-    </p>
-
-    <form id="addForm">
-
-      <label class="block text-sm font-bold mb-1">
-        Nome do item
-      </label>
-
-      <input
-        id="itemName"
-        type="text"
-        maxlength="100"
-        placeholder="Ex.: Arroz"
-        required
-        class="w-full h-12 border border-gray-300 rounded-xl px-3 outline-none focus:border-green-700"
-      >
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-
-        <div>
-
-          <label class="block text-sm font-bold mb-1">
-            Quantidade
-          </label>
-
-          <input
-            id="itemQuantity"
-            type="text"
-            maxlength="40"
-            placeholder="Ex.: 5 kg"
-            required
-            class="w-full h-12 border border-gray-300 rounded-xl px-3 outline-none focus:border-green-700"
-          >
-
-        </div>
-
-        <div>
-
-          <label class="block text-sm font-bold mb-1">
-            Categoria
-          </label>
-
-          <select
-            id="itemCategory"
-            class="w-full h-12 border border-gray-300 rounded-xl px-3 bg-white outline-none focus:border-green-700"
-          ></select>
-
-        </div>
-
-      </div>
-
-      <button
-        type="submit"
-        class="w-full h-12 bg-green-700 hover:bg-green-800 text-white font-bold rounded-xl mt-4"
-      >
-        ＋ Adicionar item
-      </button>
-
-    </form>
-
-  </section>
-
-
-  <!-- LISTA -->
-  <section class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
-
-    <div class="flex items-center justify-between gap-3 mb-3">
-
-      <div>
-        <h2 class="text-lg font-extrabold">
-          Lista de compras
-        </h2>
-
-        <p id="itemCount" class="text-xs text-gray-500">
-          0 itens
-        </p>
-      </div>
-
-      <button
-        id="clearButton"
-        class="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded-xl font-bold"
-      >
-        Limpar
-      </button>
-
+<main>
+  <div class="card" id="cardAdd">
+    <div class="card-title">➕ Adicionar Item</div>
+    <div class="form-group"><label for="inpNome">Nome do item</label><input id="inpNome" class="form-control" placeholder="Ex: Arroz"></div>
+    <div class="form-group"><label for="inpQtd">Quantidade</label><input id="inpQtd" class="form-control" placeholder="Ex: 5 kg, 2 sacos"></div>
+    <div class="form-group"><label for="inpCat">Categoria</label>
+      <select id="inpCat" class="form-control">
+        <option>🛒 Mercearia & Alimentos</option>
+        <option>🧼 Limpeza & Lavanderia</option>
+        <option>🪚 Ferramentas & Manutenção</option>
+        <option>🌱 Horta, Pomar & Animais</option>
+        <option>🪵 Utilidades & Diversos</option>
+      </select>
     </div>
-
-    <div id="shoppingList"></div>
-
-    <div
-      id="emptyState"
-      class="text-center py-10 text-gray-500"
-    >
-      <div class="text-5xl mb-3">
-        🛒
-      </div>
-
-      <b>Nenhum item adicionado</b>
-
-      <p class="text-xs mt-1">
-        A lista será salva automaticamente.
-      </p>
-    </div>
-
-  </section>
-
+    <button class="btn btn-primary" id="btnAdd" onclick="adicionarItem()">+ ADICIONAR ITEM</button>
+  </div>
+  <div id="lista"></div>
+  <div class="card"><button class="btn btn-sec" onclick="confirmarLimpar()">🧹 LIMPAR LISTA</button></div>
 </main>
 
-
-<!-- RODAPÉ FIXO -->
-<div class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-gray-200 z-30 safe-bottom">
-
-  <div class="max-w-3xl mx-auto p-3 grid grid-cols-2 gap-2">
-
-    <button
-      id="previewButton"
-      class="h-12 bg-gray-800 text-white rounded-xl font-bold"
-    >
-      👁️ Pré-visualizar
-    </button>
-
-    <button
-      id="generateButton"
-      class="h-12 bg-green-700 text-white rounded-xl font-bold"
-    >
-      📄 Gerar PDF
-    </button>
-
-  </div>
-
+<div class="footer">
+  <button class="btn btn-sec" onclick="abrirPreview()">👁️ PRÉ-VISUALIZAR PDF</button>
+  <button class="btn btn-primary" onclick="gerarPDF()">📄 GERAR PDF</button>
 </div>
 
-
-<!-- MODAL INICIAL -->
-<div
-  id="setupModal"
-  class="fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4"
->
-
-  <div class="bg-white rounded-3xl w-full max-w-md p-5 shadow-2xl">
-
-    <div class="text-center">
-
-      <div class="text-5xl">
-        🌿
-      </div>
-
-      <h2 class="text-2xl font-extrabold mt-2">
-        Novo pedido
-      </h2>
-
-      <p class="text-sm text-gray-500">
-        A data e hora foram capturadas automaticamente.
-      </p>
-
+<!-- Modal Inicial -->
+<div class="modal on" id="modalInit">
+  <div class="modal-card">
+    <div class="modal-title">🌿 Novo pedido</div>
+    <p style="font-size:.95rem">Data e hora capturadas automaticamente:</p>
+    <p id="initData" style="font-weight:800;margin:8px 0 12px"></p>
+    <p style="font-weight:700;margin-bottom:8px">Nível de urgência:</p>
+    <div class="urg-sel">
+      <div class="urg-opt" id="optNormal" onclick="selecionarUrg('NORMAL')">🟢 Normal</div>
+      <div class="urg-opt" id="optUrg" onclick="selecionarUrg('URGENTE')">🔴 Urgente</div>
     </div>
-
-    <div class="bg-gray-50 border rounded-xl p-4 text-center mt-5">
-
-      <div class="text-[10px] uppercase text-gray-500">
-        Data / Hora capturada
-      </div>
-
-      <div id="capturedDate" class="font-bold mt-1">
-        —
-      </div>
-
-    </div>
-
-    <p class="font-bold text-sm mt-5 mb-2">
-      Nível de urgência
-    </p>
-
-    <div class="grid grid-cols-2 gap-2">
-
-      <button
-        data-urgency="Normal"
-        class="urgencyButton border-2 border-gray-200 rounded-xl p-4 font-bold"
-      >
-        🟢 Normal
-      </button>
-
-      <button
-        data-urgency="Urgente"
-        class="urgencyButton border-2 border-gray-200 rounded-xl p-4 font-bold"
-      >
-        🔴 Urgente
-      </button>
-
-    </div>
-
-    <button
-      id="startButton"
-      disabled
-      class="w-full h-12 bg-green-700 disabled:bg-gray-300 text-white font-bold rounded-xl mt-5"
-    >
-      Iniciar pedido
-    </button>
-
+    <button class="btn btn-primary" id="btnIniciar" disabled onclick="iniciarPedido()">INICIAR PEDIDO</button>
   </div>
-
 </div>
 
-
-<!-- MODAL EDITAR -->
-<div
-  id="editModal"
-  class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4"
->
-
-  <div class="bg-white rounded-3xl w-full max-w-md p-5">
-
-    <div class="flex justify-between items-center">
-
-      <h2 class="text-xl font-extrabold">
-        Editar item
-      </h2>
-
-      <button
-        id="closeEdit"
-        class="w-11 h-11 rounded-xl bg-gray-100"
-      >
-        ✕
-      </button>
-
-    </div>
-
-    <form id="editForm" class="mt-3">
-
-      <input id="editId" type="hidden">
-
-      <label class="block text-sm font-bold mb-1">
-        Nome
-      </label>
-
-      <input
-        id="editName"
-        required
-        class="w-full h-12 border rounded-xl px-3"
-      >
-
-      <label class="block text-sm font-bold mb-1 mt-3">
-        Quantidade
-      </label>
-
-      <input
-        id="editQuantity"
-        required
-        class="w-full h-12 border rounded-xl px-3"
-      >
-
-      <label class="block text-sm font-bold mb-1 mt-3">
-        Categoria
-      </label>
-
-      <select
-        id="editCategory"
-        class="w-full h-12 border rounded-xl px-3 bg-white"
-      ></select>
-
-      <button
-        class="w-full h-12 bg-green-700 text-white font-bold rounded-xl mt-4"
-      >
-        Salvar alterações
-      </button>
-
-    </form>
-
+<!-- Modal Editar -->
+<div class="modal" id="modalEdit">
+  <div class="modal-card">
+    <div class="modal-title">✏️ Editar item</div>
+    <div class="form-group"><label>Nome</label><input id="editNome" class="form-control"></div>
+    <div class="form-group"><label>Quantidade</label><input id="editQtd" class="form-control"></div>
+    <div class="form-group"><label>Categoria</label><select id="editCat" class="form-control">
+        <option>🛒 Mercearia & Alimentos</option><option>🧼 Limpeza & Lavanderia</option><option>🪚 Ferramentas & Manutenção</option><option>🌱 Horta, Pomar & Animais</option><option>🪵 Utilidades & Diversos</option>
+    </select></div>
+    <div class="modal-btns"><button class="btn btn-sec" onclick="fecharModal('modalEdit')">Cancelar</button><button class="btn btn-primary" onclick="salvarEdicao()">SALVAR ALTERAÇÕES</button></div>
   </div>
-
 </div>
 
-
-<!-- MODAL CONFIRMAÇÃO -->
-<div
-  id="confirmModal"
-  class="hidden fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4"
->
-
-  <div class="bg-white rounded-3xl w-full max-w-md p-5">
-
-    <div class="text-4xl">
-      ⚠️
-    </div>
-
-    <h2
-      id="confirmTitle"
-      class="text-xl font-extrabold mt-2"
-    >
-      Confirmar
-    </h2>
-
-    <p
-      id="confirmMessage"
-      class="text-sm text-gray-500 mt-2"
-    ></p>
-
-    <div class="grid grid-cols-2 gap-2 mt-5">
-
-      <button
-        id="cancelConfirm"
-        class="h-12 bg-gray-100 rounded-xl font-bold"
-      >
-        Cancelar
-      </button>
-
-      <button
-        id="acceptConfirm"
-        class="h-12 bg-red-600 text-white rounded-xl font-bold"
-      >
-        Confirmar
-      </button>
-
-    </div>
-
+<!-- Modal Excluir -->
+<div class="modal" id="modalDel">
+  <div class="modal-card">
+    <div class="modal-title">⚠️ Excluir item?</div>
+    <p>Deseja realmente excluir:</p>
+    <p id="delNome" style="font-weight:800;margin:8px 0;text-transform:uppercase"></p>
+    <p style="font-size:.85rem;color:#78909C">Esta ação não pode ser desfeita.</p>
+    <div class="modal-btns"><button class="btn btn-sec" onclick="fecharModal('modalDel')">CANCELAR</button><button class="btn btn-danger" onclick="confirmarExclusao()">EXCLUIR</button></div>
   </div>
-
 </div>
 
-
-<!-- MODAL PDF -->
-<div
-  id="pdfModal"
-  class="hidden fixed inset-0 bg-black/70 z-50 flex flex-col"
->
-
-  <div class="bg-white p-3 flex items-center justify-between">
-
-    <div>
-      <b>Pré-visualização do PDF</b>
-      <div class="text-xs text-gray-500">
-        Formato A4
-      </div>
-    </div>
-
-    <button
-      id="closePdf"
-      class="w-11 h-11 rounded-xl bg-gray-100"
-    >
-      ✕
-    </button>
-
+<!-- Modal Limpar -->
+<div class="modal" id="modalClear">
+  <div class="modal-card">
+    <div class="modal-title">⚠️ Limpar toda a lista?</div>
+    <p>Todos os itens serão removidos.</p>
+    <div class="modal-btns"><button class="btn btn-sec" onclick="fecharModal('modalClear')">CANCELAR</button><button class="btn btn-danger" onclick="limparTudo()">LIMPAR TUDO</button></div>
   </div>
-
-  <div
-    id="pdfPreview"
-    class="flex-1 overflow-auto bg-gray-500 p-4"
-  ></div>
-
-  <div class="bg-white p-3 grid grid-cols-2 gap-2">
-
-    <button
-      id="backPdf"
-      class="h-12 bg-gray-200 rounded-xl font-bold"
-    >
-      Voltar
-    </button>
-
-    <button
-      id="confirmPdf"
-      class="h-12 bg-green-700 text-white rounded-xl font-bold"
-    >
-      Gerar PDF
-    </button>
-
-  </div>
-
 </div>
 
+<!-- Modal Preview -->
+<div class="modal" id="modalPreview">
+  <div class="modal-card" style="max-width:620px">
+    <div class="modal-title">👁️ Pré-visualização A4</div>
+    <div id="preview-viewport"><div class="a4-preview" id="previewContent"></div></div>
+    <div class="modal-btns"><button class="btn btn-sec" onclick="fecharModal('modalPreview')">← VOLTAR</button><button class="btn btn-primary" onclick="gerarPDF()">📄 GERAR PDF</button></div>
+  </div>
+</div>
 
-<div
-  id="pdfRenderArea"
-  aria-hidden="true"
-></div>
+<!-- Template exclusivo PDF -->
+<div style="position:absolute;left:-9999px;top:0">
+  <div id="pdf-render" class="pdf-render">
+    <div class="pdf-header-table">
+      <div class="pdf-title">SÍTIO RECANTO DA LIMEIRA</div>
+      <div class="pdf-sub">Controle de Suprimentos e Compras</div>
+      <div class="pdf-meta" id="pdfDataHora"></div>
+      <div class="pdf-meta"><span class="pdf-status" id="pdfStatus"></span></div>
+    </div>
+    <div id="pdfBody"></div>
+    <div class="pdf-footer">Sítio Recanto da Limeira<br>Pedido de Suprimentos</div>
+  </div>
+</div>
 
-
-<!-- TOAST -->
-<div
-  id="toast"
-  class="fixed top-4 left-4 right-4 z-[100] flex justify-center pointer-events-none"
-></div>
-
-
+<script src="html2pdf.bundle.min.js"></script>
 <script>
+const KEY='recanto_limeira_v2';
+let state = JSON.parse(localStorage.getItem(KEY) || '{"iniciado":false,"dataHora":"","urg":"", "itens":[]}');
+let editId=null, delId=null;
+let urgTemp='';
 
-const STORAGE_KEY = "recanto_limeira_compras_v4";
+function formatarData(d){return d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}
 
-const CATEGORIES = [
-  {
-    id: "mercearia",
-    name: "🛒 Mercearia & Alimentos"
-  },
-  {
-    id: "limpeza",
-    name: "🧼 Limpeza & Lavanderia"
-  },
-  {
-    id: "ferramentas",
-    name: "🪚 Ferramentas & Manutenção"
-  },
-  {
-    id: "horta",
-    name: "🌱 Horta, Pomar & Animais"
-  },
-  {
-    id: "utilidades",
-    name: "🪵 Utilidades & Diversos"
+function salvar(){localStorage.setItem(KEY, JSON.stringify(state)); render();}
+
+function selecionarUrg(v){
+  urgTemp=v;
+  document.getElementById('optNormal').className='urg-opt'+(v==='NORMAL'?' sel-normal':'');
+  document.getElementById('optUrg').className='urg-opt'+(v==='URGENTE'?' sel-urg':'');
+  document.getElementById('btnIniciar').disabled=false;
+}
+function iniciarPedido(){
+  const agora=new Date();
+  state.dataHora=formatarData(agora);
+  state.urg=urgTemp;
+  state.iniciado=true;
+  salvar();
+  fecharModal('modalInit');
+}
+function verificarInicio(){
+  if(!state.iniciado){
+    document.getElementById('initData').textContent=formatarData(new Date());
+    abrirModal('modalInit');
   }
-];
+}
+function adicionarItem(){
+  const nome=document.getElementById('inpNome').value.trim();
+  const qtd=document.getElementById('inpQtd').value.trim();
+  const cat=document.getElementById('inpCat').value;
+  if(!nome){alert('⚠️ Digite o nome do item'); return}
+  state.itens.push({id:Date.now(), nome, qtd: qtd||'1', cat});
+  document.getElementById('inpNome').value=''; document.getElementById('inpQtd').value='';
+  salvar();
+}
+function render(){
+  const lista=document.getElementById('lista');
+  if(!state.iniciado){lista.innerHTML=''; return}
+  document.getElementById('badgeData').textContent='📅 '+state.dataHora;
+  document.getElementById('badgeStatus').textContent = state.urg==='URGENTE'?'🔴 URGENTE':'🟢 NORMAL';
+  document.getElementById('badgeStatus').className='badge urg '+(state.urg==='URGENTE'?'on':'');
+  document.getElementById('badgeCount').textContent=state.itens.length+' itens';
 
+  const porCat={};
+  ["🛒 Mercearia & Alimentos","🧼 Limpeza & Lavanderia","🪚 Ferramentas & Manutenção","🌱 Horta, Pomar & Animais","🪵 Utilidades & Diversos"].forEach(c=>porCat[c]=[]);
+  state.itens.forEach(it=>{ if(!porCat[it.cat]) porCat[it.cat]=[]; porCat[it.cat].push(it); });
 
-let state = loadState();
+  let html='';
+  Object.keys(porCat).forEach(cat=>{
+    const arr=porCat[cat];
+    if(arr.length===0) return;
+    html+=`<div class="category-block"><div class="category-header">${cat}</div>`;
+    arr.forEach(it=>{
+      html+=`<div class="item-row"><div><div class="item-name">${it.nome}</div><span class="item-qty">${it.qtd}</span></div><div class="item-actions"><button class="icon-btn" aria-label="Editar" onclick="abrirEditar(${it.id})">✏️</button><button class="icon-btn" aria-label="Excluir" onclick="abrirExcluir(${it.id})">🗑️</button></div></div>`;
+    });
+    html+=`</div>`;
+  });
+  lista.innerHTML=html||`<div class="card empty">Nenhum item ainda. Adicione acima 👆</div>`;
+  renderPDFTemplate();
+}
+function abrirModal(id){document.getElementById(id).classList.add('on')}
+function fecharModal(id){document.getElementById(id).classList.remove('on')}
+function abrirEditar(id){
+  const it=state.itens.find(x=>x.id===id); if(!it) return;
+  editId=id;
+  document.getElementById('editNome').value=it.nome;
+  document.getElementById('editQtd').value=it.qtd;
+  document.getElementById('editCat').value=it.cat;
+  abrirModal('modalEdit');
+}
+function salvarEdicao(){
+  const it=state.itens.find(x=>x.id===editId); if(!it) return;
+  it.nome=document.getElementById('editNome').value.trim()||it.nome;
+  it.qtd=document.getElementById('editQtd').value.trim()||it.qtd;
+  it.cat=document.getElementById('editCat').value;
+  salvar(); fecharModal('modalEdit');
+}
+function abrirExcluir(id){
+  const it=state.itens.find(x=>x.id===id); if(!it) return;
+  delId=id; document.getElementById('delNome').textContent=it.nome;
+  abrirModal('modalDel');
+}
+function confirmarExclusao(){ state.itens=state.itens.filter(x=>x.id!==delId); salvar(); fecharModal('modalDel'); }
+function confirmarLimpar(){abrirModal('modalClear')}
+function limparTudo(){ state.itens=[]; salvar(); fecharModal('modalClear'); }
 
-let selectedUrgency = null;
-
-let pendingAction = null;
-
-
-/* -----------------------------
-   ESTADO
------------------------------ */
-
-function defaultState() {
-
-  return {
-    initialized: false,
-    orderDate: null,
-    urgency: null,
-    items: []
+function renderPDFTemplate(){
+  document.getElementById('pdfDataHora').textContent='Data/Hora: '+(state.dataHora||formatarData(new Date()));
+  const st=document.getElementById('pdfStatus');
+  st.textContent='STATUS: '+(state.urg||'NORMAL');
+  st.className='pdf-status'+(state.urg==='URGENTE'?' urg':'');
+  const porCat={};
+  state.itens.forEach(it=>{ (porCat[it.cat]=porCat[it.cat]||[]).push(it); });
+  let body='';
+  Object.keys(porCat).forEach(cat=>{
+    if(porCat[cat].length===0) return;
+    body+=`<div class="pdf-cat"><div class="pdf-cat-title">${cat}</div><table class="pdf-table"><thead><tr><th>Produto / Suprimento</th><th style="width:35%">Quantidade</th></tr></thead><tbody>`;
+    porCat[cat].forEach(it=>{ body+=`<tr><td>${it.nome}</td><td>${it.qtd}</td></tr>`; });
+    body+=`</tbody></table></div>`;
+  });
+  document.getElementById('pdfBody').innerHTML=body||'<p style="padding:20px;text-align:center">Nenhum item</p>';
+  document.getElementById('previewContent').innerHTML=document.getElementById('pdf-render').innerHTML;
+}
+function abrirPreview(){
+  if(state.itens.length===0){alert('⚠️ Adicione pelo menos um item à lista.'); return}
+  renderPDFTemplate(); abrirModal('modalPreview');
+}
+function gerarPDF(){
+  if(state.itens.length===0){alert('⚠️ Adicione pelo menos um item à lista.'); return}
+  renderPDFTemplate();
+  const el=document.getElementById('pdf-render');
+  const opt={
+    margin:[10,10,10,10],
+    filename:'Pedido_Suprimentos_Recanto_da_Limeira.pdf',
+    image:{type:'jpeg',quality:0.98},
+    html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+    pagebreak:{mode:['css','legacy']}
   };
-
+  // html2pdf real ou fallback
+  try{ html2pdf().from(el).set(opt).save(); }
+  catch(e){ window.print(); }
 }
 
-
-function loadState() {
-
-  try {
-
-    const saved =
-      JSON.parse(
-        localStorage.getItem(STORAGE_KEY)
-      );
-
-    if (
-      saved &&
-      Array.isArray(saved.items)
-    ) {
-
-      return saved;
-
-    }
-
-  } catch (error) {
-
-    console.warn(error);
-
-  }
-
-  return defaultState();
-
-}
-
-
-function saveState() {
-
-  try {
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(state)
-    );
-
-  } catch (error) {
-
-    alert(
-      "Não foi possível salvar os dados neste dispositivo."
-    );
-
-  }
-
-}
-
-
-/* -----------------------------
-   UTILIDADES
------------------------------ */
-
-function $(id) {
-
-  return document.getElementById(id);
-
-}
-
-
-function escapeHTML(value) {
-
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-
-}
-
-
-function generateId() {
-
-  if (
-    window.crypto &&
-    crypto.randomUUID
-  ) {
-
-    return crypto.randomUUID();
-
-  }
-
-  return (
-    Date.now().toString(36) +
-    Math.random().toString(36).slice(2)
-  );
-
-}
-
-
-function formatDate(date) {
-
-  return new Intl.DateTimeFormat(
-    "pt-BR",
-    {
-      dateStyle: "short",
-      timeStyle: "short"
-    }
-  ).format(new Date(date));
-
-}
-
-
-function formatDateLong(date) {
-
-  return new Intl.DateTimeFormat(
-    "pt-BR",
-    {
-      dateStyle: "full",
-      timeStyle: "short"
-    }
-  ).format(new Date(date));
-
-}
-
-
-function showToast(message) {
-
-  $("toast").innerHTML = `
-    <div class="
-      bg-gray-900
-      text-white
-      px-4
-      py-3
-      rounded-xl
-      shadow-xl
-      text-sm
-      font-bold
-    ">
-      ${escapeHTML(message)}
-    </div>
-  `;
-
-  setTimeout(() => {
-
-    $("toast").innerHTML = "";
-
-  }, 2500);
-
-}
-
-
-/* -----------------------------
-   CATEGORIAS
------------------------------ */
-
-function populateCategories() {
-
-  const html =
-    CATEGORIES
-      .map(category => `
-        <option value="${category.id}">
-          ${escapeHTML(category.name)}
-        </option>
-      `)
-      .join("");
-
-  $("itemCategory").innerHTML = html;
-
-  $("editCategory").innerHTML = html;
-
-}
-
-
-/* -----------------------------
-   CABEÇALHO
------------------------------ */
-
-function updateHeader() {
-
-  $("headerDate").textContent =
-    state.orderDate
-      ? formatDate(state.orderDate)
-      : "—";
-
-  $("headerUrgency").textContent =
-    state.urgency || "—";
-
-  if (state.urgency === "Urgente") {
-
-    $("headerUrgencyBox").classList.remove(
-      "bg-white/10"
-    );
-
-    $("headerUrgencyBox").classList.add(
-      "bg-red-600"
-    );
-
-  } else {
-
-    $("headerUrgencyBox").classList.remove(
-      "bg-red-600"
-    );
-
-    $("headerUrgencyBox").classList.add(
-      "bg-white/10"
-    );
-
-  }
-
-}
-
-
-/* -----------------------------
-   LISTA
------------------------------ */
-
-function renderList() {
-
-  const container =
-    $("shoppingList");
-
-  const empty =
-    $("emptyState");
-
-  $("itemCount").textContent =
-    `${state.items.length} ${
-      state.items.length === 1
-        ? "item"
-        : "itens"
-    }`;
-
-  empty.classList.toggle(
-    "hidden",
-    state.items.length > 0
-  );
-
-  let html = "";
-
-  CATEGORIES.forEach(category => {
-
-    const items =
-      state.items.filter(
-        item =>
-          item.category === category.id
-      );
-
-    if (!items.length) return;
-
-    html += `
-      <div class="mb-5">
-
-        <div class="
-          border-l-4
-          border-green-700
-          pl-2
-          font-extrabold
-          mb-2
-        ">
-          ${escapeHTML(category.name)}
-        </div>
-    `;
-
-    items.forEach(item => {
-
-      html += `
-        <div class="
-          flex
-          items-center
-          gap-2
-          bg-gray-50
-          border
-          border-gray-200
-          rounded-xl
-          p-3
-          mb-2
-        ">
-
-          <div class="flex-1 min-w-0">
-
-            <div class="
-              font-bold
-              break-words
-            ">
-              ${escapeHTML(item.name)}
-            </div>
-
-            <div class="
-              text-xs
-              text-gray-500
-              mt-1
-            ">
-              Quantidade:
-              <b>
-                ${escapeHTML(item.quantity)}
-              </b>
-            </div>
-
-          </div>
-
-          <button
-            data-edit="${item.id}"
-            class="
-              w-11
-              h-11
-              rounded-xl
-              border
-              bg-white
-            "
-            title="Editar"
-          >
-            ✏️
-          </button>
-
-          <button
-            data-delete="${item.id}"
-            class="
-              w-11
-              h-11
-              rounded-xl
-              border
-              border-red-200
-              bg-red-50
-              text-red-700
-            "
-            title="Excluir"
-          >
-            🗑️
-          </button>
-
-        </div>
-      `;
-
-    });
-
-    html += `</div>`;
-
-  });
-
-  container.innerHTML = html;
-
-  document
-    .querySelectorAll("[data-edit]")
-    .forEach(button => {
-
-      button.onclick = () =>
-        openEdit(button.dataset.edit);
-
-    });
-
-  document
-    .querySelectorAll("[data-delete]")
-    .forEach(button => {
-
-      button.onclick = () =>
-        requestDelete(button.dataset.delete);
-
-    });
-
-}
-
-
-/* -----------------------------
-   MODAL INICIAL
------------------------------ */
-
-function openSetup() {
-
-  const now =
-    new Date();
-
-  $("capturedDate").textContent =
-    formatDateLong(now);
-
-  selectedUrgency =
-    state.urgency || null;
-
-  document
-    .querySelectorAll(".urgencyButton")
-    .forEach(button => {
-
-      button.classList.remove(
-        "border-green-700",
-        "bg-green-50",
-        "border-red-600",
-        "bg-red-50"
-      );
-
-      if (
-        button.dataset.urgency ===
-        selectedUrgency
-      ) {
-
-        if (
-          selectedUrgency ===
-          "Urgente"
-        ) {
-
-          button.classList.add(
-            "border-red-600",
-            "bg-red-50"
-          );
-
-        } else {
-
-          button.classList.add(
-            "border-green-700",
-            "bg-green-50"
-          );
-
-        }
-
-      }
-
-    });
-
-  $("startButton").disabled =
-    !selectedUrgency;
-
-}
-
-
-document
-  .querySelectorAll(".urgencyButton")
-  .forEach(button => {
-
-    button.onclick = () => {
-
-      selectedUrgency =
-        button.dataset.urgency;
-
-      openSetup();
-
-    };
-
-  });
-
-
-$("startButton").onclick = () => {
-
-  if (!selectedUrgency) return;
-
-  state.initialized = true;
-
-  state.orderDate =
-    new Date().toISOString();
-
-  state.urgency =
-    selectedUrgency;
-
-  saveState();
-
-  updateHeader();
-
-  $("setupModal")
-    .classList.add("hidden");
-
-  showToast(
-    "Pedido iniciado com sucesso."
-  );
-
-};
-
-
-/* -----------------------------
-   ADICIONAR
------------------------------ */
-
-$("addForm").onsubmit = event => {
-
-  event.preventDefault();
-
-  const name =
-    $("itemName").value.trim();
-
-  const quantity =
-    $("itemQuantity").value.trim();
-
-  const category =
-    $("itemCategory").value;
-
-  if (!name || !quantity) {
-
-    showToast(
-      "Preencha nome e quantidade."
-    );
-
-    return;
-
-  }
-
-  state.items.push({
-
-    id: generateId(),
-
-    name,
-
-    quantity,
-
-    category
-
-  });
-
-  saveState();
-
-  renderList();
-
-  $("addForm").reset();
-
-  $("itemCategory").value =
-    CATEGORIES[0].id;
-
-  $("itemName").focus();
-
-  showToast(
-    "Item adicionado."
-  );
-
-};
-
-
-/* -----------------------------
-   EDITAR
------------------------------ */
-
-function openEdit(itemId) {
-
-  const item =
-    state.items.find(
-      x => x.id === itemId
-    );
-
-  if (!item) return;
-
-  $("editId").value =
-    item.id;
-
-  $("editName").value =
-    item.name;
-
-  $("editQuantity").value =
-    item.quantity;
-
-  $("editCategory").value =
-    item.category;
-
-  $("editModal")
-    .classList.remove("hidden");
-
-}
-
-
-$("closeEdit").onclick = () => {
-
-  $("editModal")
-    .classList.add("hidden");
-
-};
-
-
-$("editForm").onsubmit = event => {
-
-  event.preventDefault();
-
-  const item =
-    state.items.find(
-      x =>
-        x.id ===
-        $("editId").value
-    );
-
-  if (!item) return;
-
-  item.name =
-    $("editName").value.trim();
-
-  item.quantity =
-    $("editQuantity").value.trim();
-
-  item.category =
-    $("editCategory").value;
-
-  saveState();
-
-  renderList();
-
-  $("editModal")
-    .classList.add("hidden");
-
-  showToast(
- 
+// PWA
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>{navigator.serviceWorker.register('./service-worker.js');}); }
+
+verificarInicio(); render();
+</script>
+</body>
+</html>
