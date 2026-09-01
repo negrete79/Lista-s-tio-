@@ -1,145 +1,125 @@
 const CACHE_NAME = "recanto-limeira-v1";
 
 const APP_FILES = [
-"./",
-"./index.html",
-"./manifest.json",
-"./icon-192.png",
-"./icon-512.png"
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./icon-192.png",
+  "./icon-512.png"
 ];
-
-/* Instalação */
 
 self.addEventListener("install", event => {
 
-event.waitUntil(
+  event.waitUntil(
 
-```
-caches.open(CACHE_NAME)
-  .then(cache => {
+    caches
+      .open(CACHE_NAME)
+      .then(cache =>
+        cache.addAll(APP_FILES)
+      )
+      .then(() =>
+        self.skipWaiting()
+      )
 
-    return cache.addAll(APP_FILES);
-
-  })
-  .then(() => {
-
-    return self.skipWaiting();
-
-  })
-```
-
-);
+  );
 
 });
 
-/* Ativação */
 
 self.addEventListener("activate", event => {
 
-event.waitUntil(
+  event.waitUntil(
 
-```
-caches.keys()
-  .then(keys => {
+    caches.keys()
+      .then(keys =>
 
-    return Promise.all(
+        Promise.all(
 
-      keys
-        .filter(key => key !== CACHE_NAME)
-        .map(key => caches.delete(key))
+          keys
+            .filter(
+              key =>
+                key !== CACHE_NAME
+            )
+            .map(
+              key =>
+                caches.delete(key)
+            )
 
-    );
+        )
 
-  })
-  .then(() => {
+      )
+      .then(() =>
+        self.clients.claim()
+      )
 
-    return self.clients.claim();
-
-  })
-```
-
-);
+  );
 
 });
 
-/* Requisições */
 
 self.addEventListener("fetch", event => {
 
-if(event.request.method !== "GET"){
-return;
-}
+  if (event.request.method !== "GET") {
+    return;
+  }
 
-event.respondWith(
+  event.respondWith(
 
-```
-caches.match(event.request)
-  .then(cached => {
+    caches.match(event.request)
+      .then(cachedResponse => {
 
-    if(cached){
-      return cached;
-    }
+        if (cachedResponse) {
+          return cachedResponse;
+        }
 
-    return fetch(event.request)
-      .then(response => {
+        return fetch(event.request)
+          .then(networkResponse => {
 
-        /*
-         * Recursos externos como Tailwind e html2pdf
-         * também podem ser armazenados depois que forem
-         * carregados pela primeira vez.
-         */
+            if (
+              networkResponse &&
+              (
+                networkResponse.ok ||
+                networkResponse.type ===
+                "opaque"
+              )
+            ) {
 
-        if(
-          response &&
-          (
-            response.ok ||
-            response.type === "opaque"
-          )
-        ){
+              const responseClone =
+                networkResponse.clone();
 
-          const copy=response.clone();
+              caches
+                .open(CACHE_NAME)
+                .then(cache => {
 
-          caches.open(CACHE_NAME)
-            .then(cache => {
+                  cache.put(
+                    event.request,
+                    responseClone
+                  );
 
-              cache.put(
-                event.request,
-                copy
+                });
+
+            }
+
+            return networkResponse;
+
+          })
+          .catch(() => {
+
+            if (
+              event.request.mode ===
+              "navigate"
+            ) {
+
+              return caches.match(
+                "./index.html"
               );
 
-            })
-            .catch(()=>{});
+            }
 
-        }
-
-        return response;
+          });
 
       })
-      .catch(() => {
 
-        if(
-          event.request.mode === "navigate"
-        ){
-
-          return caches.match(
-            "./index.html"
-          );
-
-        }
-
-        return new Response(
-          "",
-          {
-            status:503,
-            statusText:"Offline"
-          }
-        );
-
-      });
-
-  })
-```
-
-);
+  );
 
 });
