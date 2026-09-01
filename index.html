@@ -25,7 +25,7 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     body { background-color: var(--fundo); color: var(--texto); -webkit-tap-highlight-color: transparent; padding-bottom: 90px; }
-    header { background-color: var(--verde-campo); color: var(--branco); padding: 16px; text-align: center; box-shadow: var(--sombra); sticky: top; }
+    header { background-color: var(--verde-campo); color: var(--branco); padding: 16px; text-align: center; box-shadow: var(--sombra); }
     header h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
     header p { font-size: 0.85rem; opacity: 0.9; }
     .status-bar { background: var(--verde-escuro); color: var(--branco); padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 600; }
@@ -61,18 +61,35 @@
     .urgency-option { flex: 1; border: 2px solid var(--cinza-claro); padding: 12px; border-radius: 8px; text-align: center; cursor: pointer; font-weight: 600; }
     .urgency-option.selected-normal { border-color: #4CAF50; background: #E8F5E9; color: #2E7D32; }
     .urgency-option.selected-urgente { border-color: var(--urgente); background: #FFEBEE; color: var(--urgente); }
-    #a4-preview-container { background: #525659; padding: 10px; }
-    .a4-page { background: white; width: 100%; min-height: 297mm; padding: 15mm 10mm 15mm 10mm; box-shadow: 0 0 10px rgba(0,0,0,0.3); box-sizing: border-box; font-size: 12pt; position: relative; }
-    .pdf-header { border-bottom: 2px solid #2E7D32; padding-bottom: 8px; margin-bottom: 12px; }
-    .pdf-header h2 { color: #1B5E20; font-size: 14pt; text-align: center; font-weight: bold; }
-    .pdf-header p { text-align: center; font-size: 9pt; color: #555; }
-    .pdf-meta { display: flex; justify-content: space-between; margin-top: 10px; font-size: 9.5pt; font-weight: bold; background: #f0f0f0; padding: 6px; border-radius: 4px; }
-    .pdf-category { margin-top: 12px; page-break-inside: avoid; break-inside: avoid; }
-    .pdf-category-title { background: #2E7D32; color: white; padding: 4px 8px; font-weight: bold; font-size: 10pt; }
-    .pdf-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-    .pdf-table th, .pdf-table td { border: 1px solid #ccc; padding: 5px 8px; text-align: left; font-size: 9.5pt; }
+    
+    /* CSS DO PDF A4 OTIMIZADO PARA 1 PÁGINA */
+    #a4-preview-container { background: #525659; padding: 10px; display: flex; justify-content: center; }
+    .a4-page { 
+      background: white; 
+      width: 190mm; 
+      min-height: 270mm; 
+      padding: 10mm; 
+      box-shadow: 0 0 10px rgba(0,0,0,0.3); 
+      box-sizing: border-box; 
+      font-size: 10pt; 
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    }
+    .pdf-header { border-bottom: 2px solid #2E7D32; padding-bottom: 6px; margin-bottom: 8px; }
+    .pdf-header h2 { color: #1B5E20; font-size: 13pt; text-align: center; font-weight: bold; margin-bottom: 2px; }
+    .pdf-header p { text-align: center; font-size: 8.5pt; color: #555; }
+    .pdf-meta { display: flex; justify-content: space-between; margin-top: 6px; font-size: 9pt; font-weight: bold; background: #f0f0f0; padding: 5px 8px; border-radius: 4px; }
+    .pdf-content { flex: 1; }
+    .pdf-category { margin-top: 8px; page-break-inside: avoid; break-inside: avoid; }
+    .pdf-category-title { background: #2E7D32; color: white; padding: 3px 6px; font-weight: bold; font-size: 9pt; border-radius: 2px; }
+    .pdf-table { width: 100%; border-collapse: collapse; margin-top: 3px; }
+    .pdf-table th, .pdf-table td { border: 1px solid #ccc; padding: 3px 6px; text-align: left; font-size: 8.5pt; }
     .pdf-table th { background: #e8f5e9; font-weight: bold; }
-    .pdf-footer { position: absolute; bottom: 10mm; left: 10mm; right: 10mm; text-align: center; font-size: 8pt; color: #777; border-top: 1px solid #ddd; padding-top: 4px; }
+    .pdf-footer { text-align: center; font-size: 7.5pt; color: #777; border-top: 1px solid #ddd; padding-top: 4px; margin-top: 10px; }
     .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #323232; color: white; padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; z-index: 2000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     .toast.show { opacity: 1; }
   </style>
@@ -519,7 +536,7 @@
             <span>STATUS: <span style="${statusStyle}">${state.urgency}</span></span>
           </div>
         </div>
-        <div>
+        <div class="pdf-content">
           ${categoriesHTML}
         </div>
         <div class="pdf-footer">
@@ -536,15 +553,15 @@
 
       renderPDFTemplate();
       const element = document.getElementById('pdf-render');
-      showToast('Gerando PDF, aguarde...');
+      showToast('Gerando PDF em página única...');
 
       const opt = {
-        margin: [10, 10, 10, 10],
+        margin: [5, 5, 5, 5],
         filename: 'Pedido_Suprimentos_Recanto_da_Limeira.pdf',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] }
+        pagebreak: { mode: [] } // Desativa a quebra automática para manter tudo em 1 página
       };
 
       html2pdf().set(opt).from(element).save().then(() => {
