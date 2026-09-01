@@ -1,15 +1,15 @@
 {
-  "name": "Sítio Recanto da Limeira - Controle de Suprimentos",
+  "name": "Sítio Recanto da Limeira",
   "short_name": "Recanto Limeira",
-  "description": "Controle de Suprimentos e Compras - PWA offline",
-  "start_url": "./index.html",
+  "description": "Controle de Suprimentos e Compras - funciona offline",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#2E7D32",
   "background_color": "#F3F6F4",
   "icons": [
-    {"src": "icon-192.png","sizes": "192x192","type": "image/png","purpose": "any maskable"},
-    {"src": "icon-512.png","sizes": "512x512","type": "image/png","purpose": "any maskable"}
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }
