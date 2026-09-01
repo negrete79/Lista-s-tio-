@@ -1,26 +1,17 @@
 {
-  "name": "Sítio Recanto da Limeira — Controle de Suprimentos e Compras",
-  "short_name": "Recanto Limeira",
-  "description": "Controle de Suprimentos e Compras do Sítio Recanto da Limeira. Monta a lista, pré-visualiza e gera PDF A4. Funciona offline.",
+  "name": "Sítio Recanto da Limeira",
+  "short_name": "Recanto",
+  "description": "Controle de suprimentos e compras do Sítio Recanto da Limeira. Funciona offline e gera o pedido em PDF A4.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#F3F6F4",
-  "theme_color": "#1B5E20",
   "lang": "pt-BR",
+  "theme_color": "#1B5E20",
+  "background_color": "#F3F6F4",
   "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
