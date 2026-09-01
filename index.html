@@ -1,1185 +1,1048 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Controle de Suprimentos e Compras do Sítio Recanto da Limeira — monte a lista de compras offline e envie o pedido em PDF ao patrão.">
-  <meta name="theme-color" content="#1B5E20">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Recanto Limeira">
-  <title>Sítio Recanto da Limeira — Controle de Suprimentos e Compras</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon-192.png">
-  <link rel="apple-touch-icon" href="icon-192.png">
-  <style>
-    /* ============================================================
-       SÍTIO RECANTO DA LIMEIRA — Estilos (mobile-first)
-       ============================================================ */
-    :root{
-      --verde:#2E7D32;
-      --verde-escuro:#1B5E20;
-      --fundo:#F3F6F4;
-      --branco:#FFFFFF;
-      --texto:#263238;
-      --urgente:#C62828;
-      --texto-suave:#5f6f66;
-      --linha:#d9e3dc;
-      --verde-suave:#e8f2ea;
-    }
-    *{ box-sizing:border-box; }
-    [hidden]{ display:none !important; }
-    html{ -webkit-text-size-adjust:100%; }
-    body{
-      margin:0;
-      background:var(--fundo);
-      color:var(--texto);
-      font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-size:16px;
-      line-height:1.45;
-      min-height:100dvh;
-      touch-action:manipulation;
-    }
-    button, input, select{ font-family:inherit; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1B5E20">
+<meta name="description" content="Controle de Suprimentos e Compras do Sítio Recanto da Limeira. Funciona offline.">
+<title>Sítio Recanto da Limeira — Controle de Suprimentos e Compras</title>
 
-    /* ---------- Cabeçalho ---------- */
-    #app-header{
-      position:sticky; top:0; z-index:50;
-      background:var(--verde-escuro); color:#fff;
-      padding:14px 16px 12px;
-      box-shadow:0 2px 12px rgba(20,50,24,.35);
-    }
-    .marca h1{
-      margin:0;
-      font-family:Georgia,'Times New Roman',serif;
-      font-size:21px; font-weight:700; letter-spacing:.3px;
-    }
-    .marca p{
-      margin:3px 0 0;
-      font-size:10.5px; letter-spacing:1.9px; text-transform:uppercase;
-      color:rgba(255,255,255,.72);
-    }
-    #meta-pedido{ display:flex; align-items:center; gap:8px; margin-top:11px; flex-wrap:wrap; }
-    .meta-data{
-      font-size:13px; font-weight:600;
-      background:rgba(255,255,255,.13); padding:5px 11px; border-radius:999px;
-    }
-    .status-pill{
-      font-size:12px; font-weight:700; letter-spacing:.6px;
-      padding:5px 12px; border-radius:999px; white-space:nowrap;
-    }
-    .status-pill.normal{ background:#E8F3E9; color:var(--verde-escuro); }
-    .status-pill.urgente{ background:var(--urgente); color:#fff; }
-    #btn-novo-topo{
-      margin-left:auto;
-      background:transparent; color:#fff;
-      border:1.5px solid rgba(255,255,255,.55);
-      border-radius:999px; padding:6px 13px; min-height:35px;
-      font-size:11.5px; font-weight:700; letter-spacing:.6px; cursor:pointer;
-      transition:background .15s;
-    }
-    #btn-novo-topo:hover{ background:rgba(255,255,255,.12); }
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
 
-    /* ---------- Estrutura ---------- */
-    main{ max-width:640px; margin:0 auto; padding:16px 14px 118px; }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    /* ---------- Tela inicial ---------- */
-    #tela-inicio{ display:flex; flex-direction:column; align-items:center; text-align:center; padding:46px 8px 20px; }
-    .emblema{ width:106px; height:106px; filter:drop-shadow(0 8px 18px rgba(27,94,32,.28)); }
-    #tela-inicio h2{
-      font-family:Georgia,'Times New Roman',serif;
-      color:var(--verde-escuro); font-size:27px; margin:20px 0 6px;
-    }
-    #tela-inicio > p{ color:var(--texto-suave); max-width:340px; margin:0 0 28px; }
+<!-- Biblioteca do PDF: arquivo LOCAL primeiro (offline). Se ausente, o app tenta o CDN só na hora de gerar. -->
+<script src="html2pdf.bundle.min.js" defer></script>
 
-    /* ---------- Botões ---------- */
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center; gap:8px;
-      min-height:52px; padding:12px 20px;
-      border:none; border-radius:13px;
-      font-size:15px; font-weight:700; letter-spacing:.4px;
-      cursor:pointer;
-      transition:transform .12s ease, background .15s ease, border-color .15s ease, color .15s ease;
-    }
-    .btn:active{ transform:scale(.98); }
-    .btn-primario{ background:var(--verde); color:#fff; box-shadow:0 4px 14px rgba(46,125,50,.28); }
-    .btn-primario:hover{ background:var(--verde-escuro); }
-    .btn-primario:disabled{ background:#a7bfa9; box-shadow:none; cursor:not-allowed; }
-    .btn-fantasma{ background:#fff; color:var(--verde-escuro); border:1.5px solid #c9d8cd; }
-    .btn-fantasma:hover{ border-color:var(--verde); color:var(--verde); }
-    .btn-perigo{ background:var(--urgente); color:#fff; }
-    .btn-perigo:hover{ background:#a91f1f; }
-    .btn-full{ width:100%; }
-    button:focus-visible, input:focus-visible, select:focus-visible{
-      outline:3px solid rgba(46,125,50,.45); outline-offset:1px;
-    }
+<style>
+/* ============================================================
+   SÍTIO RECANTO DA LIMEIRA — estilos do aplicativo + template A4
+   ============================================================ */
+:root{
+  --verde:#2E7D32;
+  --verde-escuro:#1B5E20;
+  --fundo:#F3F6F4;
+  --branco:#FFFFFF;
+  --texto:#263238;
+  --texto-2:#5B6B60;
+  --linha:#DCE5DE;
+  --urgente:#C62828;
+  --raio:16px;
+  --sombra:0 1px 2px rgba(27,60,34,.06), 0 10px 30px -14px rgba(27,60,34,.22);
+  --fonte-display:'Fraunces',Georgia,'Times New Roman',serif;
+  --fonte-ui:'Sora',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--fonte-ui);
+  background:var(--fundo);
+  color:var(--texto);
+  min-height:100dvh;
+  font-size:15px;
+  line-height:1.5;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+button:disabled{opacity:.45;cursor:not-allowed}
+[hidden]{display:none !important}
+noscript p{padding:24px;text-align:center}
 
-    /* ---------- Cartão do formulário ---------- */
-    .card{
-      background:#fff; border-radius:16px; padding:18px 16px;
-      box-shadow:0 1px 4px rgba(38,50,56,.07), 0 8px 24px rgba(38,50,56,.05);
-    }
-    .card-titulo{
-      margin:0 0 14px; font-size:12px; letter-spacing:1.7px; font-weight:700;
-      color:var(--verde-escuro); text-transform:uppercase;
-    }
-    .campo{ margin-bottom:14px; }
-    .campo label{ display:block; font-size:13.5px; font-weight:600; margin-bottom:6px; color:#37474F; }
-    .campo input, .campo select{
-      width:100%; min-height:50px; padding:12px 14px;
-      font-size:16px; color:var(--texto); background:#fff;
-      border:1.5px solid var(--linha); border-radius:11px;
-      transition:border-color .15s, box-shadow .15s;
-    }
-    .campo input:focus, .campo select:focus{
-      border-color:var(--verde); box-shadow:0 0 0 3px rgba(46,125,50,.14); outline:none;
-    }
-    .campo select{
-      appearance:none; -webkit-appearance:none; padding-right:44px;
-      background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%232E7D32' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat:no-repeat; background-position:right 14px center;
-    }
-    .erro-msg{ display:block; color:var(--urgente); font-size:12.5px; margin-top:5px; font-weight:600; }
-    .invalido{ border-color:var(--urgente) !important; }
+/* ---------- CAPA (sem pedido em andamento) ---------- */
+.capa{
+  min-height:100dvh;max-width:560px;margin:0 auto;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:36px 22px calc(36px + env(safe-area-inset-bottom));
+}
+.capa-marca{text-align:center;margin-bottom:30px}
+.capa-marca svg{display:block;margin:0 auto 14px}
+.capa h1{
+  font-family:var(--fonte-display);font-weight:900;color:var(--verde-escuro);
+  font-size:clamp(34px,9.5vw,46px);line-height:1.06;letter-spacing:-.01em;
+}
+.capa-sub{
+  margin-top:12px;font-size:11.5px;font-weight:700;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--verde);
+}
+.capa-cartao{
+  background:var(--branco);border-radius:20px;box-shadow:var(--sombra);
+  padding:24px 20px;
+}
+.capa-cartao p{font-size:13.5px;color:var(--texto-2);margin-bottom:18px}
+.capa-nota{
+  text-align:center;font-size:12px;color:var(--texto-2);margin-top:18px;line-height:1.6;
+}
 
-    /* ---------- Lista ---------- */
-    .lista-topo{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      margin:20px 2px 10px;
-    }
-    .lista-contador{ margin:0; font-size:14px; color:var(--texto-suave); }
-    .lista-contador strong{ color:var(--verde-escuro); font-size:18px; }
-    .btn-limpar{
-      background:#fff; color:var(--urgente);
-      border:1.5px solid #efc7c7; border-radius:10px;
-      min-height:42px; padding:8px 14px;
-      font-weight:700; font-size:12.5px; letter-spacing:.3px; cursor:pointer;
-      transition:background .15s, opacity .15s;
-    }
-    .btn-limpar:hover:not(:disabled){ background:#fdecea; }
-    .btn-limpar:disabled{ opacity:.45; cursor:not-allowed; }
-    .grupo{
-      background:#fff; border-radius:14px; overflow:hidden;
-      box-shadow:0 1px 4px rgba(38,50,56,.08);
-      margin-bottom:14px;
-      animation:surgir .25s ease both;
-    }
-    @keyframes surgir{ from{ opacity:0; transform:translateY(8px); } }
-    .grupo-cab{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      background:var(--verde-suave); border-left:4px solid var(--verde);
-      padding:10px 14px;
-    }
-    .grupo-nome{ font-size:12.5px; font-weight:700; letter-spacing:.8px; color:var(--verde-escuro); }
-    .grupo-cont{
-      font-size:11.5px; font-weight:700; color:var(--verde-escuro);
-      background:rgba(46,125,50,.14); padding:3px 10px;
-      border-radius:999px; white-space:nowrap;
-    }
-    .grupo-lista{ list-style:none; margin:0; padding:0; }
-    .item{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding:11px 14px; border-top:1px solid #eef3ef;
-    }
-    .item-info{ display:flex; flex-direction:column; gap:2px; min-width:0; }
-    .item-nome{ font-weight:600; font-size:15px; overflow-wrap:anywhere; }
-    .item-qtd{ font-size:13px; color:var(--texto-suave); }
-    .item-acoes{ display:flex; gap:6px; flex-shrink:0; }
-    .btn-icone{
-      width:42px; height:42px; border:none; border-radius:10px;
-      background:#f1f5f2; font-size:17px; cursor:pointer;
-      display:flex; align-items:center; justify-content:center;
-      transition:background .15s, transform .12s;
-    }
-    .btn-icone:hover{ background:#e2ece4; }
-    .btn-icone:active{ transform:scale(.94); }
-    .btn-icone.perigo:hover{ background:#fdecea; }
-    #lista-vazia{
-      text-align:center; color:var(--texto-suave);
-      background:#fff; border:1.5px dashed #c9d8cd;
-      border-radius:14px; padding:26px 16px; font-size:14.5px;
-    }
+/* ---------- Botões ---------- */
+.btn{
+  width:100%;height:54px;border-radius:12px;
+  font-size:14.5px;font-weight:700;letter-spacing:.04em;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  transition:transform .08s ease, box-shadow .15s ease, background .15s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn:active:not(:disabled){transform:scale(.985)}
+.btn-primario{background:var(--verde);color:#fff;box-shadow:0 6px 16px -8px rgba(46,125,50,.55)}
+.btn-primario:hover:not(:disabled){background:#286D2C}
+.btn-contorno{background:#fff;color:var(--verde-escuro);border:1.5px solid var(--verde)}
+.btn-contorno:hover{background:#F0F6F0}
+.btn-neutro{background:#EAF0EA;color:var(--texto)}
+.btn-perigo{background:var(--urgente);color:#fff}
 
-    /* ---------- Barra fixa de PDF ---------- */
-    #barra-pdf{
-      position:fixed; left:0; right:0; bottom:0; z-index:60;
-      display:flex; gap:10px;
-      padding:10px 12px calc(10px + env(safe-area-inset-bottom));
-      background:#fff; box-shadow:0 -3px 16px rgba(38,50,56,.1);
-    }
-    #barra-pdf .btn{ flex:1; min-height:54px; font-size:13.5px; }
-    .btn-outline-pdf{ background:#fff; color:var(--verde-escuro); border:1.5px solid #c9d8cd; }
-    .btn-outline-pdf:hover{ border-color:var(--verde); color:var(--verde); }
+/* ---------- Cabeçalho do app ---------- */
+.topo{
+  background:var(--verde-escuro);color:#F1F6EF;
+  padding:calc(env(safe-area-inset-top) + 20px) 20px 18px;
+}
+.topo-inner{max-width:560px;margin:0 auto}
+.topo h1{font-family:var(--fonte-display);font-weight:700;font-size:22px;letter-spacing:.01em}
+.topo-sub{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.72;margin-top:3px}
+.linha-status{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-top:15px;padding-top:13px;border-top:1px solid rgba(241,246,239,.18);
+  font-size:13.5px;font-variant-numeric:tabular-nums;
+}
+.badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 12px;border-radius:999px;
+  font-size:11px;font-weight:700;letter-spacing:.12em;white-space:nowrap;
+}
+.badge .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.badge.normal{background:rgba(255,255,255,.14);color:#E7F1E4}
+.badge.normal .dot{background:#8BE08B}
+.badge.urgente{background:var(--urgente);color:#fff}
+.badge.urgente .dot{background:#fff;animation:pulsar 1.5s ease-in-out infinite}
+@keyframes pulsar{50%{opacity:.35}}
 
-    /* ---------- Modais ---------- */
-    .overlay{
-      position:fixed; inset:0; z-index:900;
-      background:rgba(24,33,27,.55);
-      display:flex; align-items:center; justify-content:center; padding:18px;
-      opacity:0; transition:opacity .18s ease;
-    }
-    .overlay.aberto{ opacity:1; }
-    .modal{
-      width:100%; max-width:410px;
-      background:#fff; border-radius:18px; padding:22px 20px 20px;
-      box-shadow:0 22px 60px rgba(0,0,0,.3);
-      transform:translateY(16px); transition:transform .18s ease;
-      max-height:calc(100dvh - 36px); overflow:auto;
-    }
-    .overlay.aberto .modal{ transform:translateY(0); }
-    .modal h3{ margin:0 0 6px; font-family:Georgia, serif; font-size:21px; color:var(--verde-escuro); }
-    .modal-sub{ margin:0 0 16px; color:var(--texto-suave); font-size:14px; }
-    .modal-acoes{ display:flex; gap:10px; margin-top:18px; }
-    .modal-acoes .btn{ flex:1; }
-    .data-capturada{
-      min-height:50px; display:flex; align-items:center;
-      padding:12px 14px; background:var(--verde-suave);
-      border-radius:11px; font-weight:700; color:var(--verde-escuro); font-size:16px;
-    }
-    .urgencias{ display:flex; gap:10px; }
-    .btn-urg{
-      flex:1; min-height:56px;
-      display:flex; align-items:center; justify-content:center; gap:8px;
-      border:2px solid var(--linha); border-radius:12px; background:#fff;
-      font-size:15.5px; font-weight:600; color:var(--texto); cursor:pointer;
-      transition:border-color .15s, background .15s;
-    }
-    .btn-urg.selecionada{ border-color:var(--verde); background:var(--verde-suave); box-shadow:inset 0 0 0 1.5px var(--verde); color:var(--verde-escuro); font-weight:700; }
-    .btn-urg.urg.selecionada{ border-color:var(--urgente); background:#fdecea; box-shadow:inset 0 0 0 1.5px var(--urgente); color:#8e1b1b; }
-    .conf-destaque{
-      margin:0 0 8px; font-size:19px; font-weight:800; text-align:center;
-      color:var(--texto); background:#f4f6f5; border-radius:10px; padding:12px;
-      overflow-wrap:anywhere;
-    }
-    .conf-nota{ margin:0; font-size:13px; color:var(--texto-suave); text-align:center; }
+/* ---------- Corpo ---------- */
+main{max-width:560px;margin:0 auto;width:100%;padding:18px 16px 138px}
+.cartao{
+  background:var(--branco);border-radius:var(--raio);
+  box-shadow:var(--sombra);padding:20px 18px;
+}
+.campo{margin-bottom:15px}
+.campo label{
+  display:block;font-size:11px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--texto-2);margin-bottom:7px;
+}
+.campo input,.campo select{
+  width:100%;height:52px;border:1.5px solid var(--linha);border-radius:12px;
+  padding:0 14px;font:inherit;font-size:16px;color:var(--texto);
+  background:#FBFDFB;-webkit-appearance:none;appearance:none;
+}
+.campo select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%235B6B60' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:42px;
+}
+.campo input:focus,.campo select:focus{
+  outline:none;border-color:var(--verde);
+  box-shadow:0 0 0 3px rgba(46,125,50,.14);background:#fff;
+}
+.grade2{display:grid;grid-template-columns:1fr 1.45fr;gap:12px}
+@media (max-width:340px){.grade2{grid-template-columns:1fr}}
 
-    /* ---------- Pré-visualização (folha A4) ---------- */
-    #modal-previa{
-      padding:0; background:#232b26;
-      flex-direction:column; align-items:stretch; justify-content:stretch;
-    }
-    .previa-topo{
-      display:flex; align-items:center; gap:10px;
-      padding:10px 12px; background:var(--verde-escuro); color:#fff; flex-shrink:0;
-    }
-    .previa-topo .btn{ min-height:44px; padding:8px 14px; font-size:13px; }
-    .btn-voltar{ background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.4); }
-    .btn-voltar:hover{ background:rgba(255,255,255,.22); }
-    .previa-titulo{
-      flex:1; text-align:center; font-size:13px; font-weight:600;
-      color:rgba(255,255,255,.85);
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    #previa-scroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding:20px 14px 34px; }
-    #previa-folhas{ --escala:1; }
-    .folha-box{ width:calc(794px * var(--escala)); height:calc(1123px * var(--escala)); margin:0 auto; }
-    .folha{
-      width:794px; height:1123px; background:#fff; padding:38px;
-      transform:scale(var(--escala)); transform-origin:top left;
-      box-shadow:0 10px 34px rgba(0,0,0,.45);
-    }
-    .pagina-rotulo{
-      text-align:center; color:#93a39a; font-size:11.5px;
-      margin:10px 0 22px; letter-spacing:.5px;
-    }
+/* ---------- Lista ---------- */
+.linha-contagem{
+  display:flex;align-items:center;justify-content:space-between;
+  margin:20px 2px 12px;gap:10px;
+}
+.contagem{font-size:13px;color:var(--texto-2)}
+.btn-limpar{
+  color:var(--urgente);font-weight:700;font-size:13px;
+  height:42px;padding:0 12px;border-radius:10px;flex:none;
+}
+.btn-limpar:active{background:#FBEDED}
+.grupo{
+  background:var(--branco);border-radius:var(--raio);
+  box-shadow:var(--sombra);margin-bottom:14px;overflow:hidden;
+}
+.grupo-topo{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 16px;border-bottom:1px solid var(--linha);
+}
+.grupo-emoji{font-size:18px;line-height:1}
+.grupo-topo h2{
+  flex:1;font-size:12.5px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--verde-escuro);min-width:0;
+}
+.grupo-cont{
+  font-size:11px;font-weight:700;color:var(--verde-escuro);
+  background:#EDF3EE;padding:3px 10px;border-radius:999px;flex:none;
+}
+.item{
+  display:flex;align-items:center;gap:8px;
+  padding:12px 16px;border-bottom:1px solid #EDF2ED;
+}
+.item:last-child{border-bottom:none}
+.item-info{flex:1;min-width:0}
+.item-nome{font-weight:600;font-size:15px;overflow-wrap:anywhere}
+.item-qtd{font-size:13px;color:var(--texto-2);margin-top:2px;overflow-wrap:anywhere}
+.item-acoes{display:flex;gap:2px;flex:none}
+.icone-btn{
+  width:44px;height:44px;border-radius:10px;font-size:17px;
+  display:grid;place-items:center;-webkit-tap-highlight-color:transparent;
+}
+.icone-btn:active{background:#EDF3EE}
+.item-novo{animation:aparece .45s ease}
+@keyframes aparece{from{opacity:0;transform:translateY(-8px)}}
+.vazio{padding:44px 20px;text-align:center}
+.vazio-titulo{font-family:var(--fonte-display);font-weight:700;font-size:19px;color:var(--verde-escuro)}
+.vazio-sub{font-size:13.5px;color:var(--texto-2);margin-top:6px}
 
-    /* ---------- Toast ---------- */
-    #toast{
-      position:fixed; left:50%; bottom:calc(88px + env(safe-area-inset-bottom));
-      transform:translate(-50%, 14px);
-      background:var(--texto); color:#fff;
-      padding:11px 18px; border-radius:12px;
-      font-size:14px; font-weight:600; text-align:center;
-      max-width:min(92vw, 420px);
-      opacity:0; pointer-events:none;
-      transition:opacity .2s, transform .2s;
-      z-index:1200; box-shadow:0 8px 22px rgba(0,0,0,.3);
-    }
-    #toast.mostrar{ opacity:1; transform:translate(-50%, 0); }
-    #toast.erro{ background:var(--urgente); }
+.btn-concluir{
+  display:block;margin:26px auto 0;color:var(--texto-2);
+  font-size:13px;font-weight:600;height:44px;padding:0 14px;border-radius:10px;
+}
+.btn-concluir:active{background:#EAF0EA}
 
-    /* ============================================================
-       TEMPLATE EXCLUSIVO DO PDF (folha A4, 210 × 297 mm)
-       Área útil com margens de 10 mm: 190 × 277 mm = 718 × 1046 px (96 dpi)
-       ============================================================ */
-    #pdf-stage, #pdf-medidor{
-      position:fixed; top:0; left:-20000px; width:718px; pointer-events:none;
-    }
-    .pdf-pagina{
-      width:718px; height:1046px; background:#fff;
-      position:relative; overflow:hidden;
-    }
-    .pdf-cabecalho{
-      display:flex; justify-content:space-between; align-items:flex-end; gap:16px;
-      padding:4px 0 14px; border-bottom:3px solid var(--verde-escuro);
-    }
-    .pdf-titulo{
-      margin:0 0 4px;
-      font-family:Georgia,'Times New Roman',serif;
-      font-size:25px; line-height:1.1; color:var(--verde-escuro); letter-spacing:.4px;
-    }
-    .pdf-subtitulo{ margin:0; font-size:12px; letter-spacing:1.6px; text-transform:uppercase; color:#5c6f63; }
-    .pdf-cab-dir{ display:flex; flex-direction:column; align-items:flex-end; gap:7px; flex-shrink:0; }
-    .pdf-data{ margin:0; font-size:12.5px; color:#37474F; font-weight:600; white-space:nowrap; }
-    .pdf-status{
-      display:inline-block; padding:4px 14px; border-radius:999px;
-      font-size:11.5px; font-weight:700; letter-spacing:.6px;
-      background:#E8F3E9; color:var(--verde-escuro); border:1px solid #BFD8C2;
-    }
-    .pdf-status.urgente{ background:var(--urgente); color:#fff; border-color:var(--urgente); }
-    .pdf-mini{
-      display:flex; justify-content:space-between; align-items:baseline; gap:12px;
-      padding:2px 0 10px; border-bottom:2px solid var(--verde-escuro);
-    }
-    .pdf-mini-titulo{ font-family:Georgia, serif; font-size:14px; font-weight:700; color:var(--verde-escuro); }
-    .pdf-mini-meta{ font-size:11px; color:#607D8B; }
-    .pdf-conteudo{ padding-top:16px; }
-    .pdf-grupo{ padding-bottom:20px; }
-    .pdf-cat-titulo{
-      margin:0 0 8px; padding:8px 12px;
-      background:#EDF4EF; border-left:4px solid var(--verde); border-radius:4px;
-      color:var(--verde-escuro); font-size:12.5px; letter-spacing:.8px; font-weight:700;
-    }
-    .pdf-tabela{ width:100%; border-collapse:collapse; }
-    .pdf-tabela th{
-      text-align:left; font-size:11px; letter-spacing:.6px; text-transform:uppercase;
-      color:var(--verde-escuro); padding:6px 8px 7px; border-bottom:2px solid var(--verde);
-    }
-    .pdf-tabela th.col-qtd{ width:140px; text-align:right; }
-    .pdf-tabela td{
-      padding:8px; border-bottom:1px solid #E3EAE5;
-      font-size:13px; color:var(--texto);
-      overflow-wrap:break-word; word-break:break-word;
-    }
-    .pdf-tabela td.td-qtd{ text-align:right; font-weight:600; color:#37474F; }
-    .pdf-rodape{
-      position:absolute; left:0; right:0; bottom:0; height:46px;
-      border-top:1px solid #CFD8DC;
-      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-      padding-top:4px;
-    }
-    .pdf-rodape p{ margin:0; }
-    .pdf-rodape-nome{ font-size:11.5px; font-weight:700; color:var(--texto); }
-    .pdf-rodape-sub{ font-size:10.5px; color:#78909C; }
-    .html2pdf__page-break{ height:0; }
-  </style>
+/* ---------- Barra de ações fixa ---------- */
+.barra{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  background:var(--branco);border-top:1px solid var(--linha);
+  box-shadow:0 -10px 26px -20px rgba(27,60,34,.45);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+}
+.barra-inner{max-width:560px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.barra .btn{height:52px;font-size:13.5px}
+
+/* ---------- Modais ---------- */
+.modal{
+  position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;
+}
+.modal-fundo{position:absolute;inset:0;background:rgba(17,32,20,.55)}
+.modal-caixa{
+  position:relative;width:100%;max-width:400px;
+  background:var(--branco);border-radius:20px;padding:22px;
+  box-shadow:0 24px 60px -20px rgba(10,25,12,.55);
+  animation:modalEntra .22s ease;max-height:calc(100dvh - 40px);overflow:auto;
+}
+@keyframes modalEntra{from{opacity:0;transform:translateY(14px) scale(.97)}}
+.modal-caixa h2{font-family:var(--fonte-display);font-weight:700;font-size:20px;color:var(--verde-escuro)}
+.modal-texto{font-size:14px;color:var(--texto-2);margin-top:8px}
+.modal-nome{
+  margin-top:10px;text-align:center;font-weight:700;font-size:16px;
+  color:var(--texto);background:#F5F8F5;border-radius:12px;padding:12px 14px;
+  overflow-wrap:anywhere;
+}
+.modal-aviso{font-size:12.5px;color:var(--urgente);margin-top:10px;font-weight:600}
+.modal-acoes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.modal-acoes .btn{height:50px;font-size:13.5px}
+
+/* Modal: novo pedido */
+.rotulo-mini{
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--texto-2);margin:18px 0 8px;
+}
+.relogio{
+  font-size:22px;font-weight:700;color:var(--verde-escuro);text-align:center;
+  background:#F0F5F1;border-radius:12px;padding:13px;font-variant-numeric:tabular-nums;
+}
+.radio-urgencia{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.urg-btn{
+  height:56px;border:1.5px solid var(--linha);border-radius:12px;background:#FBFDFB;
+  font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:border-color .15s, background .15s, box-shadow .15s;
+}
+.urg-btn .dot{width:11px;height:11px;border-radius:50%}
+.dot-verde{background:#2E9E44}
+.dot-vermelho{background:#E53935}
+.urg-btn[aria-pressed="true"]{border-color:var(--verde);background:#EFF6EF;box-shadow:0 0 0 3px rgba(46,125,50,.13)}
+.urg-btn[data-urg="urgente"][aria-pressed="true"]{border-color:var(--urgente);background:#FBEDED;box-shadow:0 0 0 3px rgba(198,40,40,.13)}
+#btn-iniciar{margin-top:20px}
+
+/* Modal: pré-visualização A4 */
+.previa{padding:0}
+.previa-wrap{position:absolute;inset:0;display:flex;flex-direction:column;background:#1C271E}
+.previa-topo{
+  display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top) + 12px) 14px 12px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+.previa-topo .titulo-previa{
+  flex:1;text-align:center;color:#D7E4D3;font-size:12px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;
+}
+.btn-previa{
+  height:44px;padding:0 14px;border-radius:10px;font-size:12.5px;font-weight:700;
+  letter-spacing:.04em;white-space:nowrap;
+}
+.btn-previa-voltar{background:rgba(255,255,255,.12);color:#F1F6EF}
+.btn-previa-gerar{background:var(--verde);color:#fff}
+.previa-scroll{
+  flex:1;overflow:auto;padding:22px 16px calc(24px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling:touch;
+}
+.folha-slot{margin:0 auto 24px;position:relative}
+.folha-slot:last-child{margin-bottom:8px}
+.folha-inner{
+  width:794px;transform-origin:top left;background:#fff;
+  box-shadow:0 8px 30px rgba(0,0,0,.45);
+}
+
+/* Modal: gerando */
+#modal-gerando .modal-fundo{background:rgba(12,22,14,.78)}
+.gerando-caixa{
+  position:relative;background:#263238;color:#fff;border-radius:18px;
+  padding:28px 34px;text-align:center;animation:modalEntra .2s ease;
+}
+.spinner{
+  width:42px;height:42px;margin:0 auto 14px;border-radius:50%;
+  border:4px solid rgba(255,255,255,.22);border-top-color:#8BE08B;
+  animation:girar .8s linear infinite;
+}
+@keyframes girar{to{transform:rotate(360deg)}}
+.gerando-caixa p{font-size:14px;font-weight:600}
+
+/* ---------- Toast ---------- */
+#toast{
+  position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));z-index:80;
+  transform:translateX(-50%) translateY(10px);
+  background:#263238;color:#fff;padding:12px 18px;border-radius:12px;
+  font-size:14px;font-weight:500;max-width:calc(100% - 36px);text-align:center;
+  opacity:0;pointer-events:none;transition:opacity .25s, transform .25s;
+  box-shadow:0 10px 30px -10px rgba(0,0,0,.4);
+}
+#toast.mostrar{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ============================================================
+   TEMPLATE EXCLUSIVO DO PDF — folha A4 (210×297 mm a 96 dpi)
+   794 × 1122 px por página. Margens de 10 mm internas ao template.
+   ============================================================ */
+#pdf-render,#pdf-measure{position:fixed;left:-10000px;top:0;z-index:-1}
+#pdf-measure{visibility:hidden}
+.pdoc-page{
+  width:794px;height:1122px;overflow:hidden;background:#fff;
+  box-sizing:border-box;padding:46px 40px 36px;
+  display:flex;flex-direction:column;
+  font-family:var(--fonte-ui);color:#263238;position:relative;
+}
+.pdoc-titulo{
+  font-family:var(--fonte-display);font-weight:900;font-size:34px;
+  color:#1B5E20;line-height:1.12;letter-spacing:.01em;
+}
+.pdoc-subtitulo{font-size:14px;color:#5B6B60;margin-top:5px;letter-spacing:.05em}
+.pdoc-divisoria{height:3px;width:66px;background:#1B5E20;border-radius:2px;margin:14px 0 12px}
+.pdoc-dados{
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  border:1px solid #DCE5DE;border-radius:10px;padding:11px 14px;font-size:13.5px;
+}
+.pdoc-status{font-weight:700;letter-spacing:.07em;font-size:13px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.pdoc-status.normal{color:#1B5E20}
+.pdoc-status.urgente{color:#C62828}
+.pdoc-dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}
+.pdoc-dot.verde{background:#2E7D32}
+.pdoc-dot.vermelho{background:#C62828}
+.pdoc-corpo{flex:1;min-height:0;padding-top:6px}
+.pdoc-cat{padding-top:16px;break-inside:avoid;page-break-inside:avoid}
+.pdoc-cat-titulo{
+  display:flex;align-items:baseline;gap:9px;
+  font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:#1B5E20;border-bottom:2px solid #1B5E20;padding-bottom:7px;
+}
+.pdoc-cat-emoji{font-size:15px}
+.pdoc-cont{font-size:10.5px;color:#5B6B60;letter-spacing:.06em;font-weight:600}
+.pdoc-linha-cab{
+  display:flex;padding:9px 2px 7px;
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:#5B6B60;border-bottom:1px solid #DCE5DE;
+}
+.pdoc-row{
+  display:flex;padding:9px 2px;border-bottom:1px solid #E8EEE9;font-size:14.5px;
+  break-inside:avoid;page-break-inside:avoid;
+}
+.pdoc-tabela .pdoc-row:nth-child(odd){background:#F7FAF7}
+.pdoc-prod{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:500}
+.pdoc-qtd{
+  width:150px;flex:none;text-align:right;padding-left:16px;
+  font-weight:600;color:#1B5E20;overflow-wrap:anywhere;
+}
+.pdoc-rodape{
+  margin-top:auto;border-top:1.5px solid #1B5E20;padding-top:10px;
+  display:flex;justify-content:space-between;gap:12px;
+  font-size:12px;color:#5B6B60;letter-spacing:.03em;
+}
+.pdoc-rodape .pdoc-marca{font-weight:700;color:#1B5E20}
+.pdoc-pagina{white-space:nowrap}
+</style>
 </head>
 <body>
+<noscript><p>Para usar o Sítio Recanto da Limeira, ative o JavaScript no navegador.</p></noscript>
 
-  <!-- ================= CABEÇALHO ================= -->
-  <header id="app-header">
-    <div class="marca">
+<!-- ══════════ CAPA — nenhum pedido em andamento ══════════ -->
+<section id="capa" class="capa" hidden>
+  <div class="capa-marca">
+    <svg viewBox="0 0 220 58" width="210" height="55" aria-hidden="true">
+      <g fill="none" stroke="#2E7D32" stroke-width="2" stroke-linecap="round">
+        <path d="M14 50 Q110 42 206 50" opacity=".45"/>
+        <path d="M34 40 Q110 30 186 40" opacity=".6"/>
+        <path d="M58 31 Q110 22 162 31" opacity=".75"/>
+      </g>
+      <path d="M110 28 C 98 25, 95 14, 110 5 C 125 14, 122 25, 110 28 Z" fill="#2E7D32" opacity=".9"/>
+      <path d="M110 28 L110 10" stroke="#F3F6F4" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <h1>Sítio Recanto<br>da Limeira</h1>
+    <p class="capa-sub">Controle de Suprimentos e Compras</p>
+  </div>
+  <div class="capa-cartao">
+    <p>Monte a lista de suprimentos do sítio e envie o pedido pronto em PDF para o patrão.</p>
+    <button id="btn-abrir-novo" class="btn btn-primario">🌿 NOVO PEDIDO</button>
+  </div>
+  <p class="capa-nota">Os pedidos ficam salvos neste dispositivo.<br>O aplicativo funciona mesmo sem internet.</p>
+</section>
+
+<!-- ══════════ APLICATIVO — pedido em andamento ══════════ -->
+<div id="app" hidden>
+  <header class="topo">
+    <div class="topo-inner">
       <h1>Sítio Recanto da Limeira</h1>
-      <p>Controle de Suprimentos e Compras</p>
-    </div>
-    <div id="meta-pedido" hidden>
-      <span class="meta-data" id="meta-data">📅 —</span>
-      <span class="status-pill normal" id="meta-status">🟢 NORMAL</span>
-      <button type="button" id="btn-novo-topo">NOVO PEDIDO</button>
+      <p class="topo-sub">Controle de Suprimentos e Compras</p>
+      <div class="linha-status">
+        <span id="status-data">📅 —</span>
+        <span id="status-badge" class="badge normal"><span class="dot"></span>NORMAL</span>
+      </div>
     </div>
   </header>
 
   <main>
-    <!-- ================= TELA INICIAL ================= -->
-    <section id="tela-inicio">
-      <svg class="emblema" viewBox="0 0 96 96" role="img" aria-label="Símbolo do sítio: folha e limão">
-        <circle cx="48" cy="48" r="46" fill="#2E7D32"/>
-        <path d="M24 70 C24 46 42 28 68 25 C67 51 52 70 24 70 Z" fill="#F3F6F4"/>
-        <path d="M26 68 C36 56 48 44 64 30" stroke="#2E7D32" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-        <circle cx="63" cy="63" r="11" fill="#CDDC39"/>
-        <path d="M56.5 56.5 A9 9 0 0 1 63 54" stroke="rgba(255,255,255,.6)" stroke-width="2" fill="none" stroke-linecap="round"/>
-      </svg>
-      <h2>Sítio Recanto da Limeira</h2>
-      <p>Monte a lista de suprimentos do sítio e envie o pedido de compras ao patrão em PDF. Funciona sem internet.</p>
-      <button type="button" id="btn-abrir-novo" class="btn btn-primario" data-foco>🌿 NOVO PEDIDO</button>
-    </section>
-
-    <!-- ================= TELA DO PEDIDO ================= -->
-    <section id="tela-pedido" hidden>
-      <section class="card" aria-labelledby="titulo-form">
-        <h2 class="card-titulo" id="titulo-form">Novo item</h2>
-        <form id="form-item" novalidate>
-          <div class="campo">
-            <label for="inp-nome">Nome do item</label>
-            <input type="text" id="inp-nome" name="nome" placeholder="Ex.: Arroz, Feijão, Óleo diesel…" autocomplete="off" maxlength="120" data-foco>
-            <small class="erro-msg" id="erro-nome" hidden></small>
-          </div>
-          <div class="campo">
-            <label for="inp-qtd">Quantidade</label>
-            <input type="text" id="inp-qtd" name="quantidade" placeholder="Ex.: 2, 5 kg, 1 saco, 10 litros…" autocomplete="off" maxlength="60">
-            <small class="erro-msg" id="erro-qtd" hidden></small>
-          </div>
-          <div class="campo">
-            <label for="sel-cat">Categoria</label>
-            <select id="sel-cat" name="categoria">
-              <option value="" selected disabled>Selecionar categoria…</option>
-            </select>
-            <small class="erro-msg" id="erro-cat" hidden></small>
-          </div>
-          <button type="submit" class="btn btn-primario btn-full">+ ADICIONAR ITEM</button>
-        </form>
-      </section>
-
-      <div class="lista-topo">
-        <p class="lista-contador"><strong id="contador-total">0</strong> <span id="contador-texto">itens</span></p>
-        <button type="button" id="btn-limpar" class="btn-limpar" disabled>🧹 LIMPAR LISTA</button>
-      </div>
-
-      <div id="lista-grupos"></div>
-
-      <p id="lista-vazia" hidden>Nenhum item na lista ainda.<br>Adicione o primeiro item no formulário acima.</p>
-    </section>
-  </main>
-
-  <!-- ================= BARRA FIXA: PDF ================= -->
-  <nav id="barra-pdf" hidden aria-label="Ações do pedido">
-    <button type="button" id="btn-previa" class="btn btn-outline-pdf">👁️ PRÉ-VISUALIZAR PDF</button>
-    <button type="button" id="btn-gerar" class="btn btn-primario">📄 GERAR PDF</button>
-  </nav>
-
-  <!-- ================= MODAL: NOVO PEDIDO ================= -->
-  <div id="modal-novo" class="overlay" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-novo">
-      <h3 id="titulo-modal-novo">🌿 Novo pedido</h3>
-      <p class="modal-sub">A data e a hora são capturadas automaticamente do aparelho.</p>
+    <!-- Formulário de item -->
+    <form id="form-item" class="cartao" novalidate>
       <div class="campo">
-        <label>Data e hora capturadas automaticamente:</label>
-        <div id="novo-data-hora" class="data-capturada">—</div>
+        <label for="f-nome">Nome do item</label>
+        <input id="f-nome" type="text" autocomplete="off" placeholder="Ex.: Arroz" maxlength="80">
       </div>
-      <div class="campo">
-        <label id="lbl-urgencia">Nível de urgência:</label>
-        <div class="urgencias" role="group" aria-labelledby="lbl-urgencia">
-          <button type="button" class="btn-urg" data-valor="normal" aria-pressed="false">🟢 Normal</button>
-          <button type="button" class="btn-urg urg" data-valor="urgente" aria-pressed="false">🔴 Urgente</button>
+      <div class="grade2">
+        <div class="campo">
+          <label for="f-qtd">Quantidade</label>
+          <input id="f-qtd" type="text" autocomplete="off" placeholder="Ex.: 5 kg" maxlength="30">
+        </div>
+        <div class="campo">
+          <label for="f-cat">Categoria</label>
+          <select id="f-cat"></select>
         </div>
       </div>
-      <div class="modal-acoes">
-        <button type="button" id="btn-cancelar-novo" class="btn btn-fantasma">CANCELAR</button>
-        <button type="button" id="btn-iniciar" class="btn btn-primario" disabled>INICIAR PEDIDO</button>
-      </div>
+      <button type="submit" class="btn btn-primario">+ ADICIONAR ITEM</button>
+    </form>
+
+    <div class="linha-contagem">
+      <span id="contagem" class="contagem">—</span>
+      <button id="btn-limpar" class="btn-limpar" type="button">🧹 LIMPAR LISTA</button>
+    </div>
+
+    <div id="lista" aria-live="polite"></div>
+
+    <button id="btn-concluir" class="btn-concluir" type="button">Concluir este pedido e iniciar outro</button>
+  </main>
+
+  <!-- Barra de ações fixa -->
+  <div class="barra">
+    <div class="barra-inner">
+      <button id="btn-previa" class="btn btn-contorno" type="button">👁️ PRÉ-VISUALIZAR PDF</button>
+      <button id="btn-gerar" class="btn btn-primario" type="button">📄 GERAR PDF</button>
     </div>
   </div>
+</div>
 
-  <!-- ================= MODAL: EDITAR ITEM ================= -->
-  <div id="modal-editar" class="overlay" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-editar">
-      <h3 id="titulo-modal-editar">Editar item</h3>
-      <p class="modal-sub">Altere os dados e salve. As mudanças são gravadas imediatamente.</p>
-      <div class="campo">
-        <label for="edt-nome">Nome:</label>
-        <input type="text" id="edt-nome" maxlength="120" data-foco>
-        <small class="erro-msg" id="erro-edt-nome" hidden></small>
+<!-- ══════════ MODAL: novo pedido ══════════ -->
+<div class="modal" id="modal-novo" hidden role="dialog" aria-modal="true" aria-labelledby="titulo-novo">
+  <div class="modal-fundo"></div>
+  <div class="modal-caixa">
+    <h2 id="titulo-novo">🌿 Novo pedido</h2>
+    <p class="rotulo-mini">Data e hora capturadas automaticamente:</p>
+    <p class="relogio" id="relogio-modal">—</p>
+    <p class="rotulo-mini">Nível de urgência:</p>
+    <div class="radio-urgencia" role="radiogroup" aria-label="Nível de urgência">
+      <button type="button" class="urg-btn" data-urg="normal" aria-pressed="false">
+        <span class="dot dot-verde"></span>Normal
+      </button>
+      <button type="button" class="urg-btn" data-urg="urgente" aria-pressed="false">
+        <span class="dot dot-vermelho"></span>Urgente
+      </button>
+    </div>
+    <button id="btn-iniciar" class="btn btn-primario" type="button" disabled>INICIAR PEDIDO</button>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: editar item ══════════ -->
+<div class="modal" id="modal-editar" hidden role="dialog" aria-modal="true" aria-labelledby="titulo-editar">
+  <div class="modal-fundo"></div>
+  <div class="modal-caixa">
+    <h2 id="titulo-editar">Editar item</h2>
+    <form id="form-editar" novalidate>
+      <div class="campo" style="margin-top:16px">
+        <label for="e-nome">Nome</label>
+        <input id="e-nome" type="text" autocomplete="off" maxlength="80">
       </div>
       <div class="campo">
-        <label for="edt-qtd">Quantidade:</label>
-        <input type="text" id="edt-qtd" maxlength="60">
-        <small class="erro-msg" id="erro-edt-qtd" hidden></small>
+        <label for="e-qtd">Quantidade</label>
+        <input id="e-qtd" type="text" autocomplete="off" maxlength="30">
       </div>
       <div class="campo">
-        <label for="edt-cat">Categoria:</label>
-        <select id="edt-cat"></select>
-        <small class="erro-msg" id="erro-edt-cat" hidden></small>
+        <label for="e-cat">Categoria</label>
+        <select id="e-cat"></select>
       </div>
       <div class="modal-acoes">
-        <button type="button" id="btn-cancelar-edicao" class="btn btn-fantasma">CANCELAR</button>
-        <button type="button" id="btn-salvar-edicao" class="btn btn-primario">SALVAR ALTERAÇÕES</button>
+        <button type="button" id="btn-cancelar-editar" class="btn btn-neutro">CANCELAR</button>
+        <button type="submit" class="btn btn-primario">SALVAR ALTERAÇÕES</button>
       </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: confirmar exclusão ══════════ -->
+<div class="modal" id="modal-excluir" hidden role="dialog" aria-modal="true" aria-labelledby="titulo-excluir">
+  <div class="modal-fundo"></div>
+  <div class="modal-caixa">
+    <h2 id="titulo-excluir">⚠️ Excluir item?</h2>
+    <p class="modal-texto">Deseja realmente excluir:</p>
+    <p class="modal-nome" id="ex-nome">—</p>
+    <p class="modal-aviso">Esta ação não pode ser desfeita.</p>
+    <div class="modal-acoes">
+      <button type="button" id="btn-cancelar-excluir" class="btn btn-neutro">CANCELAR</button>
+      <button type="button" id="btn-confirmar-excluir" class="btn btn-perigo">EXCLUIR</button>
     </div>
   </div>
+</div>
 
-  <!-- ================= MODAL: CONFIRMAÇÃO ================= -->
-  <div id="modal-confirmar" class="overlay" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="conf-titulo">
-      <h3 id="conf-titulo">⚠️ Confirmar</h3>
-      <p id="conf-texto" class="modal-sub"></p>
-      <p id="conf-destaque" class="conf-destaque" hidden></p>
-      <p id="conf-nota" class="conf-nota" hidden></p>
-      <div class="modal-acoes">
-        <button type="button" id="btn-conf-cancelar" class="btn btn-fantasma">CANCELAR</button>
-        <button type="button" id="btn-conf-ok" class="btn btn-perigo">CONFIRMAR</button>
-      </div>
+<!-- ══════════ MODAL: limpar lista ══════════ -->
+<div class="modal" id="modal-limpar" hidden role="dialog" aria-modal="true" aria-labelledby="titulo-limpar">
+  <div class="modal-fundo"></div>
+  <div class="modal-caixa">
+    <h2 id="titulo-limpar">⚠️ Limpar toda a lista?</h2>
+    <p class="modal-texto">Todos os itens serão removidos.</p>
+    <div class="modal-acoes">
+      <button type="button" id="btn-cancelar-limpar" class="btn btn-neutro">CANCELAR</button>
+      <button type="button" id="btn-confirmar-limpar" class="btn btn-perigo">LIMPAR TUDO</button>
     </div>
   </div>
+</div>
 
-  <!-- ================= PRÉ-VISUALIZAÇÃO DO PDF ================= -->
-  <div id="modal-previa" class="overlay" hidden>
-    <div class="previa-topo">
-      <button type="button" id="btn-previa-voltar" class="btn btn-voltar">← VOLTAR</button>
-      <span class="previa-titulo">Pré-visualização do PDF — A4 · 210 × 297 mm</span>
-      <button type="button" id="btn-previa-gerar" class="btn btn-primario">📄 GERAR PDF</button>
+<!-- ══════════ MODAL: concluir pedido ══════════ -->
+<div class="modal" id="modal-concluir" hidden role="dialog" aria-modal="true" aria-labelledby="titulo-concluir">
+  <div class="modal-fundo"></div>
+  <div class="modal-caixa">
+    <h2 id="titulo-concluir">⚠️ Concluir pedido?</h2>
+    <p class="modal-texto">O pedido atual será finalizado e removido deste dispositivo. Se ainda precisar dele, gere o PDF antes.</p>
+    <div class="modal-acoes">
+      <button type="button" id="btn-cancelar-concluir" class="btn btn-neutro">CANCELAR</button>
+      <button type="button" id="btn-confirmar-concluir" class="btn btn-primario">CONCLUIR</button>
     </div>
-    <div id="previa-scroll">
+  </div>
+</div>
+
+<!-- ══════════ MODAL: pré-visualização do PDF (A4 real) ══════════ -->
+<div class="modal previa" id="modal-previa" hidden role="dialog" aria-modal="true" aria-label="Pré-visualização do PDF">
+  <div class="previa-wrap">
+    <header class="previa-topo">
+      <button type="button" id="btn-voltar-previa" class="btn-previa btn-previa-voltar">← VOLTAR</button>
+      <span class="titulo-previa">Pré-visualização do PDF</span>
+      <button type="button" id="btn-gerar-previa" class="btn-previa btn-previa-gerar">📄 GERAR PDF</button>
+    </header>
+    <div class="previa-scroll" id="previa-scroll">
       <div id="previa-folhas"></div>
     </div>
   </div>
+</div>
 
-  <!-- ================= TOAST ================= -->
-  <div id="toast" role="status" aria-live="polite"></div>
+<!-- ══════════ MODAL: gerando PDF ══════════ -->
+<div class="modal" id="modal-gerando" hidden role="alert" aria-label="Gerando PDF">
+  <div class="modal-fundo"></div>
+  <div class="gerando-caixa">
+    <div class="spinner" aria-hidden="true"></div>
+    <p>Gerando PDF…</p>
+  </div>
+</div>
 
-  <!-- ================= TEMPLATE EXCLUSIVO DO PDF (fora da tela) ================= -->
-  <div id="pdf-stage" aria-hidden="true"><div id="pdf-render"></div></div>
-  <div id="pdf-medidor" aria-hidden="true"></div>
+<!-- Template do PDF (fora da tela) + régua de medição -->
+<div id="pdf-render" aria-hidden="true"></div>
+<div id="pdf-measure" aria-hidden="true"></div>
 
-  <!-- Biblioteca de PDF local (para funcionar offline).
-       Se este arquivo não existir na pasta, o app tenta a cópia de reserva via CDN. -->
-  <script src="html2pdf.bundle.min.js"></script>
+<div id="toast" role="status"></div>
 
-  <script>
-    'use strict';
+<script>
+'use strict';
+/* ════════════════════════════════════════════════════════════
+   SÍTIO RECANTO DA LIMEIRA — lógica do aplicativo
+   ════════════════════════════════════════════════════════════ */
 
-    /* ============================================================
-       SÍTIO RECANTO DA LIMEIRA — Aplicação
-       ============================================================ */
+/* ---------- Utilidades ---------- */
+const $  = (s, c = document) => c.querySelector(s);
+const $$ = (s, c = document) => Array.from(c.querySelectorAll(s));
+const p2 = n => String(n).padStart(2, '0');
+const fmtBR = d => `${p2(d.getDate())}/${p2(d.getMonth()+1)}/${d.getFullYear()} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const uid = () => Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
 
-    const $ = (id) => document.getElementById(id);
+/* ---------- Categorias fixas (não podem ser criadas/editadas/excluídas) ---------- */
+const CATEGORIAS = [
+  { id:'mercearia',  emoji:'🛒', nome:'Mercearia & Alimentos' },
+  { id:'limpeza',    emoji:'🧼', nome:'Limpeza & Lavanderia' },
+  { id:'ferramentas',emoji:'🪚', nome:'Ferramentas & Manutenção' },
+  { id:'horta',      emoji:'🌱', nome:'Horta, Pomar & Animais' },
+  { id:'utilidades', emoji:'🪵', nome:'Utilidades & Diversos' }
+];
+const catPorId = id => CATEGORIAS.find(c => c.id === id);
 
-    /* ---------- Categorias fixas (não podem ser criadas/editadas/excluídas) ---------- */
-    const CATEGORIAS = [
-      { id: 'mercearia',   emoji: '🛒', nome: 'Mercearia & Alimentos' },
-      { id: 'limpeza',     emoji: '🧼', nome: 'Limpeza & Lavanderia' },
-      { id: 'ferramentas', emoji: '🪚', nome: 'Ferramentas & Manutenção' },
-      { id: 'horta',       emoji: '🌱', nome: 'Horta, Pomar & Animais' },
-      { id: 'utilidades',  emoji: '🪵', nome: 'Utilidades & Diversos' }
-    ];
+/* ---------- Estado + LocalStorage ---------- */
+const LS_CHAVE = 'recantoLimeira:v1';
+let db = { pedido: null, itens: [] };
 
-    const CHAVE_STORAGE = 'recanto-limeira-pedido-v1';
-    const ESTADO_INICIAL = { pedidoAtivo: false, urgencia: null, dataHoraISO: null, itens: [] };
+function salvar(){
+  try { localStorage.setItem(LS_CHAVE, JSON.stringify(db)); }
+  catch (e) { console.warn('LocalStorage indisponível:', e); }
+}
+function carregar(){
+  try {
+    const bruto = localStorage.getItem(LS_CHAVE);
+    if (!bruto) return;
+    const d = JSON.parse(bruto);
+    if (d && typeof d === 'object') {
+      db.pedido = (d.pedido && typeof d.pedido === 'object') ? d.pedido : null;
+      db.itens  = Array.isArray(d.itens) ? d.itens.filter(i => i && i.id && catPorId(i.cat)) : [];
+    }
+  } catch (e) { console.warn('Falha ao ler dados salvos:', e); }
+}
 
-    /* Geometria do PDF: A4 (210×297 mm) com margens de 10 mm.
-       Área útil: 190 × 277 mm → 718 × 1046 px a 96 dpi. */
-    const PDF_CFG = { LARG: 718, ALT: 1046, RODAPE: 46, RESERVA: 70, GAP_GRUPO: 20 };
+/* ---------- Toast ---------- */
+let toastTimer = null;
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('mostrar');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('mostrar'), 2600);
+}
 
-    const OPCOES_PDF = {
-      margin: [10, 10, 10, 10],
+/* ---------- Gerenciador de modais ---------- */
+let focoAnterior = null;
+function abrirModal(id){
+  const m = $('#' + id);
+  m.hidden = false;
+  focoAnterior = document.activeElement;
+  const alvo = m.querySelector('[data-foco]') || m.querySelector('button, input, select');
+  if (alvo) setTimeout(() => alvo.focus(), 60);
+}
+function fecharModal(id){
+  if (id === 'modal-novo' && relogioTimer) { clearInterval(relogioTimer); relogioTimer = null; }
+  $('#' + id).hidden = true;
+  if (focoAnterior && typeof focoAnterior.focus === 'function') focoAnterior.focus();
+}
+ $$('.modal-fundo').forEach(f => {
+  f.addEventListener('click', () => {
+    const id = f.closest('.modal').id;
+    if (id !== 'modal-gerando') fecharModal(id); // "gerando" não pode ser dispensado
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  $$('.modal:not([hidden])').forEach(m => { if (m.id !== 'modal-gerando') fecharModal(m.id); });
+});
+
+/* ---------- Telas ---------- */
+function mostrarCapa(){ $('#capa').hidden = false; $('#app').hidden = true; }
+function mostrarApp(){ $('#capa').hidden = true; $('#app').hidden = false; renderTudo(); }
+
+/* ---------- Novo pedido: relógio automático + urgência obrigatória ---------- */
+let urgenciaSel = null;
+let relogioTimer = null;
+
+function ticarRelogio(){ $('#relogio-modal').textContent = fmtBR(new Date()); }
+
+ $('#btn-abrir-novo').addEventListener('click', () => {
+  urgenciaSel = null;
+  sincronizarUrgencia();
+  $('#btn-iniciar').disabled = true;
+  abrirModal('modal-novo');
+  ticarRelogio();
+  clearInterval(relogioTimer);
+  relogioTimer = setInterval(ticarRelogio, 1000);
+});
+
+function sincronizarUrgencia(){
+  $$('#modal-novo .urg-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.urg === urgenciaSel)));
+}
+ $$('#modal-novo .urg-btn').forEach(b => b.addEventListener('click', () => {
+  urgenciaSel = b.dataset.urg;
+  sincronizarUrgencia();
+  $('#btn-iniciar').disabled = false;
+}));
+
+ $('#btn-iniciar').addEventListener('click', () => {
+  if (!urgenciaSel) return;
+  clearInterval(relogioTimer); relogioTimer = null;
+  const agora = new Date(); // captura automática — nada digitado, nada selecionado em calendário
+  db.pedido = { dataHora: fmtBR(agora), urgente: urgenciaSel === 'urgente', criadoEm: agora.toISOString() };
+  db.itens = [];
+  salvar();
+  fecharModal('modal-novo');
+  mostrarApp();
+  toast('🌿 Pedido iniciado — ' + (db.pedido.urgente ? 'URGENTE' : 'NORMAL'));
+});
+
+/* ---------- Cabeçalho + contadores + lista ---------- */
+function renderTudo(){ renderStatus(); renderLista(); }
+
+function renderStatus(){
+  $('#status-data').textContent = '📅 ' + db.pedido.dataHora;
+  const b = $('#status-badge');
+  if (db.pedido.urgente) { b.className = 'badge urgente'; b.innerHTML = '<span class="dot"></span>URGENTE'; }
+  else                   { b.className = 'badge normal';  b.innerHTML = '<span class="dot"></span>NORMAL'; }
+}
+
+function popularSelect(sel){
+  sel.innerHTML = '<option value="" disabled selected>Selecionar categoria…</option>' +
+    CATEGORIAS.map(c => `<option value="${c.id}">${c.emoji} ${esc(c.nome)}</option>`).join('');
+}
+
+function renderLista(){
+  const cont = $('#lista');
+  const total = db.itens.length;
+  const nCats = new Set(db.itens.map(i => i.cat)).size;
+  $('#contagem').textContent = total === 0
+    ? 'Nenhum item na lista'
+    : `${total} ${total === 1 ? 'item' : 'itens'} · ${nCats} ${nCats === 1 ? 'categoria' : 'categorias'}`;
+
+  if (total === 0) {
+    cont.innerHTML = `<div class="cartao vazio">
+      <p class="vazio-titulo">Sua lista está vazia</p>
+      <p class="vazio-sub">Adicione o primeiro suprimento pelo formulário acima.</p>
+    </div>`;
+    return;
+  }
+
+  cont.innerHTML = CATEGORIAS.map(c => {
+    const itens = db.itens.filter(i => i.cat === c.id);
+    if (!itens.length) return '';
+    return `<section class="grupo" aria-label="${esc(c.nome)}">
+      <div class="grupo-topo">
+        <span class="grupo-emoji" aria-hidden="true">${c.emoji}</span>
+        <h2>${esc(c.nome)}</h2>
+        <span class="grupo-cont">${itens.length}</span>
+      </div>
+      ${itens.map(i => `<div class="item" data-id="${i.id}">
+        <div class="item-info">
+          <div class="item-nome">${esc(i.nome)}</div>
+          <div class="item-qtd">${esc(i.qtd)}</div>
+        </div>
+        <div class="item-acoes">
+          <button type="button" class="icone-btn" data-editar="${i.id}" aria-label="Editar ${esc(i.nome)}">✏️</button>
+          <button type="button" class="icone-btn" data-excluir="${i.id}" aria-label="Excluir ${esc(i.nome)}">🗑️</button>
+        </div>
+      </div>`).join('')}
+    </section>`;
+  }).join('');
+}
+
+/* ---------- Adicionar item ---------- */
+ $('#form-item').addEventListener('submit', e => {
+  e.preventDefault();
+  const nome = $('#f-nome').value.trim();
+  const qtd  = $('#f-qtd').value.trim();
+  const cat  = $('#f-cat').value;
+  if (!nome) { toast('⚠️ Informe o nome do item.'); $('#f-nome').focus(); return; }
+  if (!qtd)  { toast('⚠️ Informe a quantidade.');   $('#f-qtd').focus();  return; }
+  if (!cat)  { toast('⚠️ Selecione a categoria.');  $('#f-cat').focus();  return; }
+  const item = { id: uid(), nome, qtd, cat };
+  db.itens.push(item);
+  salvar();
+  $('#form-item').reset();
+  renderTudo();
+  const el = $(`.item[data-id="${item.id}"]`);
+  if (el) { el.classList.add('item-novo'); setTimeout(() => el.classList.remove('item-novo'), 500); el.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+  toast('✅ ' + nome + ' adicionado.');
+  $('#f-nome').focus();
+});
+
+/* ---------- Editar item ---------- */
+let idEdicao = null;
+function abrirEditar(id){
+  const i = db.itens.find(x => x.id === id);
+  if (!i) return;
+  idEdicao = id;
+  $('#e-nome').value = i.nome;
+  $('#e-qtd').value  = i.qtd;
+  popularSelect($('#e-cat'));
+  $('#e-cat').value  = i.cat;
+  abrirModal('modal-editar');
+}
+ $('#form-editar').addEventListener('submit', e => {
+  e.preventDefault();
+  const i = db.itens.find(x => x.id === idEdicao);
+  if (!i) { fecharModal('modal-editar'); return; }
+  const nome = $('#e-nome').value.trim();
+  const qtd  = $('#e-qtd').value.trim();
+  const cat  = $('#e-cat').value;
+  if (!nome || !qtd || !cat) { toast('⚠️ Preencha todos os campos.'); return; }
+  i.nome = nome; i.qtd = qtd; i.cat = cat;
+  salvar();
+  renderTudo();
+  fecharModal('modal-editar');
+  toast('💾 Alterações salvas.');
+});
+ $('#btn-cancelar-editar').addEventListener('click', () => fecharModal('modal-editar'));
+
+/* ---------- Exclusão segura (sempre com confirmação) ---------- */
+let idExclusao = null;
+function abrirExcluir(id){
+  const i = db.itens.find(x => x.id === id);
+  if (!i) return;
+  idExclusao = id;
+  $('#ex-nome').textContent = i.nome.toUpperCase();
+  abrirModal('modal-excluir');
+}
+ $('#btn-confirmar-excluir').addEventListener('click', () => {
+  db.itens = db.itens.filter(x => x.id !== idExclusao);
+  salvar();
+  renderTudo();
+  fecharModal('modal-excluir');
+  toast('🗑️ Item excluído.');
+});
+ $('#btn-cancelar-excluir').addEventListener('click', () => fecharModal('modal-excluir'));
+
+/* Delegação dos botões ✏️ / 🗑️ da lista */
+ $('#lista').addEventListener('click', e => {
+  const ed = e.target.closest('[data-editar]');
+  const ex = e.target.closest('[data-excluir]');
+  if (ed) abrirEditar(ed.dataset.editar);
+  else if (ex) abrirExcluir(ex.dataset.excluir);
+});
+
+/* ---------- Limpar lista (sempre com confirmação) ---------- */
+ $('#btn-limpar').addEventListener('click', () => {
+  if (!db.itens.length) { toast('A lista já está vazia.'); return; }
+  abrirModal('modal-limpar');
+});
+ $('#btn-confirmar-limpar').addEventListener('click', () => {
+  db.itens = [];
+  salvar();
+  renderTudo();
+  fecharModal('modal-limpar');
+  toast('🧹 Lista limpa.');
+});
+ $('#btn-cancelar-limpar').addEventListener('click', () => fecharModal('modal-limpar'));
+
+/* ---------- Concluir pedido ---------- */
+ $('#btn-concluir').addEventListener('click', () => abrirModal('modal-concluir'));
+ $('#btn-confirmar-concluir').addEventListener('click', () => {
+  db = { pedido: null, itens: [] };
+  salvar();
+  fecharModal('modal-concluir');
+  mostrarCapa();
+  toast('✅ Pedido concluído. Pronto para um novo.');
+});
+ $('#btn-cancelar-concluir').addEventListener('click', () => fecharModal('modal-concluir'));
+
+/* ════════════════════════════════════════════════════════════
+   PDF A4 — template exclusivo, medição real e paginação própria
+   Página lógica: 794 × 1122 px (210 × 297 mm @ 96 dpi, menos 1 px
+   de folga contra arredondamento do fatiamento).
+   ════════════════════════════════════════════════════════════ */
+const PDF_LARGURA = 794;
+const PDF_ALTURA  = 1122;
+
+function cabecalhoPDF(){
+  const p = db.pedido;
+  return `<header>
+    <h1 class="pdoc-titulo">SÍTIO RECANTO DA LIMEIRA</h1>
+    <p class="pdoc-subtitulo">Controle de Suprimentos e Compras</p>
+    <div class="pdoc-divisoria"></div>
+    <div class="pdoc-dados">
+      <span><strong>Data/Hora:</strong> ${esc(p.dataHora)}</span>
+      <span class="pdoc-status ${p.urgente ? 'urgente' : 'normal'}">
+        <span class="pdoc-dot ${p.urgente ? 'vermelho' : 'verde'}"></span>STATUS: ${p.urgente ? 'URGENTE' : 'NORMAL'}
+      </span>
+    </div>
+  </header>`;
+}
+function rodapePDF(n, total){
+  return `<footer class="pdoc-rodape">
+    <span class="pdoc-marca">Sítio Recanto da Limeira</span>
+    <span>Pedido de Suprimentos</span>
+    <span class="pdoc-pagina">Página ${n} de ${total}</span>
+  </footer>`;
+}
+const rowHTML = i => `<div class="pdoc-row"><span class="pdoc-prod">${esc(i.nome)}</span><span class="pdoc-qtd">${esc(i.qtd)}</span></div>`;
+
+function grupoHTML(cat, itens, continuacao){
+  return `<section class="pdoc-cat">
+    <h2 class="pdoc-cat-titulo">
+      <span class="pdoc-cat-emoji" aria-hidden="true">${cat.emoji}</span>
+      <span>${esc(cat.nome)}${continuacao ? ' <span class="pdoc-cont">(continuação)</span>' : ''}</span>
+    </h2>
+    <div class="pdoc-tabela">
+      <div class="pdoc-linha-cab"><span class="pdoc-prod">Produto / Suprimento</span><span class="pdoc-qtd">Quantidade</span></div>
+      ${itens.map(rowHTML).join('')}
+    </div>
+  </section>`;
+}
+
+/* Mede blocos usando a mesma régua/largura do PDF real */
+function medirBloco(html){
+  const m = $('#pdf-measure');
+  m.innerHTML = `<section class="pdoc-page" style="height:auto;padding:0"><div>${html}</div></section>`;
+  const h = m.firstElementChild.firstElementChild.getBoundingClientRect().height;
+  m.innerHTML = '';
+  return h;
+}
+function medirOrcamento(){
+  const m = $('#pdf-measure');
+  m.innerHTML = `<section class="pdoc-page">${cabecalhoPDF()}<div class="pdoc-corpo"><div style="height:100%"></div></div>${rodapePDF(1,1)}</section>`;
+  const corpo = m.querySelector('.pdoc-corpo');
+  const avail = corpo.getBoundingClientRect().height - 6 - 4; // menos padding interno e folga de segurança
+  m.innerHTML = '';
+  return avail;
+}
+
+/* Divide uma categoria que não cabe numa página inteira em
+   sub-unidades com título "(continuação)" — nada é cortado. */
+function dividirGrupo(cat, itens, avail){
+  const cabH = medirBloco(grupoHTML(cat, [], false));
+  const unidades = [];
+  let atuais = [], usado = cabH;
+  for (const i of itens) {
+    const h = medirBloco(rowHTML(i));
+    if (atuais.length && usado + h > avail) {
+      unidades.push({ cat, itens: atuais, continuacao: unidades.length > 0, h: usado });
+      atuais = []; usado = cabH;
+    }
+    atuais.push(i); usado += h;
+  }
+  if (atuais.length) unidades.push({ cat, itens: atuais, continuacao: unidades.length > 0, h: usado });
+  return unidades;
+}
+
+function prepararUnidades(avail){
+  const unidades = [];
+  for (const c of CATEGORIAS) {
+    const itens = db.itens.filter(i => i.cat === c.id);
+    if (!itens.length) continue; // categorias vazias não aparecem
+    const h = medirBloco(grupoHTML(c, itens, false));
+    if (h <= avail) unidades.push({ cat: c, itens, continuacao: false, h });
+    else unidades.push(...dividirGrupo(c, itens, avail));
+  }
+  return unidades;
+}
+
+/* Empacota unidades inteiras por página — categorias nunca quebradas */
+function empacotar(unidades, avail){
+  const paginas = [];
+  let atual = [], usado = 0;
+  for (const u of unidades) {
+    if (atual.length && usado + u.h > avail) { paginas.push(atual); atual = []; usado = 0; }
+    atual.push(u); usado += u.h;
+  }
+  if (atual.length) paginas.push(atual);
+  return paginas;
+}
+
+function construirPaginas(paginas){
+  const total = paginas.length;
+  return paginas.map((gs, idx) =>
+    `<section class="pdoc-page">${cabecalhoPDF()}<div class="pdoc-corpo">${gs.map(g => grupoHTML(g.cat, g.itens, g.continuacao)).join('')}</div>${rodapePDF(idx + 1, total)}</section>`
+  );
+}
+
+async function gerarDocumentoPaginas(){
+  await document.fonts.ready; // mede com as fontes definitivas
+  const avail = medirOrcamento();
+  const unidades = prepararUnidades(avail);
+  return construirPaginas(empacotar(unidades, avail));
+}
+
+/* ---------- Pré-visualização (folha A4 realista, mesmas medidas do PDF) ---------- */
+async function abrirPrevia(){
+  if (!db.itens.length) { toast('⚠️ Adicione pelo menos um item à lista.'); return; }
+  const paginas = await gerarDocumentoPaginas();
+  $('#previa-folhas').innerHTML = paginas
+    .map(h => `<div class="folha-slot"><div class="folha-inner">${h}</div></div>`).join('');
+  abrirModal('modal-previa');
+  aplicarEscalaPrevia();
+  $('#previa-scroll').scrollTop = 0;
+}
+function aplicarEscalaPrevia(){
+  if ($('#modal-previa').hidden) return;
+  const cont = $('#previa-scroll');
+  const s = Math.min(1, (cont.clientWidth - 36) / PDF_LARGURA);
+  $$('#previa-folhas .folha-inner').forEach(el => {
+    el.style.transform = `scale(${s})`;
+    const slot = el.parentElement;
+    slot.style.width  = (PDF_LARGURA * s) + 'px';
+    slot.style.height = (PDF_ALTURA  * s) + 'px';
+  });
+}
+window.addEventListener('resize', aplicarEscalaPrevia);
+ $('#btn-previa').addEventListener('click', abrirPrevia);
+ $('#btn-voltar-previa').addEventListener('click', () => fecharModal('modal-previa'));
+ $('#btn-gerar-previa').addEventListener('click', gerarPDF);
+
+/* ---------- Geração do PDF ---------- */
+let gerando = false;
+
+function carregarHtml2pdf(){
+  // Reserva: só usado se o arquivo local estiver ausente.
+  return new Promise(res => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    s.onload = () => res(true);
+    s.onerror = () => res(false);
+    document.head.appendChild(s);
+    setTimeout(() => res(typeof html2pdf !== 'undefined'), 8000);
+  });
+}
+
+async function gerarPDF(){
+  if (gerando) return;
+  if (!db.itens.length) { toast('⚠️ Adicione pelo menos um item à lista.'); return; }
+  if (typeof html2pdf === 'undefined') {
+    const ok = await carregarHtml2pdf();
+    if (!ok) { toast('⚠️ Biblioteca do PDF não encontrada. Verifique o arquivo html2pdf.bundle.min.js.'); return; }
+  }
+  gerando = true;
+  abrirModal('modal-gerando');
+  try {
+    const paginas = await gerarDocumentoPaginas();
+    const render = $('#pdf-render');
+    render.innerHTML = paginas.join('<div class="html2pdf__page-break"></div>');
+    // dois frames para garantir layout estabilizado antes do raster
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await html2pdf().set({
+      margin: [0, 0, 0, 0], // as margens de 10 mm ficam internas ao template (controle exato)
       filename: 'Pedido_Suprimentos_Recanto_da_Limeira.pdf',
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['css', 'legacy'] }
-    };
+    }).from(render).save();
+    render.innerHTML = '';
+    fecharModal('modal-gerando');
+    if (!$('#modal-previa').hidden) fecharModal('modal-previa');
+    toast('📄 PDF gerado com sucesso!');
+  } catch (err) {
+    console.error('Falha ao gerar PDF:', err);
+    fecharModal('modal-gerando');
+    toast('⚠️ Não foi possível gerar o PDF. Tente novamente.');
+  }
+  gerando = false;
+}
+ $('#btn-gerar').addEventListener('click', gerarPDF);
 
-    /* ---------- Estado ---------- */
-    let state = { ...ESTADO_INICIAL };
-    let urgenciaSelecionada = null;   // seleção provisória dentro do modal "Novo pedido"
-    let novoPedidoISO = null;         // data/hora capturada ao abrir o modal
-    let itemEmEdicaoId = null;
-    let acaoConfirmada = null;        // callback pendente do modal de confirmação
-    let toastTimer = null;
+/* ---------- Service Worker (PWA real + offline) ---------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+  });
+}
 
-    /* ---------- Utilitários ---------- */
-    function el(tag, classe, texto) {
-      const n = document.createElement(tag);
-      if (classe) n.className = classe;
-      if (texto !== undefined && texto !== null) n.textContent = texto;
-      return n;
-    }
-    function gerarId() {
-      return 'it_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
-    }
-    function textoItens(n) { return n === 1 ? 'item' : 'itens'; }
-
-    /* Data/hora: capturada com new Date() do aparelho, exibida em pt-BR (DD/MM/AAAA HH:MM). */
-    function formatarDataHora(iso) {
-      const d = new Date(iso);
-      if (isNaN(d)) return '—';
-      const dd = String(d.getDate()).padStart(2, '0');
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const aa = d.getFullYear();
-      const hh = String(d.getHours()).padStart(2, '0');
-      const mi = String(d.getMinutes()).padStart(2, '0');
-      return dd + '/' + mm + '/' + aa + ' ' + hh + ':' + mi;
-    }
-
-    /* ---------- LocalStorage (persistência automática) ---------- */
-    function salvarState() {
-      try { localStorage.setItem(CHAVE_STORAGE, JSON.stringify(state)); } catch (e) { /* armazenamento indisponível */ }
-    }
-    function carregarState() {
-      try {
-        const raw = localStorage.getItem(CHAVE_STORAGE);
-        if (!raw) return;
-        const d = JSON.parse(raw);
-        if (d && typeof d === 'object' && Array.isArray(d.itens)) {
-          state = {
-            pedidoAtivo: !!d.pedidoAtivo,
-            urgencia: (d.urgencia === 'urgente') ? 'urgente' : (d.urgencia === 'normal' ? 'normal' : null),
-            dataHoraISO: (typeof d.dataHoraISO === 'string') ? d.dataHoraISO : null,
-            itens: d.itens.filter(i => i && typeof i.nome === 'string').map(i => ({
-              id: (typeof i.id === 'string' && i.id) ? i.id : gerarId(),
-              nome: String(i.nome),
-              quantidade: String(i.quantidade || ''),
-              categoria: CATEGORIAS.some(c => c.id === i.categoria) ? i.categoria : 'utilidades'
-            }))
-          };
-          if (state.pedidoAtivo && !state.dataHoraISO) state.pedidoAtivo = false;
-        }
-      } catch (e) { /* dados corrompidos: começa limpo, sem travar */ }
-    }
-
-    /* ---------- Toast ---------- */
-    function toast(msg, erro) {
-      const t = $('toast');
-      t.textContent = msg;
-      t.classList.toggle('erro', !!erro);
-      t.classList.add('mostrar');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => t.classList.remove('mostrar'), 2800);
-    }
-
-    /* ---------- Modais ---------- */
-    let ultimoFocado = null;
-    function abrirModal(overlay) {
-      ultimoFocado = document.activeElement;
-      overlay.hidden = false;
-      requestAnimationFrame(() => overlay.classList.add('aberto'));
-      const alvo = overlay.querySelector('[data-foco]');
-      if (alvo) setTimeout(() => alvo.focus(), 120);
-    }
-    function fecharModal(overlay) {
-      overlay.classList.remove('aberto');
-      setTimeout(() => { overlay.hidden = true; }, 180);
-      if (ultimoFocado && typeof ultimoFocado.focus === 'function') ultimoFocado.focus();
-    }
-    function confirmarAcao(o) {
-      $('conf-titulo').textContent = o.titulo;
-      $('conf-texto').textContent = o.texto || '';
-      const destaque = $('conf-destaque');
-      if (o.destaque) { destaque.hidden = false; destaque.textContent = o.destaque; } else destaque.hidden = true;
-      const nota = $('conf-nota');
-      if (o.nota) { nota.hidden = false; nota.textContent = o.nota; } else nota.hidden = true;
-      $('btn-conf-ok').textContent = o.rotuloOk || 'CONFIRMAR';
-      $('btn-conf-ok').className = 'btn ' + (o.classeOk || 'btn-perigo');
-      acaoConfirmada = o.onConfirm || null;
-      abrirModal($('modal-confirmar'));
-    }
-
-    /* ---------- Validação ---------- */
-    function validarCampo(valor, input, msgEl, msg) {
-      if (valor) { input.classList.remove('invalido'); msgEl.hidden = true; return true; }
-      input.classList.add('invalido');
-      msgEl.textContent = msg;
-      msgEl.hidden = false;
-      return false;
-    }
-
-    /* ---------- Renderização geral ---------- */
-    function renderTudo() {
-      const ativo = state.pedidoAtivo;
-      $('tela-inicio').hidden = ativo;
-      $('tela-pedido').hidden = !ativo;
-      $('barra-pdf').hidden = !ativo;
-      $('meta-pedido').hidden = !ativo;
-      if (ativo) {
-        $('meta-data').textContent = '📅 ' + formatarDataHora(state.dataHoraISO);
-        const urgente = state.urgencia === 'urgente';
-        const pill = $('meta-status');
-        pill.textContent = urgente ? '🔴 URGENTE' : '🟢 NORMAL';
-        pill.className = 'status-pill ' + (urgente ? 'urgente' : 'normal');
-      }
-      renderLista();
-    }
-
-    function renderLista() {
-      const container = $('lista-grupos');
-      container.innerHTML = '';
-      let total = 0;
-
-      for (const cat of CATEGORIAS) {
-        const itens = state.itens.filter(i => i.categoria === cat.id);
-        if (!itens.length) continue;
-        total += itens.length;
-
-        const grupo = el('section', 'grupo');
-        const cab = el('header', 'grupo-cab');
-        cab.appendChild(el('span', 'grupo-nome', cat.emoji + ' ' + cat.nome.toUpperCase()));
-        cab.appendChild(el('span', 'grupo-cont', itens.length + ' ' + textoItens(itens.length)));
-        cab.querySelector('.grupo-cont').setAttribute('aria-label', itens.length + ' ' + textoItens(itens.length) + ' em ' + cat.nome);
-
-        const ul = el('ul', 'grupo-lista');
-        itens.forEach(it => {
-          const li = el('li', 'item');
-          const info = el('div', 'item-info');
-          info.appendChild(el('span', 'item-nome', it.nome));
-          info.appendChild(el('span', 'item-qtd', it.quantidade));
-          const acoes = el('div', 'item-acoes');
-          const bE = el('button', 'btn-icone', '✏️');
-          bE.type = 'button';
-          bE.setAttribute('aria-label', 'Editar ' + it.nome);
-          bE.dataset.editar = it.id;
-          const bX = el('button', 'btn-icone perigo', '🗑️');
-          bX.type = 'button';
-          bX.setAttribute('aria-label', 'Excluir ' + it.nome);
-          bX.dataset.excluir = it.id;
-          acoes.append(bE, bX);
-          li.append(info, acoes);
-          ul.appendChild(li);
-        });
-        grupo.append(cab, ul);
-        container.appendChild(grupo);
-      }
-
-      $('contador-total').textContent = total;
-      $('contador-texto').textContent = textoItens(total);
-      $('lista-vazia').hidden = total !== 0;
-      $('btn-limpar').disabled = total === 0;
-    }
-
-    /* ---------- Novo pedido ---------- */
-    function solicitarNovoPedido() {
-      if (state.pedidoAtivo && state.itens.length) {
-        confirmarAcao({
-          titulo: 'Iniciar novo pedido?',
-          texto: 'Já existe um pedido em andamento com itens na lista. Ao iniciar um novo pedido, os itens atuais serão descartados.',
-          nota: 'Esta ação não pode ser desfeita.',
-          rotuloOk: 'INICIAR NOVO',
-          classeOk: 'btn-perigo',
-          onConfirm: abrirModalNovo
-        });
-      } else {
-        abrirModalNovo();
-      }
-    }
-
-    function abrirModalNovo() {
-      novoPedidoISO = new Date().toISOString();          // data/hora do aparelho, capturada no ato
-      $('novo-data-hora').textContent = formatarDataHora(novoPedidoISO);
-      urgenciaSelecionada = null;
-      $('btn-iniciar').disabled = true;
-      document.querySelectorAll('.btn-urg').forEach(b => {
-        b.classList.remove('selecionada');
-        b.setAttribute('aria-pressed', 'false');
-      });
-      abrirModal($('modal-novo'));
-    }
-
-    function iniciarPedido() {
-      if (!urgenciaSelecionada) return;                  // o botão só funciona após escolher a urgência
-      state = { pedidoAtivo: true, urgencia: urgenciaSelecionada, dataHoraISO: novoPedidoISO, itens: [] };
-      salvarState();
-      fecharModal($('modal-novo'));
-      renderTudo();
-      toast('Pedido iniciado. Adicione os itens.');
-    }
-
-    /* ---------- Adicionar / editar / excluir / limpar ---------- */
-    function adicionarItem(e) {
-      e.preventDefault();
-      const nome = $('inp-nome').value.trim();
-      const qtd = $('inp-qtd').value.trim();
-      const cat = $('sel-cat').value;
-      let ok = validarCampo(nome, $('inp-nome'), $('erro-nome'), 'Informe o nome do item.');
-      ok = validarCampo(qtd, $('inp-qtd'), $('erro-qtd'), 'Informe a quantidade.') && ok;
-      ok = validarCampo(cat, $('sel-cat'), $('erro-cat'), 'Selecione uma categoria.') && ok;
-      if (!ok) return;
-
-      state.itens.push({ id: gerarId(), nome, quantidade: qtd, categoria: cat });
-      salvarState();
-      // Limpa os campos de texto; mantém a categoria para agilizar vários itens da mesma seção
-      $('inp-nome').value = '';
-      $('inp-qtd').value = '';
-      renderLista();
-      toast('Item adicionado à lista.');
-      $('inp-nome').focus();
-    }
-
-    function abrirEditar(id) {
-      const it = state.itens.find(i => i.id === id);
-      if (!it) return;
-      itemEmEdicaoId = id;
-      $('edt-nome').value = it.nome;
-      $('edt-qtd').value = it.quantidade;
-      $('edt-cat').value = it.categoria;
-      ['erro-edt-nome', 'erro-edt-qtd', 'erro-edt-cat'].forEach(e => { $(e).hidden = true; });
-      ['edt-nome', 'edt-qtd', 'edt-cat'].forEach(e => { $(e).classList.remove('invalido'); });
-      abrirModal($('modal-editar'));
-    }
-
-    function salvarEdicao() {
-      const it = state.itens.find(i => i.id === itemEmEdicaoId);
-      if (!it) { fecharModal($('modal-editar')); return; }
-      const nome = $('edt-nome').value.trim();
-      const qtd = $('edt-qtd').value.trim();
-      const cat = $('edt-cat').value;
-      let ok = validarCampo(nome, $('edt-nome'), $('erro-edt-nome'), 'Informe o nome do item.');
-      ok = validarCampo(qtd, $('edt-qtd'), $('erro-edt-qtd'), 'Informe a quantidade.') && ok;
-      ok = validarCampo(cat, $('edt-cat'), $('erro-edt-cat'), 'Selecione uma categoria.') && ok;
-      if (!ok) return;
-
-      it.nome = nome;
-      it.quantidade = qtd;
-      it.categoria = cat;
-      salvarState();
-      renderLista();
-      fecharModal($('modal-editar'));
-      toast('Alterações salvas.');
-    }
-
-    function pedirExclusao(id) {
-      const it = state.itens.find(i => i.id === id);
-      if (!it) return;
-      confirmarAcao({
-        titulo: '⚠️ Excluir item?',
-        texto: 'Deseja realmente excluir:',
-        destaque: it.nome.toUpperCase(),
-        nota: 'Esta ação não pode ser desfeita.',
-        rotuloOk: 'EXCLUIR',
-        classeOk: 'btn-perigo',
-        onConfirm: () => {
-          state.itens = state.itens.filter(i => i.id !== id);
-          salvarState();
-          renderLista();
-          toast('Item excluído.');
-        }
-      });
-    }
-
-    function pedirLimpeza() {
-      if (!state.itens.length) return;
-      confirmarAcao({
-        titulo: '⚠️ Limpar toda a lista?',
-        texto: 'Todos os itens serão removidos.',
-        nota: 'Esta ação não pode ser desfeita.',
-        rotuloOk: 'LIMPAR TUDO',
-        classeOk: 'btn-perigo',
-        onConfirm: () => {
-          state.itens = [];
-          salvarState();
-          renderLista();
-          toast('Lista limpa.');
-        }
-      });
-    }
-
-    /* ============================================================
-       TEMPLATE DO PDF — construção + paginação controlada
-       Cada "página" é um bloco de altura exata da área útil A4,
-       com cabeçalho (completo na 1ª, compacto nas seguintes) e
-       rodapé fixos dentro do bloco. Nada é cortado e nenhuma
-       página em branco é criada.
-       ============================================================ */
-
-    function montarCabecalhoPdf() {
-      const h = el('header', 'pdf-cabecalho');
-      const esq = el('div');
-      esq.appendChild(el('h2', 'pdf-titulo', 'SÍTIO RECANTO DA LIMEIRA'));
-      esq.appendChild(el('p', 'pdf-subtitulo', 'Controle de Suprimentos e Compras'));
-      const dir = el('div', 'pdf-cab-dir');
-      dir.appendChild(el('p', 'pdf-data', 'Data/Hora: ' + formatarDataHora(state.dataHoraISO)));
-      const urgente = state.urgencia === 'urgente';
-      dir.appendChild(el('span', 'pdf-status' + (urgente ? ' urgente' : ''), urgente ? 'STATUS: 🔴 URGENTE' : 'STATUS: 🟢 NORMAL'));
-      h.append(esq, dir);
-      return h;
-    }
-
-    function montarMiniCabecalhoPdf() {
-      const h = el('header', 'pdf-mini');
-      h.appendChild(el('span', 'pdf-mini-titulo', 'SÍTIO RECANTO DA LIMEIRA'));
-      const urgente = state.urgencia === 'urgente';
-      h.appendChild(el('span', 'pdf-mini-meta', formatarDataHora(state.dataHoraISO) + '  •  ' + (urgente ? 'STATUS: 🔴 URGENTE' : 'STATUS: 🟢 NORMAL')));
-      return h;
-    }
-
-    function montarRodapePdf() {
-      const f = el('footer', 'pdf-rodape');
-      f.appendChild(el('p', 'pdf-rodape-nome', 'Sítio Recanto da Limeira'));
-      f.appendChild(el('p', 'pdf-rodape-sub', 'Pedido de Suprimentos'));
-      return f;
-    }
-
-    function montarGrupoPdf(cat, itens, sufixo) {
-      const g = el('section', 'pdf-grupo');
-      g.appendChild(el('h3', 'pdf-cat-titulo', cat.emoji + '  ' + cat.nome.toUpperCase() + (sufixo || '')));
-      const table = el('table', 'pdf-tabela');
-      const thead = el('thead');
-      const trh = el('tr');
-      const th1 = el('th', 'col-produto', 'Produto / Suprimento');
-      const th2 = el('th', 'col-qtd', 'Quantidade');
-      trh.append(th1, th2);
-      thead.appendChild(trh);
-      const tbody = el('tbody');
-      itens.forEach(it => {
-        const tr = el('tr');
-        tr.appendChild(el('td', 'td-nome', it.nome));
-        tr.appendChild(el('td', 'td-qtd', it.quantidade));
-        tbody.appendChild(tr);
-      });
-      table.append(thead, tbody);
-      g.append(table);
-      return { node: g };
-    }
-
-    function construirTemplatePdf() {
-      const render = $('pdf-render');
-      const medidor = $('pdf-medidor');
-      render.innerHTML = '';
-      medidor.innerHTML = '';
-
-      /* 1) Mede os cabeçalhos */
-      const cab1 = montarCabecalhoPdf();
-      const cab2 = montarMiniCabecalhoPdf();
-      medidor.append(cab1, cab2);
-      const cab1H = cab1.offsetHeight;
-      const cab2H = cab2.offsetHeight;
-      medidor.innerHTML = '';
-
-      /* 2) Mede cada categoria (título, cabeçalho da tabela e cada linha) */
-      const grupos = [];
-      for (const cat of CATEGORIAS) {
-        const itens = state.itens.filter(i => i.categoria === cat.id);
-        if (!itens.length) continue;
-        const { node } = montarGrupoPdf(cat, itens, '');
-        medidor.appendChild(node);
-        grupos.push({
-          cat,
-          itens,
-          titulo: node.querySelector('.pdf-cat-titulo').offsetHeight,
-          thead: node.querySelector('thead').offsetHeight,
-          linhas: Array.from(node.querySelectorAll('tbody tr')).map(tr => tr.offsetHeight)
-        });
-        medidor.innerHTML = '';
-      }
-
-      /* 3) Distribui os grupos pelas páginas sem cortar linhas */
-      const paginas = [];
-      let conteudo = null, restante = 0, primeira = true, paginaVazia = true;
-
-      const alturaDaFatia = (p, ate) => {
-        let h = p.titulo + p.thead;
-        for (let i = p.idx; i < ate; i++) h += p.linhas[i];
-        return h + PDF_CFG.GAP_GRUPO;
-      };
-
-      const abrirPagina = () => {
-        const pag = el('section', 'pdf-pagina');
-        pag.appendChild(primeira ? cab1 : cab2.cloneNode(true));
-        conteudo = el('div', 'pdf-conteudo');
-        pag.appendChild(conteudo);
-        pag.appendChild(montarRodapePdf());
-        paginas.push(pag);
-        restante = PDF_CFG.ALT - (primeira ? cab1H : cab2H) - PDF_CFG.RESERVA;
-        primeira = false;
-        paginaVazia = true;
-      };
-
-      const anexar = (p, ate, sufixo) => {
-        const { node } = montarGrupoPdf(p.cat, p.itens.slice(p.idx, ate), sufixo);
-        conteudo.appendChild(node);
-        restante -= alturaDaFatia(p, ate);
-        paginaVazia = false;
-      };
-
-      abrirPagina();
-      const fila = grupos.map(g => ({ ...g, idx: 0 }));
-      let guardas = 0;
-      while (fila.length && guardas++ < 300) {
-        const p = fila.shift();
-        const fim = p.itens.length;
-
-        if (alturaDaFatia(p, fim) <= restante) {
-          anexar(p, fim, p.idx > 0 ? ' (continuação)' : '');
-          continue;
-        }
-
-        /* Não coube inteiro: tenta título + cabeçalho da tabela + N linhas inteiras */
-        let esp = restante - p.titulo - p.thead;
-        let n = 0;
-        while (p.idx + n < fim && esp - p.linhas[p.idx + n] >= 0) {
-          esp -= p.linhas[p.idx + n];
-          n++;
-        }
-
-        if (n === 0 && !paginaVazia) {        // página sem espaço: abre outra e tenta de novo
-          abrirPagina();
-          fila.unshift(p);
-          continue;
-        }
-        if (n === 0 && paginaVazia) n = 1;    // conteúdo maior que a página inteira (caso extremo): força e o overflow oculta
-
-        anexar(p, p.idx + n, p.idx > 0 ? ' (continuação)' : '');
-        p.idx += n;
-        if (p.idx < fim) {
-          abrirPagina();
-          fila.unshift(p);
-        }
-      }
-
-      /* 4) Montagem final com quebras explícitas entre as páginas */
-      paginas.forEach((pag, i) => {
-        if (i) render.appendChild(el('div', 'html2pdf__page-break'));
-        render.appendChild(pag);
-      });
-      return paginas.length;
-    }
-
-    /* ---------- Pré-visualização ---------- */
-    function abrirPrevia() {
-      if (!state.pedidoAtivo || !state.itens.length) {
-        toast('⚠️ Adicione pelo menos um item à lista.', true);
-        return;
-      }
-      const totalPaginas = construirTemplatePdf();
-      const alvo = $('previa-folhas');
-      alvo.innerHTML = '';
-      document.querySelectorAll('#pdf-render > .pdf-pagina').forEach((pag, i) => {
-        const box = el('div', 'folha-box');
-        const folha = el('div', 'folha');
-        folha.appendChild(pag.cloneNode(true));
-        box.appendChild(folha);
-        alvo.appendChild(box);
-        alvo.appendChild(el('p', 'pagina-rotulo', 'Página ' + (i + 1) + ' de ' + totalPaginas + ' — A4 · 210 × 297 mm'));
-      });
-      ajustarEscalaPrevia();
-      abrirModal($('modal-previa'));
-    }
-
-    function ajustarEscalaPrevia() {
-      const disp = $('previa-scroll').clientWidth - 28;
-      $('previa-folhas').style.setProperty('--escala', Math.min(1, disp / 794));
-    }
-
-    function fecharPrevia() { fecharModal($('modal-previa')); }
-
-    /* ---------- Geração do PDF ---------- */
-    let carregandoLib = null;
-    function garantirBibliotecaPdf() {
-      if (window.html2pdf) return Promise.resolve();
-      if (!carregandoLib) {
-        carregandoLib = new Promise((resolve, reject) => {
-          const s = document.createElement('script');
-          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-          s.onload = () => resolve();
-          s.onerror = () => {
-            carregandoLib = null;
-            reject(new Error('O arquivo html2pdf.bundle.min.js não foi encontrado na pasta do app (e não há internet para usar a cópia de reserva).'));
-          };
-          document.head.appendChild(s);
-        });
-      }
-      return carregandoLib;
-    }
-
-    async function gerarPdf() {
-      if (!state.pedidoAtivo || !state.itens.length) {
-        toast('⚠️ Adicione pelo menos um item à lista.', true);
-        return;
-      }
-      const botoes = [$('btn-gerar'), $('btn-previa-gerar')];
-      const originais = botoes.map(b => b.textContent);
-      botoes.forEach(b => { b.disabled = true; b.textContent = '⏳ GERANDO…'; });
-      try {
-        await garantirBibliotecaPdf();
-        construirTemplatePdf();
-        await html2pdf().set(OPCOES_PDF).from($('pdf-render')).save();
-        toast('📄 PDF gerado com sucesso.');
-        if (!$('modal-previa').hidden) fecharPrevia();
-      } catch (err) {
-        toast('Não foi possível gerar o PDF. ' + (err && err.message ? err.message : 'Tente novamente.'), true);
-      } finally {
-        botoes.forEach((b, i) => { b.disabled = false; b.textContent = originais[i]; });
-      }
-    }
-
-    /* ---------- Service Worker (PWA real, offline) ---------- */
-    function registrarServiceWorker() {
-      if (!('serviceWorker' in navigator)) return;
-      navigator.serviceWorker.register('./service-worker.js')
-        .catch(() => { /* ex.: aberto via file:// — o app segue funcionando normalmente */ });
-    }
-
-    /* ---------- Inicialização ---------- */
-    function popularSelects() {
-      const opcoes = () => {
-        const frag = document.createDocumentFragment();
-        CATEGORIAS.forEach(c => {
-          const o = document.createElement('option');
-          o.value = c.id;
-          o.textContent = c.emoji + ' ' + c.nome;
-          frag.appendChild(o);
-        });
-        return frag;
-      };
-      $('sel-cat').appendChild(opcoes());
-      $('edt-cat').appendChild(opcoes());
-    }
-
-    function init() {
-      popularSelects();
-      carregarState();
-      renderTudo();
-
-      /* Navegação e pedido */
-      $('btn-abrir-novo').addEventListener('click', solicitarNovoPedido);
-      $('btn-novo-topo').addEventListener('click', solicitarNovoPedido);
-      $('btn-cancelar-novo').addEventListener('click', () => fecharModal($('modal-novo')));
-      $('btn-iniciar').addEventListener('click', iniciarPedido);
-      document.querySelectorAll('.btn-urg').forEach(b => {
-        b.addEventListener('click', () => {
-          urgenciaSelecionada = b.dataset.valor;
-          document.querySelectorAll('.btn-urg').forEach(x => {
-            x.classList.toggle('selecionada', x === b);
-            x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
-          });
-          $('btn-iniciar').disabled = false;
-        });
-      });
-
-      /* Itens */
-      $('form-item').addEventListener('submit', adicionarItem);
-      $('lista-grupos').addEventListener('click', e => {
-        const bE = e.target.closest('[data-editar]');
-        if (bE) { abrirEditar(bE.dataset.editar); return; }
-        const bX = e.target.closest('[data-excluir]');
-        if (bX) pedirExclusao(bX.dataset.excluir);
-      });
-      $('btn-limpar').addEventListener('click', pedirLimpeza);
-
-      /* Edição */
-      $('btn-salvar-edicao').addEventListener('click', salvarEdicao);
-      $('btn-cancelar-edicao').addEventListener('click', () => fecharModal($('modal-editar')));
-
-      /* Confirmação */
-      $('btn-conf-ok').addEventListener('click', () => {
-        const fn = acaoConfirmada;
-        acaoConfirmada = null;
-        fecharModal($('modal-confirmar'));
-        if (fn) fn();
-      });
-      $('btn-conf-cancelar').addEventListener('click', () => {
-        acaoConfirmada = null;
-        fecharModal($('modal-confirmar'));
-      });
-
-      /* PDF */
-      $('btn-previa').addEventListener('click', abrirPrevia);
-      $('btn-previa-voltar').addEventListener('click', fecharPrevia);
-      $('btn-previa-gerar').addEventListener('click', gerarPdf);
-      $('btn-gerar').addEventListener('click', gerarPdf);
-
-      /* Limpa erros enquanto o usuário digita */
-      [['inp-nome', 'erro-nome'], ['inp-qtd', 'erro-qtd'], ['sel-cat', 'erro-cat'],
-       ['edt-nome', 'erro-edt-nome'], ['edt-qtd', 'erro-edt-qtd'], ['edt-cat', 'erro-edt-cat']]
-        .forEach(([inp, msg]) => {
-          $(inp).addEventListener('input', () => { $(inp).classList.remove('invalido'); $(msg).hidden = true; });
-        });
-
-      /* ESC cancela o modal aberto (nunca perde dados do formulário) */
-      document.addEventListener('keydown', e => {
-        if (e.key !== 'Escape') return;
-        if (!$('modal-previa').hidden) { fecharPrevia(); return; }
-        if (!$('modal-confirmar').hidden) { acaoConfirmada = null; fecharModal($('modal-confirmar')); return; }
-        if (!$('modal-editar').hidden) { fecharModal($('modal-editar')); return; }
-        if (!$('modal-novo').hidden) { fecharModal($('modal-novo')); }
-      });
-
-      window.addEventListener('resize', () => {
-        if (!$('modal-previa').hidden) ajustarEscalaPrevia();
-      });
-
-      registrarServiceWorker();
-    }
-
-    init();
-  </script>
+/* ---------- Inicialização ---------- */
+(function iniciar(){
+  carregar();
+  popularSelect($('#f-cat'));
+  popularSelect($('#e-cat'));
+  if (db.pedido) mostrarApp();
+  else mostrarCapa();
+})();
+</script>
 </body>
 </html>
