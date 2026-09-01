@@ -1,16 +1,20 @@
 {
-  "name": "Sítio Recanto da Limeira",
+  "id": "recanto-da-limeira",
+  "name": "Sítio Recanto da Limeira — Suprimentos e Compras",
   "short_name": "Recanto Limeira",
-  "description": "Controle de Suprimentos e Compras do Sítio Recanto da Limeira — monte a lista de compras offline e envie o pedido ao patrão em PDF.",
+  "description": "Controle de Suprimentos e Compras do Sítio Recanto da Limeira. Monte a lista do pedido, pré-visualize e gere o PDF. Funciona offline.",
+  "lang": "pt-BR",
+  "dir": "ltr",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#1B5E20",
   "background_color": "#F3F6F4",
-  "lang": "pt-BR",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
