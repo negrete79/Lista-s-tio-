@@ -1,75 +1,94 @@
-/* ============================================================
-   SÍTIO RECANTO DA LIMEIRA — Service Worker
-   Cache real (arquivo físico), offline garantido.
-   Ao publicar uma nova versão, aumente o número da VERSAO.
-   ============================================================ */
+/* Sítio Recanto da Limeira - Service Worker Offline */
+const CACHE_NAME = 'recanto-limeira-v1';
+const URL_CDN_PDF = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
 
-const VERSAO = 'recanto-limeira-v1.0.0';
-
-/* Arquivos indispensáveis: install falha se algum faltar. */
-const ESSENCIAIS = [
+const PRECACHE = [
   './',
   './index.html',
-  './manifest.json'
-];
-
-/* Arquivos opcionais: se ainda não existirem (ex.: ícones ou a
-   biblioteca do PDF ainda não enviados), o install NÃO quebra —
-   eles entram no cache na primeira navegação com internet. */
-const OPCIONAIS = [
+  './manifest.json',
   './html2pdf.bundle.min.js',
   './icon-192.png',
   './icon-512.png'
 ];
 
-/* ---------- INSTALAÇÃO: cria o cache ---------- */
-self.addEventListener('install', (evento) => {
-  evento.waitUntil((async () => {
-    const cache = await caches.open(VERSAO);
-    await cache.addAll(ESSENCIAIS);
-    await Promise.all(OPCIONAIS.map((url) =>
-      cache.add(url).catch(() => null) // opcional: falha silenciosa
-    ));
-    await self.skipWaiting();
-  })());
+// Instalação: guarda o essencial
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(PRECACHE.map(url => new Request(url, {cache: 'reload'})))
+        .catch(() => cache.add('./index.html')); // ignora erro se os ícones ainda não existem
+    })
+  );
+  self.skipWaiting();
 });
 
-/* ---------- ATIVAÇÃO: limpa caches de versões antigas ---------- */
-self.addEventListener('activate', (evento) => {
-  evento.waitUntil((async () => {
-    const chaves = await caches.keys();
-    await Promise.all(
-      chaves.filter((chave) => chave !== VERSAO)
-            .map((chave) => caches.delete(chave))
+// Ativação: limpa caches antigos
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
+    })
+  );
+  self.clients.claim();
+});
+
+// Estratégia de fetch
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+
+  // 1. html2pdf: tenta local, se falhar busca do CDN e guarda em cache
+  if (url.pathname.endsWith('html2pdf.bundle.min.js')) {
+    event.respondWith(
+      caches.match(req).then((cached) => {
+        if (cached) return cached;
+        return fetch(req).catch(() => fetch(URL_CDN_PDF)).then((res) => {
+          if (res && res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then(c => c.put(req, clone));
+          }
+          return res;
+        });
+      })
     );
-    await self.clients.claim();
-  })());
-});
+    return;
+  }
 
-/* ---------- FETCH: cache primeiro, rede depois ----------
-   Sem internet → responde pelo cache.
-   Com internet → serve e guarda novas respostas no cache
-   (fontes do Google, biblioteca do PDF etc. ficam offline). */
-self.addEventListener('fetch', (evento) => {
-  const requisicao = evento.request;
-  if (requisicao.method !== 'GET') return;
+  // 2. Google Fonts: Stale-While-Revalidate
+  if (url.origin.includes('fonts.googleapis.com') || url.origin.includes('fonts.gstatic.com')) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.match(req).then((cached) => {
+          const fetched = fetch(req).then((res) => {
+            if (res.ok) cache.put(req, res.clone());
+            return res;
+          }).catch(() => cached);
+          return cached || fetched;
+        });
+      })
+    );
+    return;
+  }
 
-  evento.respondWith((async () => {
-    const cache = await caches.open(VERSAO);
-    const doCache = await cache.match(requisicao, { ignoreSearch: true });
-    if (doCache) return doCache;
-
-    try {
-      const resposta = await fetch(requisicao);
-      if (resposta && (resposta.ok || resposta.type === 'opaque')) {
-        cache.put(requisicao, resposta.clone());
-      }
-      return resposta;
-    } catch (erro) {
-      /* Offline e não estava em cache: fallback para o app. */
-      const indice = await cache.match('./index.html');
-      if (indice) return indice;
-      throw erro;
-    }
-  })());
+  // 3. Todo o resto do mesmo domínio: Cache First com fallback para index.html (offline)
+  if (url.origin === location.origin) {
+    event.respondWith(
+      caches.match(req).then((cached) => {
+        if (cached) return cached;
+        return fetch(req).then((res) => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then(c => c.put(req, clone));
+          }
+          return res;
+        }).catch(() => {
+          if (req.headers.get('accept')?.includes('text/html')) {
+            return caches.match('./index.html');
+          }
+        });
+      })
+    );
+  }
 });
