@@ -1,97 +1,94 @@
 /* ============================================================
-   Sítio Recanto da Limeira — Service Worker (arquivo real)
-   Cache-first para os arquivos do app.
-   Runtime cache (stale-while-revalidate) para fontes e para a
-   biblioteca de PDF via CDN — garantindo offline total depois
-   da primeira visita com internet.
+   SÍTIO RECANTO DA LIMEIRA — Service Worker (arquivo real)
+   Instala, ativa, cria o cache, limpa caches antigos e
+   responde pelo cache quando não há internet.
    ============================================================ */
-const CACHE = 'recanto-limeira-v1';
 
-const CORE = [
+const CACHE_NAME = 'recanto-limeira-v1';
+
+const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
-  './gerar-icones.html'
+  './html2pdf.bundle.min.js'
 ];
 
-const RUNTIME_HOSTS = [
-  'https://fonts.googleapis.com',
-  'https://fonts.gstatic.com',
-  'https://cdn.jsdelivr.net'
-];
-
-/* Instalar: gravar no cache o que existir (itens individuais
-   não bloqueiam a instalação, caso um ícone ainda não exista) */
+/* ---------- INSTALAR: cria o cache e armazena os arquivos ---------- */
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
-    await Promise.allSettled(CORE.map(async (asset) => {
-      try { await cache.add(asset); } catch (e) { /* arquivo opcional ausente */ }
-    }));
+    const cache = await caches.open(CACHE_NAME);
+    // Cacheia item a item: se algum arquivo opcional estiver ausente,
+    // o restante continua sendo armazenado normalmente.
+    await Promise.allSettled(
+      CORE_ASSETS.map(async (url) => {
+        try {
+          await cache.add(new Request(url, { cache: 'reload' }));
+        } catch (e) {
+          // Arquivo ainda não publicado (ex.: html2pdf.bundle.min.js será adicionado depois).
+        }
+      })
+    );
     await self.skipWaiting();
   })());
 });
 
-/* Ativar: limpar caches antigos e assumir o controle */
+/* ---------- ATIVAR: limpa caches antigos e assume o controle ---------- */
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
-    const keys = await caches.keys();
+    const nomes = await caches.keys();
     await Promise.all(
-      keys.filter((k) => k.indexOf('recanto-limeira-') === 0 && k !== CACHE)
-          .map((k) => caches.delete(k))
+      nomes.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))
     );
     await self.clients.claim();
   })());
 });
 
-/* Buscar: cache quando offline, rede como atualização */
+/* ---------- FETCH: offline de verdade ---------- */
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
-  let url;
-  try { url = new URL(req.url); } catch (e) { return; }
-
-  const sameOrigin = url.origin === self.location.origin;
-  const isRuntime  = RUNTIME_HOSTS.some((h) => url.origin === h);
-  if (!sameOrigin && !isRuntime) return;
-
-  if (sameOrigin) {
-    event.respondWith(cacheFirst(req));
-  } else {
-    event.respondWith(staleWhileRevalidate(req));
+  /* Navegação (abertura do app): rede primeiro; sem internet, responde pelo cache. */
+  if (req.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const fresh = await fetch(req);
+        const cache = await caches.open(CACHE_NAME);
+        cache.put('./index.html', fresh.clone());
+        return fresh;
+      } catch (e) {
+        return (await caches.match('./index.html')) || (await caches.match('./')) ||
+               new Response('<h1>Offline</h1>', { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+      }
+    })());
+    return;
   }
+
+  /* Demais recursos: cache primeiro; em segundo plano, atualiza silenciosamente. */
+  event.respondWith((async () => {
+    const cached = await caches.match(req, { ignoreSearch: true });
+    if (cached) {
+      event.waitUntil(revalidar(req));
+      return cached;
+    }
+    const fresh = await revalidar(req);
+    return fresh || new Response('', { status: 504, statusText: 'Offline' });
+  })());
 });
 
-async function cacheFirst(req) {
-  const cache = await caches.open(CACHE);
-  const cached = await cache.match(req, { ignoreSearch: true });
-  if (cached) return cached;
+/* Busca na rede e guarda no cache quando a resposta é válida. */
+async function revalidar(req) {
   try {
-    const res = await fetch(req);
-    if (res && res.ok) cache.put(req, res.clone());
-    return res;
-  } catch (err) {
-    /* Sem rede e sem cache: se for navegação, entrega o app do cache */
-    if (req.mode === 'navigate') {
-      const fallback = await cache.match('./index.html');
-      if (fallback) return fallback;
+    const fresh = await fetch(req);
+    const origemOk = new URL(req.url).origin === self.location.origin;
+    if (fresh && (fresh.status === 200 || fresh.type === 'opaque') && origemOk) {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(req, fresh.clone());
     }
-    throw err;
+    return fresh;
+  } catch (e) {
+    return null;
   }
-}
-
-async function staleWhileRevalidate(req) {
-  const cache = await caches.open(CACHE);
-  const cached = await cache.match(req);
-  const network = fetch(req).then((res) => {
-    if (res && res.ok) cache.put(req, res.clone());
-    return res;
-  }).catch(() => undefined);
-  if (cached) return cached;
-  const fresh = await network;
-  if (fresh) return fresh;
-  throw new Error('Offline e sem cache: ' + req.url);
 }
