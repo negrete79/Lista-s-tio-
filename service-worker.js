@@ -1,94 +1,90 @@
 /* ============================================================
-   SÍTIO RECANTO DA LIMEIRA — Service Worker (arquivo real)
-   Instala, ativa, cria o cache, limpa caches antigos e
-   responde pelo cache quando não há internet.
+   SÍTIO RECANTO DA LIMEIRA — Service Worker
+   Cache do app shell + runtime para fontes e biblioteca do PDF.
+   Para publicar uma atualização, troque VERSAO (ex.: v1 → v1-2).
    ============================================================ */
+'use strict';
 
-const CACHE_NAME = 'recanto-limeira-v1';
+const VERSAO = 'recanto-limeira-v1';
+const ESSENCIAIS = ['./', './index.html', './manifest.json'];
+const OPCIONAIS  = ['./html2pdf.bundle.min.js', './icon-192.png', './icon-512.png'];
 
-const CORE_ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
-  './html2pdf.bundle.min.js'
-];
-
-/* ---------- INSTALAR: cria o cache e armazena os arquivos ---------- */
-self.addEventListener('install', (event) => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    // Cacheia item a item: se algum arquivo opcional estiver ausente,
-    // o restante continua sendo armazenado normalmente.
-    await Promise.allSettled(
-      CORE_ASSETS.map(async (url) => {
-        try {
-          await cache.add(new Request(url, { cache: 'reload' }));
-        } catch (e) {
-          // Arquivo ainda não publicado (ex.: html2pdf.bundle.min.js será adicionado depois).
-        }
-      })
-    );
+/* ---------- Instalação: cria o cache e armazena os arquivos ---------- */
+self.addEventListener('install', (evento) => {
+  evento.waitUntil((async () => {
+    const cache = await caches.open(VERSAO);
+    try { await cache.addAll(ESSENCIAIS); } catch (e) { /* nunca bloquear a instalação */ }
+    await Promise.all(OPCIONAIS.map(async (url) => {
+      try { await cache.add(url); } catch (e) { /* opcional: pode faltar sem quebrar */ }
+    }));
     await self.skipWaiting();
   })());
 });
 
-/* ---------- ATIVAR: limpa caches antigos e assume o controle ---------- */
-self.addEventListener('activate', (event) => {
-  event.waitUntil((async () => {
-    const nomes = await caches.keys();
-    await Promise.all(
-      nomes.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))
-    );
+/* ---------- Ativação: limpa caches antigos ---------- */
+self.addEventListener('activate', (evento) => {
+  evento.waitUntil((async () => {
+    const chaves = await caches.keys();
+    await Promise.all(chaves.filter(k => k !== VERSAO).map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
 
-/* ---------- FETCH: offline de verdade ---------- */
-self.addEventListener('fetch', (event) => {
-  const req = event.request;
+/* ---------- Fetch: cache-first (rural = internet instável) ---------- */
+self.addEventListener('fetch', (evento) => {
+  const req = evento.request;
   if (req.method !== 'GET') return;
 
-  /* Navegação (abertura do app): rede primeiro; sem internet, responde pelo cache. */
-  if (req.mode === 'navigate') {
-    event.respondWith((async () => {
+  const url = new URL(req.url);
+
+  /* Terceiros (fontes do Google, CDN da biblioteca): cache-first com guarda em runtime */
+  if (url.origin !== self.location.origin) {
+    const ehRecurso = req.destination === 'font' || req.destination === 'style' ||
+                      url.hostname.includes('fonts') || url.hostname.includes('cdn') || url.hostname.includes('cdnjs');
+    if (!ehRecurso) return;
+    evento.respondWith((async () => {
+      const cache = await caches.open(VERSAO);
+      const emCache = await cache.match(req);
+      if (emCache) return emCache;
       try {
-        const fresh = await fetch(req);
-        const cache = await caches.open(CACHE_NAME);
-        cache.put('./index.html', fresh.clone());
-        return fresh;
+        const resp = await fetch(req);
+        if (resp && resp.ok) cache.put(req, resp.clone());
+        return resp;
       } catch (e) {
-        return (await caches.match('./index.html')) || (await caches.match('./')) ||
-               new Response('<h1>Offline</h1>', { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+        return Response.error();
       }
     })());
     return;
   }
 
-  /* Demais recursos: cache primeiro; em segundo plano, atualiza silenciosamente. */
-  event.respondWith((async () => {
-    const cached = await caches.match(req, { ignoreSearch: true });
-    if (cached) {
-      event.waitUntil(revalidar(req));
-      return cached;
+  /* Navegação: sempre resolvida pelo index.html em cache */
+  if (req.mode === 'navigate') {
+    evento.respondWith((async () => {
+      const cache = await caches.open(VERSAO);
+      const emCache = (await cache.match('./index.html')) || (await cache.match('./'));
+      if (emCache) return emCache;
+      try {
+        const resp = await fetch(req);
+        cache.put('./index.html', resp.clone());
+        return resp;
+      } catch (e) {
+        return Response.error();
+      }
+    })());
+    return;
+  }
+
+  /* Demais recursos same-origin: cache-first */
+  evento.respondWith((async () => {
+    const cache = await caches.open(VERSAO);
+    const emCache = await cache.match(req);
+    if (emCache) return emCache;
+    try {
+      const resp = await fetch(req);
+      if (resp && resp.status === 200 && resp.type === 'basic') cache.put(req, resp.clone());
+      return resp;
+    } catch (e) {
+      return Response.error();
     }
-    const fresh = await revalidar(req);
-    return fresh || new Response('', { status: 504, statusText: 'Offline' });
   })());
 });
-
-/* Busca na rede e guarda no cache quando a resposta é válida. */
-async function revalidar(req) {
-  try {
-    const fresh = await fetch(req);
-    const origemOk = new URL(req.url).origin === self.location.origin;
-    if (fresh && (fresh.status === 200 || fresh.type === 'opaque') && origemOk) {
-      const cache = await caches.open(CACHE_NAME);
-      await cache.put(req, fresh.clone());
-    }
-    return fresh;
-  } catch (e) {
-    return null;
-  }
-}
