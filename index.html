@@ -1,435 +1,63 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#2E7D32">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Limeira">
-  <title>Sítio Recanto da Limeira — Controle de Suprimentos</title>
-
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%232E7D32'/><text x='50%' y='55%' font-size='260' text-anchor='middle' dominant-baseline='middle'>🏡</text></svg>">
-  <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%232E7D32'/><text x='50%' y='55%' font-size='260' text-anchor='middle' dominant-baseline='middle'>🏡</text></svg>">
-
-  <style>
-    :root {
-      --verde-principal: #2E7D32;
-      --verde-escuro: #1B5E20;
-      --fundo: #F4F6F8;
-      --branco: #FFFFFF;
-      --texto: #2C3E50;
-      --urgente: #D32F2F;
-      --cinza-claro: #E2E8F0;
-      --sombra: 0 4px 12px rgba(0, 0, 0, 0.05);
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    body { background-color: var(--fundo); color: var(--texto); padding-bottom: 90px; }
-
-    header { background: var(--verde-principal); color: var(--branco); padding: 18px 16px; text-align: center; }
-    header h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 2px; }
-    header p { font-size: 0.85rem; opacity: 0.9; }
-
-    .status-bar { background: var(--verde-escuro); color: var(--branco); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 600; }
-    .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-    .badge-normal { background: #4CAF50; color: white; }
-    .badge-urgente { background: var(--urgente); color: white; }
-
-    main { padding: 16px; max-width: 600px; margin: 0 auto; }
-    .card { background: var(--branco); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: var(--sombra); }
-
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
-    .form-control { width: 100%; padding: 12px; border: 1px solid var(--cinza-claro); border-radius: 8px; font-size: 1rem; outline: none; background: #FAFAFA; }
-    .form-control:focus { border-color: var(--verde-principal); background: #FFF; }
-
-    .btn { border: none; border-radius: 8px; padding: 12px 16px; font-size: 0.95rem; font-weight: 600; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
-    .btn:active { transform: scale(0.98); }
-    .btn-primary { background: var(--verde-principal); color: var(--branco); }
-    .btn-secondary { background: #607D8B; color: var(--branco); }
-    .btn-outline { background: transparent; border: 1.5px solid var(--verde-principal); color: var(--verde-principal); }
-
-    .item-card { background: var(--branco); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.03); border-left: 4px solid var(--verde-principal); }
-    .item-name { font-weight: 600; font-size: 0.95rem; }
-    .item-qty { font-size: 0.85rem; color: #666; margin-top: 2px; }
-    .action-btn { background: none; border: none; font-size: 1.1rem; padding: 4px 6px; cursor: pointer; }
-
-    .fixed-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--branco); padding: 12px 16px; box-shadow: 0 -4px 12px rgba(0,0,0,0.08); display: flex; gap: 10px; max-width: 600px; margin: 0 auto; z-index: 100; }
-
-    .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-    .modal-overlay.active { opacity: 1; pointer-events: all; }
-    .modal-card { background: var(--branco); width: 100%; max-width: 440px; border-radius: 12px; padding: 20px; }
-    .modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; color: var(--verde-escuro); }
-    .urgency-selector { display: flex; gap: 10px; margin: 16px 0; }
-    .urgency-option { flex: 1; border: 2px solid var(--cinza-claro); padding: 12px; border-radius: 8px; text-align: center; cursor: pointer; font-weight: 600; }
-    .urgency-option.selected-normal { border-color: #4CAF50; background: #E8F5E9; color: #2E7D32; }
-    .urgency-option.selected-urgente { border-color: var(--urgente); background: #FFEBEE; color: var(--urgente); }
-
-    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; z-index: 2000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
-    .toast.show { opacity: 1; }
-
-    #print-area { display: none; }
-
-    /* REGRAS DA IMPRESSÃO COMPACTA */
-    @page {
-      size: A4 portrait;
-      margin: 10mm;
-    }
-
-    @media print {
-      html, body {
-        background: #fff !important;
-        height: auto !important;
-        overflow: visible !important;
-        padding: 0 !important;
-        margin: 0 !important;
-      }
-
-      header, .status-bar, main, .fixed-footer, .modal-overlay, .toast {
-        display: none !important;
-      }
-
-      #print-area {
-        display: block !important;
-        position: relative !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-
-      .pdf-header {
-        border-bottom: 2px solid #2E7D32;
-        padding-bottom: 6px;
-        margin-bottom: 10px;
-        text-align: center;
-      }
-
-      .pdf-header h1 {
-        font-size: 14pt;
-        color: #1B5E20;
-        margin-bottom: 2px;
-      }
-
-      .pdf-meta {
-        display: flex;
-        justify-content: space-between;
-        background: #f0f4f1;
-        padding: 6px 10px;
-        margin-top: 6px;
-        font-weight: bold;
-        border-radius: 4px;
-        font-size: 9pt;
-        color: #1B5E20;
-      }
-
-      .pdf-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 8px;
-      }
-
-      .pdf-table th, .pdf-table td {
-        border: 1px solid #aaa;
-        padding: 6px 8px;
-        text-align: left;
-        font-size: 9.5pt;
-      }
-
-      .pdf-table th {
-        background: #e8f5e9 !important;
-        color: #1B5E20 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-
-      .pdf-table tr {
-        page-break-inside: avoid;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sítio Recanto da Limeira - Controle de Suprimentos</title>
+<meta name="theme-color" content="#1b5e20">
+<link id="favicon" rel="icon" href="">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{--verde:#1b5e20;--verde-claro:#e8f5e9;--borda:#c8e6c9}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial;background:#f6faf6}
+header{background:#1b5e20;color:#fff;padding:14px 16px;position:sticky;top:0;display:flex;gap:12px;align-items:center}
+.card{background:#fff;border:1px solid var(--borda);border-radius:16px;padding:14px;margin:12px;box-shadow:0 2px 12px rgba(0,0,0,.05)}
+.row{display:flex;gap:8px;flex-wrap:wrap} input,select{padding:11px;border:1px solid #cbd5cb;border-radius:10px;flex:1}
+.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}
+.btn-primary{background:#1b5e20;color:#fff}.btn-ghost{background:#e8f5e9;color:#1b5e20}
+.item{display:flex;justify-content:space-between;padding:10px;border:1px solid #e0e0e0;border-radius:12px;margin-bottom:6px}
+</style>
 </head>
 <body>
+<header><div id="logoTxt">SL</div><div><b>SÍTIO RECANTO DA LIMEIRA</b><br><small>Controle de Suprimentos • PWA Offline</small></div><button id="btnInstall" style="display:none;margin-left:auto">📲 Instalar</button></header>
+<main>
+<div class="card">
+<div class="row"><input id="inpProduto" placeholder="Produto"><input id="inpQtd" type="number" value="1" style="max-width:80px"><select id="inpStatus"><option>NORMAL</option><option>URGENTE</option><option>CRÍTICO</option></select><button class="btn btn-primary" id="btnAdd">+ Add</button></div>
+<div class="row" style="margin-top:8px"><input id="busca" placeholder="🔎 Buscar"><button class="btn btn-ghost" id="btnModelo">Modelo PDF</button><button class="btn btn-ghost" id="btnLimpar">Limpar</button></div>
+<small>Data: <span id="dtAgora"></span> • Itens: <span id="totalItens"></span></small>
+</div>
+<div class="card"><div id="lista"></div></div>
+<div class="card"><button class="btn btn-primary" id="btnPDF">📄 GERAR PDF ELABORADO</button> <button class="btn btn-ghost" id="btnWhats">WhatsApp</button></div>
+</main>
+<script>
+// ÍCONE GERADO (corrige ícone Google)
+function genIcon(s){const c=document.createElement('canvas');c.width=s;c.height=s;const x=c.getContext('2d');x.fillStyle='#1b5e20';x.fillRect(0,0,s,s);x.fillStyle='#fff';x.beginPath();x.arc(s/2,s/2,s*0.38,0,7);x.fill();x.fillStyle='#81c784';x.beginPath();x.arc(s/2,s/2,s*0.32,0,7);x.fill();x.fillStyle='#1b5e20';x.font=`bold ${s*0.22}px Arial`;x.textAlign='center';x.textBaseline='middle';x.fillText('SL',s/2,s/2);return c.toDataURL()}
+const i192=genIcon(192),i512=genIcon(512);document.getElementById('favicon').href=i192;
+const manifest={name:"Sítio Recanto da Limeira",short_name:"Recanto Limeira",start_url:".",display:"standalone",background_color:"#1b5e20",theme_color:"#1b5e20",icons:[{src:i192,sizes:"192x192",type:"image/png",purpose:"any maskable"},{src:i512,sizes:"512x512",type:"image/png",purpose:"any maskable"}]};
+const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const link=document.createElement('link');link.rel='manifest';link.href=URL.createObjectURL(mBlob);document.head.appendChild(link);
+let aLink=document.createElement('link');aLink.rel='apple-touch-icon';aLink.href=i192;document.head.appendChild(aLink);
 
-  <header>
-    <h1>🌿 Sítio Recanto da Limeira</h1>
-    <p>Controle de Suprimentos e Compras</p>
-  </header>
+// DADOS DO SEU PDF
+const modelo=[["Ração cachorro tufão 25kl",1],["Gás cozinha",2],["Algicida manutenção",3],["Algicida de choque",3],["Pastilhas de cloro",6],["Cloro Balde",1],["Sacos de lixo 100L",1],["Detergente",5],["Sabão barra",1],["Sabão em pó",1],["Veneno de rato pastilhas",2],["Veneno formiga",10],["Flutuador de pastilhas de cloro",2],["Carretel nylon roçadeira",1],["Desenfetante 5L",1],["Limpa pedra 5l",1],["Elevador de PH",4],["Esponja de aço (Bombril)",2],["Esponja louças kit 4 uni",1],["Fósforo caixinha maço",1],["Aromatizador ambiente",1],["Rodo de passar pano medio",1],["Papel Higiênico",1],["Elevador de alcalinidade",3]];
+let itens=JSON.parse(localStorage.getItem('limeira_itens')||'null')||modelo.map((m,i)=>({id:Date.now()+i,nome:m[0],qtd:m[1]}));
+let statusCompra=localStorage.getItem('limeira_status')||'NORMAL';
+function save(){localStorage.setItem('limeira_itens',JSON.stringify(itens));localStorage.setItem('limeira_status',statusCompra);render()}
+function render(){document.getElementById('totalItens').textContent=itens.length;document.getElementById('dtAgora').textContent=new Date().toLocaleString('pt-BR');const b=(document.getElementById('busca').value||'').toLowerCase();const l=document.getElementById('lista');l.innerHTML='';itens.filter(it=>!b||it.nome.toLowerCase().includes(b)).forEach(it=>{const d=document.createElement('div');d.className='item';d.innerHTML=`<b>${it.nome}</b><span><button onclick="altQtd(${it.id},-1)">-</button> ${it.qtd} <button onclick="altQtd(${it.id},1)">+</button> <button onclick="rem(${it.id})">✕</button></span>`;l.appendChild(d)})}
+window.altQtd=(id,d)=>{const it=itens.find(x=>x.id===id);it.qtd=Math.max(1,it.qtd+d);save()};window.rem=id=>{itens=itens.filter(x=>x.id!==id);save()};
+document.getElementById('btnAdd').onclick=()=>{const n=document.getElementById('inpProduto').value.trim();if(!n)return;itens.push({id:Date.now(),nome:n,qtd:parseInt(document.getElementById('inpQtd').value)||1});save();document.getElementById('inpProduto').value=''};
+document.getElementById('btnLimpar').onclick=()=>{if(confirm('Limpar?')){itens=[];save()}};document.getElementById('btnModelo').onclick=()=>{itens=modelo.map((m,i)=>({id:Date.now()+i,nome:m[0],qtd:m[1]}));save()};
+document.getElementById('busca').oninput=render;document.getElementById('inpStatus').onchange=e=>{statusCompra=e.target.value;save()};
 
-  <div class="status-bar">
-    <span id="display-datetime">📅 --/--/---- --:--</span>
-    <span id="display-urgency" class="badge badge-normal">NORMAL</span>
-  </div>
+function gerarPDF(){const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'pt',format:'a4'});const W=doc.internal.pageSize.getWidth();doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(27,94,32);doc.text('SÍTIO RECANTO DA LIMEIRA',W/2,38,{align:'center'});doc.setFontSize(11);doc.setTextColor(40,40,40);doc.setFont('helvetica','normal');doc.text('Controle de Suprimentos e Compras',W/2,54,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(27,94,32);doc.text(`Data/Hora: ${new Date().toLocaleString('pt-BR')}`,40,78);doc.text(`Status: ${statusCompra}`,W-40,78,{align:'right'});doc.setDrawColor(27,94,32);doc.line(40,84,W-40,84);doc.autoTable({startY:92,head:[['Produto / Suprimento','Quantidade']],body:itens.map(i=>[i.nome,i.qtd.toString()]),headStyles:{fillColor:[232,245,233],textColor:[27,94,32]},columnStyles:{1:{halign:'center',fontStyle:'bold',cellWidth:80}},margin:{left:40,right:40}});return doc}
+document.getElementById('btnPDF').onclick=()=>{gerarPDF().save(`Recanto_Limeira_${new Date().toISOString().slice(0,10)}.pdf`)};
+document.getElementById('btnWhats').onclick=()=>{const t=itens.map(i=>`• ${i.nome} - ${i.qtd}`).join('\n');window.open(`https://wa.me/?text=${encodeURIComponent(`*SÍTIO RECANTO DA LIMEIRA*\n${t}`)}`)};
 
-  <main>
-    <div class="card">
-      <form id="add-item-form">
-        <div class="form-group">
-          <label for="item-name">Nome do Item</label>
-          <input type="text" id="item-name" class="form-control" placeholder="Ex: Arroz, Detergente..." required>
-        </div>
-        <div class="form-group">
-          <label for="item-qty">Quantidade</label>
-          <input type="text" id="item-qty" class="form-control" placeholder="Ex: 2, 5 kg, 1 saco..." required>
-        </div>
-        <button type="submit" class="btn btn-primary">+ ADICIONAR ITEM</button>
-      </form>
-    </div>
-
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-      <span style="font-weight: 700; font-size: 0.9rem;">ITENS DA LISTA (<span id="total-count">0</span>)</span>
-      <button id="btn-clear-all" type="button" class="btn btn-outline" style="width: auto; padding: 6px 12px; font-size: 0.8rem;">🧹 LIMPAR</button>
-    </div>
-
-    <div id="items-container"></div>
-  </main>
-
-  <div class="fixed-footer">
-    <button id="btn-generate-pdf" type="button" class="btn btn-primary">📥 GERAR PDF / IMPRIMIR</button>
-  </div>
-
-  <div id="modal-start" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-title">🌿 Novo Pedido</div>
-      <p style="font-size: 0.85rem; color: #555;">Data e hora da lista:</p>
-      <p id="modal-datetime" style="font-weight: bold; margin: 4px 0 16px 0; font-size: 1rem;"></p>
-      <label style="font-size: 0.85rem; font-weight: 600;">Nível de Urgência:</label>
-      <div class="urgency-selector">
-        <div id="opt-normal" class="urgency-option" onclick="selectUrgency('NORMAL')">🟢 Normal</div>
-        <div id="opt-urgente" class="urgency-option" onclick="selectUrgency('URGENTE')">🔴 Urgente</div>
-      </div>
-      <button id="btn-start-order" type="button" class="btn btn-primary" disabled>INICIAR PEDIDO</button>
-    </div>
-  </div>
-
-  <div id="modal-edit" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-title">✏️ Editar Item</div>
-      <form id="edit-item-form">
-        <input type="hidden" id="edit-item-id">
-        <div class="form-group">
-          <label for="edit-item-name">Nome do item</label>
-          <input type="text" id="edit-item-name" class="form-control" required>
-        </div>
-        <div class="form-group">
-          <label for="edit-item-qty">Quantidade</label>
-          <input type="text" id="edit-item-qty" class="form-control" required>
-        </div>
-        <div style="display: flex; gap: 8px; margin-top: 16px;">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-edit')">CANCELAR</button>
-          <button type="submit" class="btn btn-primary">SALVAR</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- CONTAINER DE IMPRESSÃO COMPACTO -->
-  <div id="print-area">
-    <div class="pdf-header">
-      <h1>SÍTIO RECANTO DA LIMEIRA</h1>
-      <p style="font-size: 9pt; color: #555;">Controle de Suprimentos e Compras</p>
-      <div class="pdf-meta">
-        <span>Data/Hora: <span id="pdf-datetime"></span></span>
-        <span>Status: <span id="pdf-urgency"></span></span>
-      </div>
-    </div>
-    <table class="pdf-table">
-      <thead>
-        <tr>
-          <th style="width: 70%;">Produto / Suprimento</th>
-          <th style="width: 30%;">Quantidade</th>
-        </tr>
-      </thead>
-      <tbody id="pdf-table-body"></tbody>
-    </table>
-  </div>
-
-  <div id="toast" class="toast"></div>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(function(err) {
-        console.log('Erro ao registrar SW:', err);
-      });
-    }
-
-    var state = { datetime: '', urgency: '', items: [] };
-    var tempUrgency = '';
-
-    window.onload = function() { initApp(); };
-
-    function showToast(msg) {
-      var toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.classList.add('show');
-      setTimeout(function() { toast.classList.remove('show'); }, 2200);
-    }
-
-    function initApp() {
-      var saved = localStorage.getItem('recanto_limeira_v4');
-      if (saved) {
-        try { state = JSON.parse(saved); } catch (e) { state = { datetime: '', urgency: '', items: [] }; }
-      }
-      if (!state.items) state.items = [];
-      if (!state.datetime || !state.urgency) { openStartModal(); } else { updateUI(); }
-      setupEvents();
-    }
-
-    function saveState() {
-      localStorage.setItem('recanto_limeira_v4', JSON.stringify(state));
-      updateUI();
-    }
-
-    function formatDate(d) {
-      var pad = function(n) { return n < 10 ? '0' + n : n; };
-      return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-    }
-
-    function openStartModal() {
-      state.datetime = formatDate(new Date());
-      document.getElementById('modal-datetime').textContent = state.datetime;
-      tempUrgency = '';
-      document.getElementById('opt-normal').className = 'urgency-option';
-      document.getElementById('opt-urgente').className = 'urgency-option';
-      document.getElementById('btn-start-order').disabled = true;
-      openModal('modal-start');
-    }
-
-    function selectUrgency(urg) {
-      tempUrgency = urg;
-      document.getElementById('opt-normal').className = 'urgency-option' + (urg === 'NORMAL' ? ' selected-normal' : '');
-      document.getElementById('opt-urgente').className = 'urgency-option' + (urg === 'URGENTE' ? ' selected-urgente' : '');
-      document.getElementById('btn-start-order').disabled = false;
-    }
-
-    function openModal(id) { document.getElementById(id).classList.add('active'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-    function setupEvents() {
-      document.getElementById('btn-start-order').onclick = function() {
-        if (!tempUrgency) return;
-        state.urgency = tempUrgency;
-        saveState();
-        closeModal('modal-start');
-      };
-
-      document.getElementById('add-item-form').onsubmit = function(e) {
-        e.preventDefault();
-        var nameInput = document.getElementById('item-name');
-        var qtyInput = document.getElementById('item-qty');
-        var name = nameInput.value.trim();
-        var qty = qtyInput.value.trim();
-        if (!name || !qty) return;
-        state.items.push({ id: String(Date.now()), name: name, qty: qty });
-        saveState();
-        nameInput.value = '';
-        qtyInput.value = '';
-        nameInput.focus();
-        showToast('Item adicionado!');
-      };
-
-      document.getElementById('edit-item-form').onsubmit = function(e) {
-        e.preventDefault();
-        var id = document.getElementById('edit-item-id').value;
-        for (var i = 0; i < state.items.length; i++) {
-          if (state.items[i].id === id) {
-            state.items[i].name = document.getElementById('edit-item-name').value.trim();
-            state.items[i].qty = document.getElementById('edit-item-qty').value.trim();
-            break;
-          }
-        }
-        saveState();
-        closeModal('modal-edit');
-        showToast('Item atualizado!');
-      };
-
-      document.getElementById('btn-clear-all').onclick = function() {
-        if (!state.items || state.items.length === 0) return showToast('Lista já está vazia!');
-        if (confirm('Deseja apagar todos os itens da lista?')) {
-          state.items = [];
-          saveState();
-          showToast('Lista limpa!');
-        }
-      };
-
-      document.getElementById('btn-generate-pdf').onclick = downloadPDF;
-    }
-
-    function updateUI() {
-      document.getElementById('display-datetime').textContent = '📅 ' + (state.datetime || '--/--/---- --:--');
-      var urgEl = document.getElementById('display-urgency');
-      urgEl.textContent = state.urgency || 'NORMAL';
-      urgEl.className = 'badge ' + (state.urgency === 'URGENTE' ? 'badge-urgente' : 'badge-normal');
-      document.getElementById('total-count').textContent = state.items ? state.items.length : 0;
-      var container = document.getElementById('items-container');
-      container.innerHTML = '';
-
-      if (!state.items || state.items.length === 0) {
-        container.innerHTML = '<p style="text-align:center; padding: 40px 10px; color:#888;">Sua lista está vazia.</p>';
-        return;
-      }
-
-      for (var i = 0; i < state.items.length; i++) {
-        var item = state.items[i];
-        var itemEl = document.createElement('div');
-        itemEl.className = 'item-card';
-        itemEl.innerHTML = 
-          '<div>' +
-            '<div class="item-name">' + escapeHTML(item.name) + '</div>' +
-            '<div class="item-qty">Qtd: ' + escapeHTML(item.qty) + '</div>' +
-          '</div>' +
-          '<div>' +
-            '<button type="button" class="action-btn" onclick="openEditItem(\'' + item.id + '\')">✏️</button>' +
-            '<button type="button" class="action-btn" onclick="deleteItem(\'' + item.id + '\')">🗑️</button>' +
-          '</div>';
-        container.appendChild(itemEl);
-      }
-    }
-
-    function escapeHTML(str) {
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    function openEditItem(id) {
-      var item = null;
-      for (var i = 0; i < state.items.length; i++) {
-        if (state.items[i].id === id) { item = state.items[i]; break; }
-      }
-      if (!item) return;
-      document.getElementById('edit-item-id').value = item.id;
-      document.getElementById('edit-item-name').value = item.name;
-      document.getElementById('edit-item-qty').value = item.qty;
-      openModal('modal-edit');
-    }
-
-    function deleteItem(id) {
-      state.items = state.items.filter(function(i) { return i.id !== id; });
-      saveState();
-      showToast('Item removido!');
-    }
-
-    function downloadPDF() {
-      if (!state.items || state.items.length === 0) {
-        showToast('⚠️ Adicione itens antes de gerar o PDF!');
-        return;
-      }
-
-      document.getElementById('pdf-datetime').textContent = state.datetime;
-      document.getElementById('pdf-urgency').textContent = state.urgency;
-      var tbody = document.getElementById('pdf-table-body');
-      tbody.innerHTML = '';
-
-      for (var i = 0; i < state.items.length; i++) {
-        var tr = document.createElement('tr');
-        tr.innerHTML = '<td>' + escapeHTML(state.items[i].name) + '</td><td style="font-weight: bold;">' + escapeHTML(state.items[i].qty) + '</td>';
-        tbody.appendChild(tr);
-      }
-
-      setTimeout(function() {
-        window.print();
-      }, 150);
-    }
-  </script>
+// PWA OFFLINE
+const sw=`const C='limeira-v3';self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(['.'])).then(()=>self.skipWaiting()))});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{if(e.request.url.includes('cdnjs'))caches.open(C).then(c=>c.put(e.request,res.clone()));return res})).catch(()=>caches.match('.')))});`;
+const swB=new Blob([sw],{type:'text/javascript'});if('serviceWorker' in navigator)navigator.serviceWorker.register(URL.createObjectURL(swB));
+let dp;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;document.getElementById('btnInstall').style.display='block'});document.getElementById('btnInstall').onclick=async()=>{dp.prompt();await dp.userChoice;dp=null};
+render();
+</script>
 </body>
 </html>
