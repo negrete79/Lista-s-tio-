@@ -12,7 +12,6 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%232E7D32'/><text x='50%' y='55%' font-size='260' text-anchor='middle' dominant-baseline='middle'>🏡</text></svg>">
   <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%232E7D32'/><text x='50%' y='55%' font-size='260' text-anchor='middle' dominant-baseline='middle'>🏡</text></svg>">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     :root {
@@ -71,19 +70,19 @@
     .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; z-index: 2000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     .toast.show { opacity: 1; }
 
+    /* ESTILOS DE IMPRESSÃO / GERAR PDF */
     @media print {
-      body * { visibility: hidden; }
-      #pdf-box-render, #pdf-box-render * { visibility: visible; }
-      #pdf-box-render { position: absolute; left: 0; top: 0; width: 100%; }
+      body * { visibility: hidden !important; }
+      #print-area, #print-area * { visibility: visible !important; }
+      #print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; display: block !important; }
     }
 
-    #pdf-container-wrapper { display: none; }
-    .pdf-box { background: #ffffff; padding: 15px; font-size: 10pt; color: #333; }
+    #print-area { display: none; background: #ffffff; padding: 10px; color: #000; }
     .pdf-header { border-bottom: 2px solid #2E7D32; padding-bottom: 8px; margin-bottom: 12px; text-align: center; }
     .pdf-header h1 { font-size: 16pt; color: #1B5E20; margin-bottom: 2px; }
-    .pdf-meta { display: flex; justify-content: space-between; background: #f0f4f1; padding: 6px 10px; margin-top: 8px; font-weight: bold; border-radius: 4px; font-size: 9pt; color: #1B5E20; }
+    .pdf-meta { display: flex; justify-content: space-between; background: #f0f4f1; padding: 6px 10px; margin-top: 8px; font-weight: bold; border-radius: 4px; font-size: 10pt; color: #1B5E20; }
     .pdf-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .pdf-table th, .pdf-table td { border: 1px solid #cccccc; padding: 6px 8px; text-align: left; font-size: 9pt; }
+    .pdf-table th, .pdf-table td { border: 1px solid #999; padding: 8px; text-align: left; font-size: 10pt; }
     .pdf-table th { background: #e8f5e9; font-weight: bold; color: #1B5E20; }
     .pdf-table tr { page-break-inside: avoid; }
   </style>
@@ -162,26 +161,25 @@
     </div>
   </div>
 
-  <div id="pdf-container-wrapper">
-    <div id="pdf-box-render" class="pdf-box">
-      <div class="pdf-header">
-        <h1>SÍTIO RECANTO DA LIMEIRA</h1>
-        <p>Controle de Suprimentos e Compras</p>
-        <div class="pdf-meta">
-          <span>Data/Hora: <span id="pdf-datetime"></span></span>
-          <span>Status: <span id="pdf-urgency"></span></span>
-        </div>
+  <!-- ÁREA DE IMPRESSÃO NATIVA -->
+  <div id="print-area">
+    <div class="pdf-header">
+      <h1>SÍTIO RECANTO DA LIMEIRA</h1>
+      <p>Controle de Suprimentos e Compras</p>
+      <div class="pdf-meta">
+        <span>Data/Hora: <span id="pdf-datetime"></span></span>
+        <span>Status: <span id="pdf-urgency"></span></span>
       </div>
-      <table class="pdf-table">
-        <thead>
-          <tr>
-            <th style="width: 70%;">Produto / Suprimento</th>
-            <th style="width: 30%;">Quantidade</th>
-          </tr>
-        </thead>
-        <tbody id="pdf-table-body"></tbody>
-      </table>
     </div>
+    <table class="pdf-table">
+      <thead>
+        <tr>
+          <th style="width: 70%;">Produto / Suprimento</th>
+          <th style="width: 30%;">Quantidade</th>
+        </tr>
+      </thead>
+      <tbody id="pdf-table-body"></tbody>
+    </table>
   </div>
 
   <div id="toast" class="toast"></div>
@@ -353,42 +351,21 @@
         showToast('⚠️ Adicione itens antes de gerar o PDF!');
         return;
       }
+
       document.getElementById('pdf-datetime').textContent = state.datetime;
       document.getElementById('pdf-urgency').textContent = state.urgency;
       var tbody = document.getElementById('pdf-table-body');
       tbody.innerHTML = '';
+
       for (var i = 0; i < state.items.length; i++) {
         var tr = document.createElement('tr');
         tr.innerHTML = '<td>' + escapeHTML(state.items[i].name) + '</td><td style="font-weight: bold;">' + escapeHTML(state.items[i].qty) + '</td>';
         tbody.appendChild(tr);
       }
-      var wrapper = document.getElementById('pdf-container-wrapper');
-      wrapper.style.display = 'block';
 
-      if (typeof html2pdf !== 'undefined') {
-        showToast('Gerando PDF multipágina...');
-        var element = document.getElementById('pdf-box-render');
-        
-        var opt = {
-          margin: [10, 10, 10, 10],
-          filename: 'Pedido_Suprimentos_Recanto_da_Limeira.pdf',
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
-
-        html2pdf().set(opt).from(element).save().then(function() {
-          wrapper.style.display = 'none';
-          showToast('PDF gerado com sucesso!');
-        }).catch(function() {
-          window.print();
-          wrapper.style.display = 'none';
-        });
-      } else {
+      setTimeout(function() {
         window.print();
-        wrapper.style.display = 'none';
-      }
+      }, 200);
     }
   </script>
 </body>
