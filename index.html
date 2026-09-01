@@ -1,1130 +1,1185 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sítio Recanto da Limeira — Suprimentos</title>
-<meta name="description" content="Controle de suprimentos e compras do Sítio Recanto da Limeira. Funciona offline e gera o pedido em PDF A4.">
-<meta name="theme-color" content="#1B5E20">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="data:,">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700&display=swap" rel="stylesheet">
-<style>
-:root{
-  --verde:#2E7D32; --verde-esc:#1B5E20; --fundo:#F3F6F4; --branco:#fff;
-  --texto:#263238; --urgente:#C62828; --texto-2:#5B6B60; --borda:#DCE4DD;
-  --tinte:#E8F1E9; --radius:16px;
-  --shadow:0 2px 10px rgba(38,50,56,.06), 0 12px 28px rgba(38,50,56,.07);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
-body{
-  font-family:'Atkinson Hyperlegible',-apple-system,'Segoe UI',Arial,sans-serif;
-  background:var(--fundo); color:var(--texto); min-height:100dvh;
-  padding-bottom:calc(112px + env(safe-area-inset-bottom));
-}
-body.lock{overflow:hidden}
-:focus-visible{outline:3px solid var(--verde);outline-offset:2px}
-button{font:inherit;-webkit-tap-highlight-color:transparent}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Controle de Suprimentos e Compras do Sítio Recanto da Limeira — monte a lista de compras offline e envie o pedido em PDF ao patrão.">
+  <meta name="theme-color" content="#1B5E20">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Recanto Limeira">
+  <title>Sítio Recanto da Limeira — Controle de Suprimentos e Compras</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    /* ============================================================
+       SÍTIO RECANTO DA LIMEIRA — Estilos (mobile-first)
+       ============================================================ */
+    :root{
+      --verde:#2E7D32;
+      --verde-escuro:#1B5E20;
+      --fundo:#F3F6F4;
+      --branco:#FFFFFF;
+      --texto:#263238;
+      --urgente:#C62828;
+      --texto-suave:#5f6f66;
+      --linha:#d9e3dc;
+      --verde-suave:#e8f2ea;
+    }
+    *{ box-sizing:border-box; }
+    [hidden]{ display:none !important; }
+    html{ -webkit-text-size-adjust:100%; }
+    body{
+      margin:0;
+      background:var(--fundo);
+      color:var(--texto);
+      font-family:'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size:16px;
+      line-height:1.45;
+      min-height:100dvh;
+      touch-action:manipulation;
+    }
+    button, input, select{ font-family:inherit; }
 
-/* ============ BARRA SUPERIOR ============ */
-.appbar{position:sticky;top:0;z-index:40;background:var(--verde-esc);color:#fff;
-  padding:13px 16px 12px;box-shadow:0 4px 18px rgba(27,94,32,.35)}
-.appbar .row{display:flex;align-items:center;gap:12px;max-width:660px;margin:0 auto}
-.brand-stamp{width:42px;height:42px;flex:none;border:1.5px solid rgba(255,255,255,.55);
-  border-radius:50%;display:grid;place-items:center;color:#D7EBD7}
-.appbar h1{font-family:Fraunces,Georgia,serif;font-size:18.5px;font-weight:600;line-height:1.12}
-.appbar .sub{font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#A7C9A8;font-weight:700;margin-top:3px}
-.net-dot{margin-left:auto;width:11px;height:11px;border-radius:50%;background:#93A798;flex:none}
-.net-dot.on{background:#8BC34A;box-shadow:0 0 0 3px rgba(139,195,74,.28)}
-.order-line{max-width:660px;margin:11px auto 0;display:flex;align-items:center;gap:10px;
-  flex-wrap:wrap;font-size:12.5px;color:#CFE6CF;font-weight:700}
-.ol-date{display:inline-flex;align-items:center;gap:6px}
-.badge{display:inline-flex;align-items:center;gap:7px;padding:4px 11px;border-radius:999px;
-  font-size:11px;font-weight:700;letter-spacing:.09em}
-.badge .dot{width:9px;height:9px;border-radius:50%}
-.b-nor{background:rgba(255,255,255,.15);color:#D7EBD7}
-.b-nor .dot{background:#8BC34A}
-.b-urg{background:var(--urgente);color:#fff;animation:softPulse 2.4s ease-in-out infinite}
-.b-urg .dot{background:#fff}
-@keyframes softPulse{0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,.5)}50%{box-shadow:0 0 0 7px rgba(198,40,40,0)}}
+    /* ---------- Cabeçalho ---------- */
+    #app-header{
+      position:sticky; top:0; z-index:50;
+      background:var(--verde-escuro); color:#fff;
+      padding:14px 16px 12px;
+      box-shadow:0 2px 12px rgba(20,50,24,.35);
+    }
+    .marca h1{
+      margin:0;
+      font-family:Georgia,'Times New Roman',serif;
+      font-size:21px; font-weight:700; letter-spacing:.3px;
+    }
+    .marca p{
+      margin:3px 0 0;
+      font-size:10.5px; letter-spacing:1.9px; text-transform:uppercase;
+      color:rgba(255,255,255,.72);
+    }
+    #meta-pedido{ display:flex; align-items:center; gap:8px; margin-top:11px; flex-wrap:wrap; }
+    .meta-data{
+      font-size:13px; font-weight:600;
+      background:rgba(255,255,255,.13); padding:5px 11px; border-radius:999px;
+    }
+    .status-pill{
+      font-size:12px; font-weight:700; letter-spacing:.6px;
+      padding:5px 12px; border-radius:999px; white-space:nowrap;
+    }
+    .status-pill.normal{ background:#E8F3E9; color:var(--verde-escuro); }
+    .status-pill.urgente{ background:var(--urgente); color:#fff; }
+    #btn-novo-topo{
+      margin-left:auto;
+      background:transparent; color:#fff;
+      border:1.5px solid rgba(255,255,255,.55);
+      border-radius:999px; padding:6px 13px; min-height:35px;
+      font-size:11.5px; font-weight:700; letter-spacing:.6px; cursor:pointer;
+      transition:background .15s;
+    }
+    #btn-novo-topo:hover{ background:rgba(255,255,255,.12); }
 
-main{max-width:660px;margin:0 auto;padding:16px 14px 10px}
-.card{background:var(--branco);border:1px solid var(--borda);border-radius:var(--radius);
-  box-shadow:var(--shadow);padding:16px}
-.card-title{display:flex;align-items:center;gap:9px;font-family:Fraunces,Georgia,serif;
-  font-size:18px;color:var(--verde-esc);margin-bottom:14px}
-.card-title svg{color:var(--verde);flex:none}
+    /* ---------- Estrutura ---------- */
+    main{ max-width:640px; margin:0 auto; padding:16px 14px 118px; }
 
-/* ============ BOTÕES ============ */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:54px;
-  padding:0 18px;border:none;border-radius:14px;font-size:15px;font-weight:700;
-  letter-spacing:.03em;cursor:pointer;transition:transform .12s ease,background .18s;
-  user-select:none}
-.btn:active{transform:scale(.97)}
-.btn-pri{background:var(--verde);color:#fff;box-shadow:0 6px 16px rgba(46,125,50,.28)}
-.btn-pri:hover{background:#286f2c}
-.btn-danger{background:var(--urgente);color:#fff;box-shadow:0 6px 16px rgba(198,40,40,.25)}
-.btn-ghost{background:#fff;color:var(--verde-esc);border:1.5px solid var(--borda)}
-.btn-warn{background:#fff;color:var(--urgente);border:1.5px solid #EAC3C2}
-.btn-block{width:100%}
-.btn-lg{min-height:58px;font-size:16px}
-.btn-sm{min-height:40px;padding:0 13px;font-size:12.5px;border-radius:11px;gap:7px}
-.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
-.iconbtn{width:42px;height:42px;flex:none;border-radius:11px;border:none;background:var(--tinte);
-  color:var(--verde-esc);display:grid;place-items:center;cursor:pointer;transition:.15s}
-.iconbtn:active{transform:scale(.92)}
-.iconbtn.del{background:#FDEBEA;color:var(--urgente)}
-.iconbtn.end{background:#EDF1EE;color:var(--texto-2)}
+    /* ---------- Tela inicial ---------- */
+    #tela-inicio{ display:flex; flex-direction:column; align-items:center; text-align:center; padding:46px 8px 20px; }
+    .emblema{ width:106px; height:106px; filter:drop-shadow(0 8px 18px rgba(27,94,32,.28)); }
+    #tela-inicio h2{
+      font-family:Georgia,'Times New Roman',serif;
+      color:var(--verde-escuro); font-size:27px; margin:20px 0 6px;
+    }
+    #tela-inicio > p{ color:var(--texto-suave); max-width:340px; margin:0 0 28px; }
 
-/* ============ CAMPOS ============ */
-.field{margin-bottom:14px}
-.field label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.09em;
-  text-transform:uppercase;color:var(--texto-2);margin-bottom:6px}
-.field input,.field select{width:100%;height:52px;border:1.5px solid var(--borda);
-  border-radius:12px;background:#fff;padding:0 14px;font:inherit;font-size:16px;color:var(--texto)}
-.field input:focus,.field select:focus{border-color:var(--verde)}
-.field.err input,.field.err select{border-color:var(--urgente)}
-.err-msg{display:none;color:var(--urgente);font-size:12px;margin-top:5px;font-weight:700}
-.field.err .err-msg{display:block}
-.hint{font-size:11.5px;color:#7C8C82;margin-top:5px}
-.selwrap{position:relative}
-.selwrap select{appearance:none;-webkit-appearance:none;padding-right:46px;cursor:pointer}
-.chev{position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;
-  color:var(--texto-2);display:flex}
+    /* ---------- Botões ---------- */
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      min-height:52px; padding:12px 20px;
+      border:none; border-radius:13px;
+      font-size:15px; font-weight:700; letter-spacing:.4px;
+      cursor:pointer;
+      transition:transform .12s ease, background .15s ease, border-color .15s ease, color .15s ease;
+    }
+    .btn:active{ transform:scale(.98); }
+    .btn-primario{ background:var(--verde); color:#fff; box-shadow:0 4px 14px rgba(46,125,50,.28); }
+    .btn-primario:hover{ background:var(--verde-escuro); }
+    .btn-primario:disabled{ background:#a7bfa9; box-shadow:none; cursor:not-allowed; }
+    .btn-fantasma{ background:#fff; color:var(--verde-escuro); border:1.5px solid #c9d8cd; }
+    .btn-fantasma:hover{ border-color:var(--verde); color:var(--verde); }
+    .btn-perigo{ background:var(--urgente); color:#fff; }
+    .btn-perigo:hover{ background:#a91f1f; }
+    .btn-full{ width:100%; }
+    button:focus-visible, input:focus-visible, select:focus-visible{
+      outline:3px solid rgba(46,125,50,.45); outline-offset:1px;
+    }
 
-/* ============ TELA INICIAL ============ */
-.start{min-height:calc(100dvh - 150px);display:flex;align-items:center;justify-content:center;
-  padding:24px 16px 36px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Cg fill='none' stroke='%232E7D32' stroke-opacity='.08' stroke-width='1.5' stroke-linecap='round'%3E%3Cpath d='M40 34c0 13-8 21-20 21 0-12 7-21 20-21Z'/%3E%3Cpath d='M20 55c4-7 10-12 15-15'/%3E%3Cpath d='M112 108c0 13-8 21-20 21 0-12 7-21 20-21Z'/%3E%3Cpath d='M92 129c4-7 10-12 15-15'/%3E%3C/g%3E%3C/svg%3E")}
-.start-card{background:#fff;border:1px solid var(--borda);border-radius:24px;
-  box-shadow:var(--shadow);padding:36px 26px 24px;max-width:420px;width:100%;text-align:center}
-.big-stamp{width:84px;height:84px;border:2.5px solid var(--verde);border-radius:50%;
-  display:grid;place-items:center;color:var(--verde);margin:0 auto 16px}
-.start-card h2{font-family:Fraunces,Georgia,serif;font-size:31px;line-height:1.12;
-  color:var(--verde-esc);margin-bottom:10px}
-.start-sub{font-size:14px;color:var(--texto-2);line-height:1.5;margin-bottom:22px}
-.start-card .btn{margin-bottom:10px}
-.start-note{margin-top:12px;font-size:11.5px;color:#7C8C82;display:flex;align-items:center;
-  justify-content:center;gap:6px}
+    /* ---------- Cartão do formulário ---------- */
+    .card{
+      background:#fff; border-radius:16px; padding:18px 16px;
+      box-shadow:0 1px 4px rgba(38,50,56,.07), 0 8px 24px rgba(38,50,56,.05);
+    }
+    .card-titulo{
+      margin:0 0 14px; font-size:12px; letter-spacing:1.7px; font-weight:700;
+      color:var(--verde-escuro); text-transform:uppercase;
+    }
+    .campo{ margin-bottom:14px; }
+    .campo label{ display:block; font-size:13.5px; font-weight:600; margin-bottom:6px; color:#37474F; }
+    .campo input, .campo select{
+      width:100%; min-height:50px; padding:12px 14px;
+      font-size:16px; color:var(--texto); background:#fff;
+      border:1.5px solid var(--linha); border-radius:11px;
+      transition:border-color .15s, box-shadow .15s;
+    }
+    .campo input:focus, .campo select:focus{
+      border-color:var(--verde); box-shadow:0 0 0 3px rgba(46,125,50,.14); outline:none;
+    }
+    .campo select{
+      appearance:none; -webkit-appearance:none; padding-right:44px;
+      background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%232E7D32' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 14px center;
+    }
+    .erro-msg{ display:block; color:var(--urgente); font-size:12.5px; margin-top:5px; font-weight:600; }
+    .invalido{ border-color:var(--urgente) !important; }
 
-/* ============ CARD DO PEDIDO ============ */
-.order-meta{padding:14px 16px;margin-bottom:14px}
-.om-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.om-lbl{font-size:10.5px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
-  color:var(--texto-2);margin-bottom:4px}
-.om-date{display:flex;align-items:center;gap:7px;font-weight:700;font-size:15.5px}
-.om-date svg{color:var(--verde);flex:none}
-.om-row2{margin-top:13px;border-top:1px dashed var(--borda);padding-top:12px}
-.urg-toggle{display:flex;gap:8px;margin-top:7px}
-.uchip{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;
-  border-radius:12px;border:1.5px solid var(--borda);background:#fff;font-size:12.5px;
-  font-weight:700;letter-spacing:.06em;color:var(--texto-2);cursor:pointer;transition:.18s}
-.uchip .dot{width:10px;height:10px;border-radius:50%;background:#B9C6BC;transition:.18s}
-.uchip:active{transform:scale(.97)}
-.uchip.sel-nor.sel{border-color:var(--verde);background:var(--tinte);color:var(--verde-esc)}
-.uchip.sel-nor.sel .dot{background:var(--verde)}
-.uchip.sel-urg.sel{border-color:var(--urgente);background:#FDEBEA;color:var(--urgente)}
-.uchip.sel-urg.sel .dot{background:var(--urgente)}
+    /* ---------- Lista ---------- */
+    .lista-topo{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin:20px 2px 10px;
+    }
+    .lista-contador{ margin:0; font-size:14px; color:var(--texto-suave); }
+    .lista-contador strong{ color:var(--verde-escuro); font-size:18px; }
+    .btn-limpar{
+      background:#fff; color:var(--urgente);
+      border:1.5px solid #efc7c7; border-radius:10px;
+      min-height:42px; padding:8px 14px;
+      font-weight:700; font-size:12.5px; letter-spacing:.3px; cursor:pointer;
+      transition:background .15s, opacity .15s;
+    }
+    .btn-limpar:hover:not(:disabled){ background:#fdecea; }
+    .btn-limpar:disabled{ opacity:.45; cursor:not-allowed; }
+    .grupo{
+      background:#fff; border-radius:14px; overflow:hidden;
+      box-shadow:0 1px 4px rgba(38,50,56,.08);
+      margin-bottom:14px;
+      animation:surgir .25s ease both;
+    }
+    @keyframes surgir{ from{ opacity:0; transform:translateY(8px); } }
+    .grupo-cab{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      background:var(--verde-suave); border-left:4px solid var(--verde);
+      padding:10px 14px;
+    }
+    .grupo-nome{ font-size:12.5px; font-weight:700; letter-spacing:.8px; color:var(--verde-escuro); }
+    .grupo-cont{
+      font-size:11.5px; font-weight:700; color:var(--verde-escuro);
+      background:rgba(46,125,50,.14); padding:3px 10px;
+      border-radius:999px; white-space:nowrap;
+    }
+    .grupo-lista{ list-style:none; margin:0; padding:0; }
+    .item{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:11px 14px; border-top:1px solid #eef3ef;
+    }
+    .item-info{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+    .item-nome{ font-weight:600; font-size:15px; overflow-wrap:anywhere; }
+    .item-qtd{ font-size:13px; color:var(--texto-suave); }
+    .item-acoes{ display:flex; gap:6px; flex-shrink:0; }
+    .btn-icone{
+      width:42px; height:42px; border:none; border-radius:10px;
+      background:#f1f5f2; font-size:17px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      transition:background .15s, transform .12s;
+    }
+    .btn-icone:hover{ background:#e2ece4; }
+    .btn-icone:active{ transform:scale(.94); }
+    .btn-icone.perigo:hover{ background:#fdecea; }
+    #lista-vazia{
+      text-align:center; color:var(--texto-suave);
+      background:#fff; border:1.5px dashed #c9d8cd;
+      border-radius:14px; padding:26px 16px; font-size:14.5px;
+    }
 
-/* ============ LISTA ============ */
-.list-top{display:flex;align-items:center;gap:10px;margin:26px 0 12px;flex-wrap:wrap}
-.list-top h2{font-family:Fraunces,Georgia,serif;font-size:19px;color:var(--verde-esc);
-  display:flex;align-items:center;gap:10px}
-.list-top .btn{margin-left:auto}
-.pill{font-size:11.5px;font-weight:700;background:var(--tinte);color:var(--verde-esc);
-  padding:3px 10px;border-radius:999px;letter-spacing:.02em}
-.empty{background:#fff;border:1.5px dashed var(--borda);border-radius:var(--radius);
-  padding:36px 18px;text-align:center;color:var(--texto-2);font-size:14px;line-height:1.5}
-.empty svg{color:#A5BBA9;display:block;margin:0 auto 12px}
-.cat-grp{margin-bottom:18px}
-.cat-head{display:flex;align-items:baseline;gap:8px;margin-bottom:9px}
-.cat-head h3{font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--verde-esc);font-weight:700;display:flex;align-items:center;gap:7px}
-.cat-head .cnt{margin-left:auto;font-size:11.5px;color:var(--texto-2);font-weight:700}
-.item{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--borda);
-  border-radius:14px;padding:9px 9px 9px 14px;margin-bottom:8px;
-  box-shadow:0 1px 3px rgba(38,50,56,.05);animation:pop .25s ease}
-@keyframes pop{from{opacity:0;transform:translateY(7px)}}
-.item .info{flex:1;min-width:0}
-.item .nome{font-weight:700;font-size:15px;overflow-wrap:anywhere;line-height:1.3}
-.item .qtd{display:inline-block;margin-top:4px;font-size:12.5px;color:var(--verde-esc);
-  background:var(--tinte);padding:2px 10px;border-radius:999px;font-weight:700;overflow-wrap:anywhere}
-.item .acts{display:flex;gap:6px}
+    /* ---------- Barra fixa de PDF ---------- */
+    #barra-pdf{
+      position:fixed; left:0; right:0; bottom:0; z-index:60;
+      display:flex; gap:10px;
+      padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+      background:#fff; box-shadow:0 -3px 16px rgba(38,50,56,.1);
+    }
+    #barra-pdf .btn{ flex:1; min-height:54px; font-size:13.5px; }
+    .btn-outline-pdf{ background:#fff; color:var(--verde-escuro); border:1.5px solid #c9d8cd; }
+    .btn-outline-pdf:hover{ border-color:var(--verde); color:var(--verde); }
 
-/* ============ RODAPÉ FIXO ============ */
-.footbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;
-  border-top:1px solid var(--borda);padding:10px 14px calc(10px + env(safe-area-inset-bottom));
-  display:flex;gap:10px}
-.footbar .btn{flex:1}
-.footbar .btn-pri2{background:var(--verde-esc);color:#fff}
-.footbar .btn-pri2:hover{background:#164f1a}
+    /* ---------- Modais ---------- */
+    .overlay{
+      position:fixed; inset:0; z-index:900;
+      background:rgba(24,33,27,.55);
+      display:flex; align-items:center; justify-content:center; padding:18px;
+      opacity:0; transition:opacity .18s ease;
+    }
+    .overlay.aberto{ opacity:1; }
+    .modal{
+      width:100%; max-width:410px;
+      background:#fff; border-radius:18px; padding:22px 20px 20px;
+      box-shadow:0 22px 60px rgba(0,0,0,.3);
+      transform:translateY(16px); transition:transform .18s ease;
+      max-height:calc(100dvh - 36px); overflow:auto;
+    }
+    .overlay.aberto .modal{ transform:translateY(0); }
+    .modal h3{ margin:0 0 6px; font-family:Georgia, serif; font-size:21px; color:var(--verde-escuro); }
+    .modal-sub{ margin:0 0 16px; color:var(--texto-suave); font-size:14px; }
+    .modal-acoes{ display:flex; gap:10px; margin-top:18px; }
+    .modal-acoes .btn{ flex:1; }
+    .data-capturada{
+      min-height:50px; display:flex; align-items:center;
+      padding:12px 14px; background:var(--verde-suave);
+      border-radius:11px; font-weight:700; color:var(--verde-escuro); font-size:16px;
+    }
+    .urgencias{ display:flex; gap:10px; }
+    .btn-urg{
+      flex:1; min-height:56px;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      border:2px solid var(--linha); border-radius:12px; background:#fff;
+      font-size:15.5px; font-weight:600; color:var(--texto); cursor:pointer;
+      transition:border-color .15s, background .15s;
+    }
+    .btn-urg.selecionada{ border-color:var(--verde); background:var(--verde-suave); box-shadow:inset 0 0 0 1.5px var(--verde); color:var(--verde-escuro); font-weight:700; }
+    .btn-urg.urg.selecionada{ border-color:var(--urgente); background:#fdecea; box-shadow:inset 0 0 0 1.5px var(--urgente); color:#8e1b1b; }
+    .conf-destaque{
+      margin:0 0 8px; font-size:19px; font-weight:800; text-align:center;
+      color:var(--texto); background:#f4f6f5; border-radius:10px; padding:12px;
+      overflow-wrap:anywhere;
+    }
+    .conf-nota{ margin:0; font-size:13px; color:var(--texto-suave); text-align:center; }
 
-/* ============ MODAIS ============ */
-.modal{position:fixed;inset:0;z-index:60;background:rgba(20,32,24,.58);display:none;
-  align-items:flex-end;justify-content:center}
-.modal.open{display:flex}
-.dialog{background:#fff;width:100%;max-width:480px;border-radius:22px 22px 0 0;
-  padding:22px 20px 20px;max-height:88dvh;overflow:auto;
-  animation:sheetUp .3s cubic-bezier(.2,.9,.3,1);box-shadow:0 -12px 40px rgba(0,0,0,.25)}
-@keyframes sheetUp{from{transform:translateY(42px);opacity:0}}
-@media(min-width:540px){
-  .modal{align-items:center;padding:26px}
-  .dialog{border-radius:22px;animation:dpop .24s ease}
-}
-@keyframes dpop{from{transform:scale(.96);opacity:0}}
-.d-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-.d-head h3{font-family:Fraunces,Georgia,serif;font-size:20px;color:var(--verde-esc)}
-.d-ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
-  background:var(--tinte);color:var(--verde-esc);flex:none}
-.d-lead{font-size:13px;color:var(--texto-2);margin-bottom:8px}
-.d-date{display:flex;align-items:center;gap:9px;background:var(--tinte);border-radius:12px;
-  padding:12px 14px;font-size:14.5px;color:var(--verde-esc);margin-bottom:16px}
-.d-date svg{color:var(--verde);flex:none}
-.d-date strong{font-size:16px}
-.urg-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
-.urg-opt{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;
-  column-gap:10px;align-items:center;text-align:left;border:1.5px solid var(--borda);
-  border-radius:14px;padding:12px;background:#fff;cursor:pointer;transition:.18s}
-.urg-opt .dot{grid-row:1/3;width:15px;height:15px;border-radius:50%;flex:none}
-.urg-opt[data-urg="normal"] .dot{background:var(--verde)}
-.urg-opt[data-urg="urgente"] .dot{background:var(--urgente)}
-.urg-opt .uo-t{font-weight:700;font-size:14.5px;color:var(--texto)}
-.urg-opt .uo-d{grid-column:2;font-size:11.5px;color:var(--texto-2);margin-top:2px;line-height:1.35}
-.urg-opt:active{transform:scale(.98)}
-.urg-opt.sel[data-urg="normal"]{border-color:var(--verde);background:var(--tinte)}
-.urg-opt.sel[data-urg="urgente"]{border-color:var(--urgente);background:#FDEBEA}
-.d-actions{display:flex;gap:10px;margin-top:6px}
-.d-actions .btn{flex:1}
-.warn-badge{width:54px;height:54px;border-radius:50%;background:#FDEBEA;color:var(--urgente);
-  display:grid;place-items:center;margin:0 auto 12px}
-.dlg-sm{text-align:center;max-width:400px}
-.d-name{font-size:19px;font-weight:700;margin:2px 0 6px;word-break:break-word}
-.d-warn{font-size:12.5px;color:var(--urgente);font-weight:700;margin-bottom:18px}
+    /* ---------- Pré-visualização (folha A4) ---------- */
+    #modal-previa{
+      padding:0; background:#232b26;
+      flex-direction:column; align-items:stretch; justify-content:stretch;
+    }
+    .previa-topo{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px; background:var(--verde-escuro); color:#fff; flex-shrink:0;
+    }
+    .previa-topo .btn{ min-height:44px; padding:8px 14px; font-size:13px; }
+    .btn-voltar{ background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.4); }
+    .btn-voltar:hover{ background:rgba(255,255,255,.22); }
+    .previa-titulo{
+      flex:1; text-align:center; font-size:13px; font-weight:600;
+      color:rgba(255,255,255,.85);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    #previa-scroll{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; padding:20px 14px 34px; }
+    #previa-folhas{ --escala:1; }
+    .folha-box{ width:calc(794px * var(--escala)); height:calc(1123px * var(--escala)); margin:0 auto; }
+    .folha{
+      width:794px; height:1123px; background:#fff; padding:38px;
+      transform:scale(var(--escala)); transform-origin:top left;
+      box-shadow:0 10px 34px rgba(0,0,0,.45);
+    }
+    .pagina-rotulo{
+      text-align:center; color:#93a39a; font-size:11.5px;
+      margin:10px 0 22px; letter-spacing:.5px;
+    }
 
-/* ============ PRÉ-VISUALIZAÇÃO (FOLHA A4) ============ */
-.preview{position:fixed;inset:0;z-index:70;background:#13221A;display:none;flex-direction:column}
-.preview.open{display:flex}
-.pv-bar{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#0E1B13;color:#fff;
-  border-bottom:1px solid rgba(255,255,255,.08)}
-.pv-back{display:flex;align-items:center;gap:6px;background:none;border:none;color:#CFE6CF;
-  font-size:14px;font-weight:700;min-height:44px;cursor:pointer}
-.pv-back:active{opacity:.7}
-.pv-title{flex:1;text-align:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-  color:#8FB491;font-weight:700}
-.pv-gen{display:flex;align-items:center;gap:8px;background:var(--verde);color:#fff;border:none;
-  border-radius:11px;min-height:44px;padding:0 14px;font-size:12.5px;font-weight:700;
-  letter-spacing:.04em;cursor:pointer}
-.pv-gen:active{transform:scale(.96)}
-.pv-stage{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:18px 10px 44px}
-.pv-wrap{position:relative;margin:0 auto;overflow:hidden}
-.pv-sheet{position:absolute;top:0;left:0;width:794px;min-height:1123px;background:#fff;
-  box-shadow:0 22px 55px rgba(0,0,0,.5);transform-origin:top left;padding:45px 45px 34px}
+    /* ---------- Toast ---------- */
+    #toast{
+      position:fixed; left:50%; bottom:calc(88px + env(safe-area-inset-bottom));
+      transform:translate(-50%, 14px);
+      background:var(--texto); color:#fff;
+      padding:11px 18px; border-radius:12px;
+      font-size:14px; font-weight:600; text-align:center;
+      max-width:min(92vw, 420px);
+      opacity:0; pointer-events:none;
+      transition:opacity .2s, transform .2s;
+      z-index:1200; box-shadow:0 8px 22px rgba(0,0,0,.3);
+    }
+    #toast.mostrar{ opacity:1; transform:translate(-50%, 0); }
+    #toast.erro{ background:var(--urgente); }
 
-/* ============ TEMPLATE DO DOCUMENTO (PDF / PREVIEW) ============ */
-.doc{width:704px;background:#fff;color:var(--texto);
-  font-family:'Atkinson Hyperlegible',Arial,sans-serif;font-size:13px;line-height:1.45}
-.keep{page-break-inside:avoid;break-inside:avoid}
-.dhead .brand{display:flex;align-items:center;gap:14px}
-.dstamp{width:54px;height:54px;flex:none;border:2.5px solid var(--verde-esc);border-radius:50%;
-  display:flex;align-items:center;justify-content:center;color:var(--verde-esc)}
-.dhead h2{font-family:Fraunces,Georgia,serif;font-size:23px;font-weight:700;letter-spacing:.05em;
-  color:var(--verde-esc);line-height:1.1}
-.dhead .brand p{font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
-  color:#61756A;margin-top:4px}
-.drule{height:3px;background:var(--verde-esc);margin:14px 0 12px;border-radius:2px}
-.dmeta{display:flex;justify-content:space-between;align-items:center;font-size:13px;flex-wrap:wrap;gap:8px}
-.chipd{display:inline-flex;align-items:center;gap:7px;padding:5px 13px;border-radius:999px;
-  font-weight:700;font-size:11px;letter-spacing:.1em}
-.chipd .dot{width:9px;height:9px;border-radius:50%}
-.chip-nor{background:#E6F0E7;color:var(--verde-esc);border:1px solid #A5C8A7}
-.chip-nor .dot{background:var(--verde)}
-.chip-urg{background:#FBE9E8;color:var(--urgente);border:1.5px solid var(--urgente)}
-.chip-urg .dot{background:var(--urgente)}
-.cat{margin-top:14px}
-.cat h3{display:flex;align-items:center;gap:8px;font-size:12.5px;letter-spacing:.09em;
-  color:var(--verde-esc);border-bottom:2px solid var(--verde);padding-bottom:5px;margin:0}
-.cat .ce{font-size:15px}
-.doc table{width:100%;border-collapse:collapse;table-layout:fixed}
-.doc th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;text-align:left;color:#61756A;
-  background:#F3F6F4;padding:7px 12px;border-bottom:1px solid #C9D4CB;font-weight:700}
-.doc th.q,.doc td.q{width:170px;text-align:right}
-.doc td{padding:8px 12px;border-bottom:1px solid #E4EAE5;font-size:13px;
-  word-wrap:break-word;overflow-wrap:anywhere}
-.doc td.q{color:var(--verde-esc);font-weight:700}
-.doc tbody tr:nth-child(even) td{background:#F7FAF8}
-.dtotal{margin-top:18px;text-align:right;font-size:12.5px;color:#3E4F44;
-  border-top:1px solid #C9D4CB;padding-top:9px}
-.dtotal strong{color:var(--verde-esc);font-size:14px}
-.dsign{margin-top:30px}
-.dsign .line{width:260px;border-bottom:1.5px solid #90A296;margin-left:auto}
-.dsign .cap{font-size:10px;color:#7C8C82;text-align:right;width:260px;margin-left:auto;
-  margin-top:5px;letter-spacing:.05em}
-.sheet-foot{position:absolute;left:45px;right:45px;bottom:24px;display:flex;
-  justify-content:space-between;font-size:10px;color:#7C8C82;
-  border-top:1px solid #DFE7E1;padding-top:7px;letter-spacing:.03em}
-
-/* elemento usado exclusivamente pelo html2pdf (fora da tela) */
-#pdfRender{position:absolute;left:-20000px;top:0;width:704px;background:#fff}
-
-/* ============ TOASTS ============ */
-.toasts{position:fixed;left:0;right:0;bottom:calc(122px + env(safe-area-inset-bottom));
-  display:flex;flex-direction:column;align-items:center;gap:8px;z-index:80;pointer-events:none}
-.toast{background:var(--texto);color:#fff;border-radius:12px;padding:11px 16px;font-size:13.5px;
-  font-weight:700;display:flex;gap:9px;align-items:center;max-width:90%;
-  box-shadow:0 8px 24px rgba(0,0,0,.3);animation:pop .22s ease}
-.toast.t-ok{background:var(--verde-esc)}
-.toast.t-err{background:var(--urgente)}
-.toast.t-warn{background:#8D6E22}
-.toast.leave{opacity:0;transform:translateY(6px);transition:.32s}
-
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
-</style>
+    /* ============================================================
+       TEMPLATE EXCLUSIVO DO PDF (folha A4, 210 × 297 mm)
+       Área útil com margens de 10 mm: 190 × 277 mm = 718 × 1046 px (96 dpi)
+       ============================================================ */
+    #pdf-stage, #pdf-medidor{
+      position:fixed; top:0; left:-20000px; width:718px; pointer-events:none;
+    }
+    .pdf-pagina{
+      width:718px; height:1046px; background:#fff;
+      position:relative; overflow:hidden;
+    }
+    .pdf-cabecalho{
+      display:flex; justify-content:space-between; align-items:flex-end; gap:16px;
+      padding:4px 0 14px; border-bottom:3px solid var(--verde-escuro);
+    }
+    .pdf-titulo{
+      margin:0 0 4px;
+      font-family:Georgia,'Times New Roman',serif;
+      font-size:25px; line-height:1.1; color:var(--verde-escuro); letter-spacing:.4px;
+    }
+    .pdf-subtitulo{ margin:0; font-size:12px; letter-spacing:1.6px; text-transform:uppercase; color:#5c6f63; }
+    .pdf-cab-dir{ display:flex; flex-direction:column; align-items:flex-end; gap:7px; flex-shrink:0; }
+    .pdf-data{ margin:0; font-size:12.5px; color:#37474F; font-weight:600; white-space:nowrap; }
+    .pdf-status{
+      display:inline-block; padding:4px 14px; border-radius:999px;
+      font-size:11.5px; font-weight:700; letter-spacing:.6px;
+      background:#E8F3E9; color:var(--verde-escuro); border:1px solid #BFD8C2;
+    }
+    .pdf-status.urgente{ background:var(--urgente); color:#fff; border-color:var(--urgente); }
+    .pdf-mini{
+      display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+      padding:2px 0 10px; border-bottom:2px solid var(--verde-escuro);
+    }
+    .pdf-mini-titulo{ font-family:Georgia, serif; font-size:14px; font-weight:700; color:var(--verde-escuro); }
+    .pdf-mini-meta{ font-size:11px; color:#607D8B; }
+    .pdf-conteudo{ padding-top:16px; }
+    .pdf-grupo{ padding-bottom:20px; }
+    .pdf-cat-titulo{
+      margin:0 0 8px; padding:8px 12px;
+      background:#EDF4EF; border-left:4px solid var(--verde); border-radius:4px;
+      color:var(--verde-escuro); font-size:12.5px; letter-spacing:.8px; font-weight:700;
+    }
+    .pdf-tabela{ width:100%; border-collapse:collapse; }
+    .pdf-tabela th{
+      text-align:left; font-size:11px; letter-spacing:.6px; text-transform:uppercase;
+      color:var(--verde-escuro); padding:6px 8px 7px; border-bottom:2px solid var(--verde);
+    }
+    .pdf-tabela th.col-qtd{ width:140px; text-align:right; }
+    .pdf-tabela td{
+      padding:8px; border-bottom:1px solid #E3EAE5;
+      font-size:13px; color:var(--texto);
+      overflow-wrap:break-word; word-break:break-word;
+    }
+    .pdf-tabela td.td-qtd{ text-align:right; font-weight:600; color:#37474F; }
+    .pdf-rodape{
+      position:absolute; left:0; right:0; bottom:0; height:46px;
+      border-top:1px solid #CFD8DC;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+      padding-top:4px;
+    }
+    .pdf-rodape p{ margin:0; }
+    .pdf-rodape-nome{ font-size:11.5px; font-weight:700; color:var(--texto); }
+    .pdf-rodape-sub{ font-size:10.5px; color:#78909C; }
+    .html2pdf__page-break{ height:0; }
+  </style>
 </head>
 <body>
 
-<!-- ============ CABEÇALHO ============ -->
-<header class="appbar">
-  <div class="row">
-    <span class="brand-stamp" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4c0 9-6 16-16 16C4 11 10 4 20 4Z"/><path d="M4 20c4-6 9-11 15-14"/></svg>
-    </span>
-    <div>
+  <!-- ================= CABEÇALHO ================= -->
+  <header id="app-header">
+    <div class="marca">
       <h1>Sítio Recanto da Limeira</h1>
-      <p class="sub">Controle de Suprimentos e Compras</p>
+      <p>Controle de Suprimentos e Compras</p>
     </div>
-    <span id="netDot" class="net-dot" role="status"></span>
-  </div>
-  <div id="orderLine" class="order-line" hidden>
-    <span class="ol-date">
-      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
-      <span id="hdrDate"></span>
-    </span>
-    <span id="hdrBadge" class="badge b-nor"></span>
-  </div>
-</header>
-
-<main>
-  <!-- ============ TELA INICIAL ============ -->
-  <section id="screenStart" class="start">
-    <div class="start-card">
-      <div class="big-stamp" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4c0 9-6 16-16 16C4 11 10 4 20 4Z"/><path d="M4 20c4-6 9-11 15-14"/></svg>
-      </div>
-      <h2>Controle de<br>Suprimentos</h2>
-      <p class="start-sub">Monte a lista de compras do sítio e envie o pedido ao patrão em PDF — direto do celular.</p>
-      <button id="btnNew" type="button" class="btn btn-pri btn-block btn-lg">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-        INICIAR NOVO PEDIDO
-      </button>
-      <button id="btnInstall" type="button" class="btn btn-ghost btn-block" hidden>
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5M4 20h16"/></svg>
-        INSTALAR APLICATIVO
-      </button>
-      <p class="start-note">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4c0 9-6 16-16 16C4 11 10 4 20 4Z"/><path d="M4 20c4-6 9-11 15-14"/></svg>
-        Funciona offline — pode usar sem internet no sítio.
-      </p>
+    <div id="meta-pedido" hidden>
+      <span class="meta-data" id="meta-data">📅 —</span>
+      <span class="status-pill normal" id="meta-status">🟢 NORMAL</span>
+      <button type="button" id="btn-novo-topo">NOVO PEDIDO</button>
     </div>
-  </section>
+  </header>
 
-  <!-- ============ PEDIDO EM ANDAMENTO ============ -->
-  <section id="screenOrder" hidden>
-
-    <section class="card order-meta" aria-label="Dados do pedido">
-      <div class="om-row">
-        <div>
-          <p class="om-lbl">Pedido iniciado em</p>
-          <p class="om-date" id="omDate"></p>
-        </div>
-        <button id="btnEnd" type="button" class="iconbtn end" aria-label="Encerrar pedido" title="Encerrar pedido">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v8"/><path d="M6.3 6.5a8 8 0 1 0 11.4 0"/></svg>
-        </button>
-      </div>
-      <div class="om-row2">
-        <p class="om-lbl">Nível de urgência</p>
-        <div class="urg-toggle" role="radiogroup" aria-label="Nível de urgência do pedido">
-          <button id="chipN" type="button" class="uchip sel-nor" role="radio" aria-checked="true"><span class="dot"></span>NORMAL</button>
-          <button id="chipU" type="button" class="uchip sel-urg" role="radio" aria-checked="false"><span class="dot"></span>URGENTE</button>
-        </div>
-      </div>
+  <main>
+    <!-- ================= TELA INICIAL ================= -->
+    <section id="tela-inicio">
+      <svg class="emblema" viewBox="0 0 96 96" role="img" aria-label="Símbolo do sítio: folha e limão">
+        <circle cx="48" cy="48" r="46" fill="#2E7D32"/>
+        <path d="M24 70 C24 46 42 28 68 25 C67 51 52 70 24 70 Z" fill="#F3F6F4"/>
+        <path d="M26 68 C36 56 48 44 64 30" stroke="#2E7D32" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <circle cx="63" cy="63" r="11" fill="#CDDC39"/>
+        <path d="M56.5 56.5 A9 9 0 0 1 63 54" stroke="rgba(255,255,255,.6)" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+      <h2>Sítio Recanto da Limeira</h2>
+      <p>Monte a lista de suprimentos do sítio e envie o pedido de compras ao patrão em PDF. Funciona sem internet.</p>
+      <button type="button" id="btn-abrir-novo" class="btn btn-primario" data-foco>🌿 NOVO PEDIDO</button>
     </section>
 
-    <section class="card">
-      <h2 class="card-title">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-        Adicionar item
-      </h2>
-      <form id="formAdd" novalidate>
-        <div class="field" id="wNome">
-          <label for="fNome">Nome do item</label>
-          <input id="fNome" type="text" placeholder="Ex.: Arroz" autocomplete="off" enterkeyhint="next">
-          <p class="err-msg">Informe o nome do item.</p>
-        </div>
-        <div class="field" id="wQtd">
-          <label for="fQtd">Quantidade</label>
-          <input id="fQtd" type="text" placeholder="Ex.: 5 kg, 1 saco, 3 unidades" autocomplete="off" enterkeyhint="next">
-          <p class="hint">Pode escrever do jeito que preferir: “2”, “5 kg”, “1 saco”…</p>
-        </div>
-        <div class="field" id="wCat">
-          <label for="fCat">Categoria</label>
-          <div class="selwrap">
-            <select id="fCat">
-              <option value="" selected disabled>Selecionar categoria</option>
-            </select>
-            <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+    <!-- ================= TELA DO PEDIDO ================= -->
+    <section id="tela-pedido" hidden>
+      <section class="card" aria-labelledby="titulo-form">
+        <h2 class="card-titulo" id="titulo-form">Novo item</h2>
+        <form id="form-item" novalidate>
+          <div class="campo">
+            <label for="inp-nome">Nome do item</label>
+            <input type="text" id="inp-nome" name="nome" placeholder="Ex.: Arroz, Feijão, Óleo diesel…" autocomplete="off" maxlength="120" data-foco>
+            <small class="erro-msg" id="erro-nome" hidden></small>
           </div>
-          <p class="err-msg">Selecione uma categoria.</p>
-        </div>
-        <button type="submit" class="btn btn-pri btn-block">
-          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-          ADICIONAR ITEM
-        </button>
-      </form>
+          <div class="campo">
+            <label for="inp-qtd">Quantidade</label>
+            <input type="text" id="inp-qtd" name="quantidade" placeholder="Ex.: 2, 5 kg, 1 saco, 10 litros…" autocomplete="off" maxlength="60">
+            <small class="erro-msg" id="erro-qtd" hidden></small>
+          </div>
+          <div class="campo">
+            <label for="sel-cat">Categoria</label>
+            <select id="sel-cat" name="categoria">
+              <option value="" selected disabled>Selecionar categoria…</option>
+            </select>
+            <small class="erro-msg" id="erro-cat" hidden></small>
+          </div>
+          <button type="submit" class="btn btn-primario btn-full">+ ADICIONAR ITEM</button>
+        </form>
+      </section>
+
+      <div class="lista-topo">
+        <p class="lista-contador"><strong id="contador-total">0</strong> <span id="contador-texto">itens</span></p>
+        <button type="button" id="btn-limpar" class="btn-limpar" disabled>🧹 LIMPAR LISTA</button>
+      </div>
+
+      <div id="lista-grupos"></div>
+
+      <p id="lista-vazia" hidden>Nenhum item na lista ainda.<br>Adicione o primeiro item no formulário acima.</p>
     </section>
+  </main>
 
-    <div class="list-top">
-      <h2>Lista do pedido <span id="cntItens" class="pill"></span></h2>
-      <button id="btnClear" type="button" class="btn btn-warn btn-sm">
-        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 3l-6.5 6.5"/><path d="M11.5 7.5l5 5"/><path d="M9.5 8.5 4 14c-1.5 1.5-2 5-2 5s3.5-.5 5-2l5.5-5.5Z"/></svg>
-        LIMPAR LISTA
-      </button>
-    </div>
-    <div id="lista" aria-live="polite"></div>
-  </section>
-</main>
-
-<!-- ============ RODAPÉ FIXO ============ -->
-<footer class="footbar">
-  <button id="btnPrev" type="button" class="btn btn-ghost">
-    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-    PRÉ-VISUALIZAR PDF
-  </button>
-  <button id="btnPdf" type="button" class="btn btn-pri2">
-    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v5h5"/><path d="M9 13h7M9 17h7"/></svg>
-    GERAR PDF
-  </button>
-</footer>
-
-<!-- ============ MODAL: NOVO PEDIDO ============ -->
-<div id="mNovo" class="modal" role="dialog" aria-modal="true" aria-labelledby="tNovo">
-  <div class="dialog">
-    <div class="d-head">
-      <span class="d-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4c0 9-6 16-16 16C4 11 10 4 20 4Z"/><path d="M4 20c4-6 9-11 15-14"/></svg></span>
-      <h3 id="tNovo">Novo pedido</h3>
-    </div>
-    <p class="d-lead">Data e hora capturadas automaticamente:</p>
-    <p class="d-date">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
-      <strong id="nvDate"></strong>
-    </p>
-    <p class="d-lead" style="margin-bottom:6px">Nível de urgência:</p>
-    <div class="urg-options" role="radiogroup" aria-label="Nível de urgência">
-      <button type="button" class="urg-opt" data-urg="normal" role="radio" aria-checked="false">
-        <span class="dot"></span>
-        <span class="uo-t">Normal</span>
-        <span class="uo-d">Compra programada, sem pressa</span>
-      </button>
-      <button type="button" class="urg-opt" data-urg="urgente" role="radio" aria-checked="false">
-        <span class="dot"></span>
-        <span class="uo-t">Urgente</span>
-        <span class="uo-d">O patrão precisa ver o quanto antes</span>
-      </button>
-    </div>
-    <div class="d-actions">
-      <button type="button" class="btn btn-ghost" data-close>CANCELAR</button>
-      <button type="button" id="btnIniciar" class="btn btn-pri" disabled>INICIAR PEDIDO</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ MODAL: EDITAR ITEM ============ -->
-<div id="mEditar" class="modal" role="dialog" aria-modal="true" aria-labelledby="tEd">
-  <div class="dialog">
-    <div class="d-head">
-      <span class="d-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
-      <h3 id="tEd">Editar item</h3>
-    </div>
-    <form id="formEdit" novalidate>
-      <div class="field" id="wEdNome">
-        <label for="edNome">Nome</label>
-        <input id="edNome" type="text" autocomplete="off" enterkeyhint="next">
-        <p class="err-msg">Informe o nome do item.</p>
-      </div>
-      <div class="field" id="wEdQtd">
-        <label for="edQtd">Quantidade</label>
-        <input id="edQtd" type="text" autocomplete="off" placeholder="Ex.: 5 kg" enterkeyhint="done">
-      </div>
-      <div class="field" id="wEdCat">
-        <label for="edCat">Categoria</label>
-        <div class="selwrap">
-          <select id="edCat"></select>
-          <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
-        </div>
-        <p class="err-msg">Selecione uma categoria.</p>
-      </div>
-      <div class="d-actions">
-        <button type="button" class="btn btn-ghost" data-close>CANCELAR</button>
-        <button type="submit" class="btn btn-pri">SALVAR ALTERAÇÕES</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- ============ MODAL: EXCLUIR ITEM ============ -->
-<div id="mDel" class="modal" role="dialog" aria-modal="true" aria-labelledby="tDel">
-  <div class="dialog dlg-sm">
-    <div class="warn-badge" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 22 20H2L12 3Z"/><path d="M12 10v4"/><path d="M12 17.2v.01"/></svg>
-    </div>
-    <h3 id="tDel" style="font-family:Fraunces,Georgia,serif;font-size:20px;color:var(--verde-esc)">Excluir item?</h3>
-    <p class="d-lead" style="margin-top:12px">Deseja realmente excluir:</p>
-    <p class="d-name" id="delName"></p>
-    <p class="d-warn">Esta ação não pode ser desfeita.</p>
-    <div class="d-actions">
-      <button type="button" class="btn btn-ghost" data-close>CANCELAR</button>
-      <button type="button" id="btnDelYes" class="btn btn-danger">EXCLUIR</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ MODAL: LIMPAR LISTA ============ -->
-<div id="mClear" class="modal" role="dialog" aria-modal="true" aria-labelledby="tClear">
-  <div class="dialog dlg-sm">
-    <div class="warn-badge" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 22 20H2L12 3Z"/><path d="M12 10v4"/><path d="M12 17.2v.01"/></svg>
-    </div>
-    <h3 id="tClear" style="font-family:Fraunces,Georgia,serif;font-size:20px;color:var(--verde-esc)">Limpar toda a lista?</h3>
-    <p class="d-lead" style="margin-top:12px">Todos os itens serão removidos.</p>
-    <p class="d-warn">Esta ação não pode ser desfeita.</p>
-    <div class="d-actions">
-      <button type="button" class="btn btn-ghost" data-close>CANCELAR</button>
-      <button type="button" id="btnClearYes" class="btn btn-danger">LIMPAR TUDO</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ MODAL: ENCERRAR PEDIDO ============ -->
-<div id="mEnd" class="modal" role="dialog" aria-modal="true" aria-labelledby="tEnd">
-  <div class="dialog dlg-sm">
-    <div class="warn-badge" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v8"/><path d="M6.3 6.5a8 8 0 1 0 11.4 0"/></svg>
-    </div>
-    <h3 id="tEnd" style="font-family:Fraunces,Georgia,serif;font-size:20px;color:var(--verde-esc)">Encerrar pedido atual?</h3>
-    <p class="d-lead" style="margin-top:12px">A lista e os dados do pedido serão apagados. Depois você poderá iniciar um novo pedido.</p>
-    <p class="d-warn">Esta ação não pode ser desfeita.</p>
-    <div class="d-actions">
-      <button type="button" class="btn btn-ghost" data-close>CANCELAR</button>
-      <button type="button" id="btnEndYes" class="btn btn-danger">ENCERRAR</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ PRÉ-VISUALIZAÇÃO DO PDF ============ -->
-<section id="pv" class="preview" aria-hidden="true" aria-label="Pré-visualização do PDF">
-  <nav class="pv-bar">
-    <button id="pvBack" type="button" class="pv-back">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>
-      <span>Voltar</span>
-    </button>
-    <span class="pv-title">Pré-visualização · A4</span>
-    <button id="pvPdf" type="button" class="pv-gen">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v5h5"/><path d="M9 13h7M9 17h7"/></svg>
-      GERAR PDF
-    </button>
+  <!-- ================= BARRA FIXA: PDF ================= -->
+  <nav id="barra-pdf" hidden aria-label="Ações do pedido">
+    <button type="button" id="btn-previa" class="btn btn-outline-pdf">👁️ PRÉ-VISUALIZAR PDF</button>
+    <button type="button" id="btn-gerar" class="btn btn-primario">📄 GERAR PDF</button>
   </nav>
-  <div id="pvStage" class="pv-stage">
-    <div id="pvWrap" class="pv-wrap">
-      <div id="pvSheet" class="pv-sheet"></div>
+
+  <!-- ================= MODAL: NOVO PEDIDO ================= -->
+  <div id="modal-novo" class="overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-novo">
+      <h3 id="titulo-modal-novo">🌿 Novo pedido</h3>
+      <p class="modal-sub">A data e a hora são capturadas automaticamente do aparelho.</p>
+      <div class="campo">
+        <label>Data e hora capturadas automaticamente:</label>
+        <div id="novo-data-hora" class="data-capturada">—</div>
+      </div>
+      <div class="campo">
+        <label id="lbl-urgencia">Nível de urgência:</label>
+        <div class="urgencias" role="group" aria-labelledby="lbl-urgencia">
+          <button type="button" class="btn-urg" data-valor="normal" aria-pressed="false">🟢 Normal</button>
+          <button type="button" class="btn-urg urg" data-valor="urgente" aria-pressed="false">🔴 Urgente</button>
+        </div>
+      </div>
+      <div class="modal-acoes">
+        <button type="button" id="btn-cancelar-novo" class="btn btn-fantasma">CANCELAR</button>
+        <button type="button" id="btn-iniciar" class="btn btn-primario" disabled>INICIAR PEDIDO</button>
+      </div>
     </div>
   </div>
-</section>
 
-<!-- Container de avisos -->
-<div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+  <!-- ================= MODAL: EDITAR ITEM ================= -->
+  <div id="modal-editar" class="overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-editar">
+      <h3 id="titulo-modal-editar">Editar item</h3>
+      <p class="modal-sub">Altere os dados e salve. As mudanças são gravadas imediatamente.</p>
+      <div class="campo">
+        <label for="edt-nome">Nome:</label>
+        <input type="text" id="edt-nome" maxlength="120" data-foco>
+        <small class="erro-msg" id="erro-edt-nome" hidden></small>
+      </div>
+      <div class="campo">
+        <label for="edt-qtd">Quantidade:</label>
+        <input type="text" id="edt-qtd" maxlength="60">
+        <small class="erro-msg" id="erro-edt-qtd" hidden></small>
+      </div>
+      <div class="campo">
+        <label for="edt-cat">Categoria:</label>
+        <select id="edt-cat"></select>
+        <small class="erro-msg" id="erro-edt-cat" hidden></small>
+      </div>
+      <div class="modal-acoes">
+        <button type="button" id="btn-cancelar-edicao" class="btn btn-fantasma">CANCELAR</button>
+        <button type="button" id="btn-salvar-edicao" class="btn btn-primario">SALVAR ALTERAÇÕES</button>
+      </div>
+    </div>
+  </div>
 
-<!-- Template usado EXCLUSIVAMENTE para gerar o PDF (fora da tela) -->
-<div id="pdfRender" aria-hidden="true"></div>
+  <!-- ================= MODAL: CONFIRMAÇÃO ================= -->
+  <div id="modal-confirmar" class="overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="conf-titulo">
+      <h3 id="conf-titulo">⚠️ Confirmar</h3>
+      <p id="conf-texto" class="modal-sub"></p>
+      <p id="conf-destaque" class="conf-destaque" hidden></p>
+      <p id="conf-nota" class="conf-nota" hidden></p>
+      <div class="modal-acoes">
+        <button type="button" id="btn-conf-cancelar" class="btn btn-fantasma">CANCELAR</button>
+        <button type="button" id="btn-conf-ok" class="btn btn-perigo">CONFIRMAR</button>
+      </div>
+    </div>
+  </div>
 
-<script>
-(function(){
-'use strict';
+  <!-- ================= PRÉ-VISUALIZAÇÃO DO PDF ================= -->
+  <div id="modal-previa" class="overlay" hidden>
+    <div class="previa-topo">
+      <button type="button" id="btn-previa-voltar" class="btn btn-voltar">← VOLTAR</button>
+      <span class="previa-titulo">Pré-visualização do PDF — A4 · 210 × 297 mm</span>
+      <button type="button" id="btn-previa-gerar" class="btn btn-primario">📄 GERAR PDF</button>
+    </div>
+    <div id="previa-scroll">
+      <div id="previa-folhas"></div>
+    </div>
+  </div>
 
-/* ============ ÍCONES SVG (inline, funcionam offline) ============ */
-var ICONS={
-  pencil:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
-  trash:'<path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>',
-  leaf:'<path d="M20 4c0 9-6 16-16 16C4 11 10 4 20 4Z"/><path d="M4 20c4-6 9-11 15-14"/>',
-  check:'<path d="m4 12 5 5L20 6"/>',
-  alert:'<path d="M12 3 22 20H2L12 3Z"/><path d="M12 10v4"/><path d="M12 17.2v.01"/>'
-};
-function icon(n,s){
-  s=s||20;
-  return '<svg viewBox="0 0 24 24" width="'+s+'" height="'+s+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICONS[n]+'</svg>';
-}
+  <!-- ================= TOAST ================= -->
+  <div id="toast" role="status" aria-live="polite"></div>
 
-/* ============ CATEGORIAS FIXAS ============ */
-var CATS=[
-  {id:'mercearia',   nome:'Mercearia & Alimentos',      emoji:'🛒'},
-  {id:'limpeza',     nome:'Limpeza & Lavanderia',       emoji:'🧼'},
-  {id:'ferramentas', nome:'Ferramentas & Manutenção',   emoji:'🪚'},
-  {id:'horta',       nome:'Horta, Pomar & Animais',     emoji:'🌱'},
-  {id:'utilidades',  nome:'Utilidades & Diversos',      emoji:'🪵'}
-];
-function catById(id){ for(var i=0;i<CATS.length;i++){ if(CATS[i].id===id) return CATS[i]; } return null; }
+  <!-- ================= TEMPLATE EXCLUSIVO DO PDF (fora da tela) ================= -->
+  <div id="pdf-stage" aria-hidden="true"><div id="pdf-render"></div></div>
+  <div id="pdf-medidor" aria-hidden="true"></div>
 
-/* ============ ESTADO + LOCALSTORAGE ============ */
-var KEY='recanto-limeira-pedido-v1';
-function defaultState(){ return {iniciado:false, ts:0, urgencia:null, itens:[]}; }
-function loadState(){
-  try{
-    var raw=localStorage.getItem(KEY);
-    if(raw){
-      var s=JSON.parse(raw);
-      if(s && typeof s==='object' && Array.isArray(s.itens)) return Object.assign(defaultState(),s);
-    }
-  }catch(e){}
-  return defaultState();
-}
-var state=loadState();
-function save(){
-  try{ localStorage.setItem(KEY,JSON.stringify(state)); }
-  catch(e){ toast('Não foi possível salvar no armazenamento do aparelho.','err'); }
-}
-function uid(){ return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8); }
+  <!-- Biblioteca de PDF local (para funcionar offline).
+       Se este arquivo não existir na pasta, o app tenta a cópia de reserva via CDN. -->
+  <script src="html2pdf.bundle.min.js"></script>
 
-/* ============ UTILITÁRIOS ============ */
-function esc(s){
-  return String(s).replace(/[&<>"']/g,function(c){
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-  });
-}
-function fmtData(ts){
-  var d=new Date(ts);
-  return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-}
-function fmtDataLong(ts){
-  var d=new Date(ts);
-  return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-}
-function $(id){ return document.getElementById(id); }
+  <script>
+    'use strict';
 
-var hdrDate=$('hdrDate'), hdrBadge=$('hdrBadge'), orderLine=$('orderLine'),
-    screenStart=$('screenStart'), screenOrder=$('screenOrder'),
-    btnNew=$('btnNew'), btnInstall=$('btnInstall'), omDate=$('omDate'), btnEnd=$('btnEnd'),
-    chipN=$('chipN'), chipU=$('chipU'),
-    formAdd=$('formAdd'), fNome=$('fNome'), fQtd=$('fQtd'), fCat=$('fCat'),
-    wNome=$('wNome'), wQtd=$('wQtd'), wCat=$('wCat'),
-    cntItens=$('cntItens'), lista=$('lista'), btnClear=$('btnClear'),
-    mNovo=$('mNovo'), nvDate=$('nvDate'), btnIniciar=$('btnIniciar'),
-    mEditar=$('mEditar'), formEdit=$('formEdit'), edNome=$('edNome'), edQtd=$('edQtd'), edCat=$('edCat'),
-    wEdNome=$('wEdNome'), wEdQtd=$('wEdQtd'), wEdCat=$('wEdCat'),
-    mDel=$('mDel'), delName=$('delName'), btnDelYes=$('btnDelYes'),
-    mClear=$('mClear'), btnClearYes=$('btnClearYes'),
-    mEnd=$('mEnd'), btnEndYes=$('btnEndYes'),
-    pv=$('pv'), pvStage=$('pvStage'), pvWrap=$('pvWrap'), pvSheet=$('pvSheet'),
-    pvBack=$('pvBack'), pvPdf=$('pvPdf'),
-    btnPrev=$('btnPrev'), btnPdf=$('btnPdf'),
-    toasts=$('toasts'), pdfRender=$('pdfRender'), netDot=$('netDot');
+    /* ============================================================
+       SÍTIO RECANTO DA LIMEIRA — Aplicação
+       ============================================================ */
 
-/* ============ TOAST ============ */
-function toast(msg,tipo){
-  tipo=tipo||'ok';
-  var t=document.createElement('div');
-  t.className='toast t-'+tipo;
-  t.innerHTML=icon(tipo==='ok'?'check':'alert',18)+'<span>'+esc(msg)+'</span>';
-  toasts.appendChild(t);
-  setTimeout(function(){ t.classList.add('leave'); setTimeout(function(){ t.remove(); },340); },2800);
-}
+    const $ = (id) => document.getElementById(id);
 
-/* ============ MODAIS ============ */
-var lastFocus=null;
-function openModal(m){
-  lastFocus=document.activeElement;
-  m.classList.add('open');
-  document.body.classList.add('lock');
-  var f=m.querySelector('input,select,button');
-  setTimeout(function(){ if(f) f.focus(); },80);
-}
-function closeModal(m){
-  m.classList.remove('open');
-  if(!document.querySelector('.modal.open') && !pv.classList.contains('open')){
-    document.body.classList.remove('lock');
-  }
-  if(lastFocus && lastFocus.focus){ try{ lastFocus.focus(); }catch(e){} }
-  lastFocus=null;
-}
-document.addEventListener('click',function(e){
-  var c=e.target.closest ? e.target.closest('[data-close]') : null;
-  if(c){ var m=c.closest('.modal'); if(m) closeModal(m); return; }
-  if(e.target.classList && e.target.classList.contains('modal')) closeModal(e.target);
-});
-document.addEventListener('keydown',function(e){
-  var m=document.querySelector('.modal.open');
-  if(e.key==='Escape' && m){ closeModal(m); return; }
-  if(e.key==='Tab' && m){
-    var f=m.querySelectorAll('button,input,select,textarea,[href]');
-    if(!f.length) return;
-    var first=f[0], last=f[f.length-1];
-    if(e.shiftKey && document.activeElement===first){ last.focus(); e.preventDefault(); }
-    else if(!e.shiftKey && document.activeElement===last){ first.focus(); e.preventDefault(); }
-  }
-});
+    /* ---------- Categorias fixas (não podem ser criadas/editadas/excluídas) ---------- */
+    const CATEGORIAS = [
+      { id: 'mercearia',   emoji: '🛒', nome: 'Mercearia & Alimentos' },
+      { id: 'limpeza',     emoji: '🧼', nome: 'Limpeza & Lavanderia' },
+      { id: 'ferramentas', emoji: '🪚', nome: 'Ferramentas & Manutenção' },
+      { id: 'horta',       emoji: '🌱', nome: 'Horta, Pomar & Animais' },
+      { id: 'utilidades',  emoji: '🪵', nome: 'Utilidades & Diversos' }
+    ];
 
-/* ============ RENDER ============ */
-function setChip(el,sel){
-  el.classList.toggle('sel',sel);
-  el.setAttribute('aria-checked',sel?'true':'false');
-}
-function render(){
-  var on=state.iniciado;
-  screenStart.hidden=on;
-  screenOrder.hidden=!on;
-  if(on){
-    orderLine.hidden=false;
-    hdrDate.textContent=fmtData(state.ts);
-    var urg=state.urgencia==='urgente';
-    hdrBadge.className='badge '+(urg?'b-urg':'b-nor');
-    hdrBadge.innerHTML='<span class="dot"></span>'+(urg?'URGENTE':'NORMAL');
-    omDate.innerHTML='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg><span>'+esc(fmtDataLong(state.ts))+'</span>';
-    var n=state.itens.length;
-    cntItens.textContent=n===0?'nenhum item':(n===1?'1 item':n+' itens');
-    setChip(chipN, state.urgencia==='normal');
-    setChip(chipU, state.urgencia==='urgente');
-  }
-  renderLista();
-}
-function renderLista(){
-  if(!state.iniciado){ lista.innerHTML=''; return; }
-  var n=state.itens.length;
-  if(n===0){
-    lista.innerHTML='<div class="empty">'+icon('leaf',28)+
-      '<p><strong>Sua lista está vazia.</strong><br>Adicione o primeiro item no formulário acima.</p></div>';
-    return;
-  }
-  var html='';
-  CATS.forEach(function(c){
-    var its=state.itens.filter(function(i){ return i.categoria===c.id; });
-    if(its.length===0) return;
-    html+='<div class="cat-grp"><div class="cat-head"><h3><span class="ce">'+c.emoji+'</span>'+
-      esc(c.nome)+'</h3><span class="cnt">'+(its.length===1?'1 item':its.length+' itens')+
-      '</span></div>';
-    its.forEach(function(it){
-      html+='<div class="item" data-id="'+it.id+'"><div class="info"><p class="nome">'+
-        esc(it.nome)+'</p>'+(it.qtd?'<span class="qtd">'+esc(it.qtd)+'</span>':'')+
-        '</div><div class="acts">'+
-        '<button type="button" class="iconbtn" data-act="edit" aria-label="Editar '+esc(it.nome)+'">'+icon('pencil',19)+'</button>'+
-        '<button type="button" class="iconbtn del" data-act="del" aria-label="Excluir '+esc(it.nome)+'">'+icon('trash',19)+'</button>'+
-        '</div></div>';
-    });
-    html+='</div>';
-  });
-  lista.innerHTML=html;
-}
+    const CHAVE_STORAGE = 'recanto-limeira-pedido-v1';
+    const ESTADO_INICIAL = { pedidoAtivo: false, urgencia: null, dataHoraISO: null, itens: [] };
 
-/* ============ ADICIONAR ITEM ============ */
-function fieldErr(w,show){ w.classList.toggle('err',show); }
-function addItem(){
-  var nome=fNome.value.trim(), qtd=fQtd.value.trim(), cat=fCat.value;
-  fieldErr(wNome,!nome);
-  fieldErr(wCat,!cat);
-  if(!nome||!cat){ if(!nome) fNome.focus(); else fCat.focus(); return; }
-  state.itens.push({id:uid(),nome:nome,qtd:qtd,categoria:cat});
-  save(); render();
-  fNome.value=''; fQtd.value=''; fNome.focus();
-  toast('“'+nome+'” adicionado à lista.');
-}
+    /* Geometria do PDF: A4 (210×297 mm) com margens de 10 mm.
+       Área útil: 190 × 277 mm → 718 × 1046 px a 96 dpi. */
+    const PDF_CFG = { LARG: 718, ALT: 1046, RODAPE: 46, RESERVA: 70, GAP_GRUPO: 20 };
 
-/* ============ EDITAR ITEM ============ */
-var editingId=null;
-function findItem(id){
-  for(var i=0;i<state.itens.length;i++){ if(state.itens[i].id===id) return state.itens[i]; }
-  return null;
-}
-function openEdit(id){
-  var it=findItem(id); if(!it) return;
-  editingId=id;
-  edNome.value=it.nome; edQtd.value=it.qtd; edCat.value=it.categoria;
-  fieldErr(wEdNome,false); fieldErr(wEdCat,false);
-  openModal(mEditar);
-}
-function saveEdit(e){
-  e.preventDefault();
-  var it=findItem(editingId);
-  if(!it){ closeModal(mEditar); return; }
-  var nome=edNome.value.trim(), qtd=edQtd.value.trim(), cat=edCat.value;
-  fieldErr(wEdNome,!nome); fieldErr(wEdCat,!cat);
-  if(!nome||!cat) return;
-  it.nome=nome; it.qtd=qtd; it.categoria=cat;
-  save(); render(); closeModal(mEditar);
-  toast('Item atualizado.');
-}
-
-/* ============ EXCLUIR ITEM ============ */
-var delId=null;
-function openDel(id){
-  var it=findItem(id); if(!it) return;
-  delId=id;
-  delName.textContent=it.nome.toUpperCase();
-  openModal(mDel);
-}
-
-/* ============ NOVO PEDIDO ============ */
-var selectedUrg=null;
-function openNovo(){
-  nvDate.textContent=fmtData(Date.now());
-  selectedUrg=null;
-  var opts=document.querySelectorAll('.urg-opt');
-  for(var i=0;i<opts.length;i++){
-    opts[i].classList.remove('sel');
-    opts[i].setAttribute('aria-checked','false');
-  }
-  btnIniciar.disabled=true;
-  openModal(mNovo);
-}
-function selectUrg(btn){
-  selectedUrg=btn.dataset.urg;
-  var opts=document.querySelectorAll('.urg-opt');
-  for(var i=0;i<opts.length;i++){
-    var on=(opts[i]===btn);
-    opts[i].classList.toggle('sel',on);
-    opts[i].setAttribute('aria-checked',on?'true':'false');
-  }
-  btnIniciar.disabled=false;
-}
-
-/* ============ TEMPLATE DO DOCUMENTO (PDF / PREVIEW) ============ */
-function buildDocHTML(withFoot){
-  var urg=state.urgencia==='urgente';
-  var n=state.itens.length;
-  var head='<header class="dhead"><div class="brand">'+
-    '<span class="dstamp">'+icon('leaf',28)+'</span>'+
-    '<div><h2>SÍTIO RECANTO DA LIMEIRA</h2><p>Controle de Suprimentos e Compras</p></div></div>'+
-    '<div class="drule"></div>'+
-    '<div class="dmeta"><span><strong>Data/Hora:</strong> '+esc(fmtData(state.ts))+'</span>'+
-    '<span class="chipd '+(urg?'chip-urg':'chip-nor')+'"><span class="dot"></span>'+
-    (urg?'URGENTE':'NORMAL')+'</span></div></header>';
-  var blocks=[];
-  CATS.forEach(function(c){
-    var its=state.itens.filter(function(i){ return i.categoria===c.id; });
-    if(!its.length) return;
-    var rows='';
-    its.forEach(function(i){
-      rows+='<tr><td>'+esc(i.nome)+'</td><td class="q">'+esc(i.qtd||'—')+'</td></tr>';
-    });
-    blocks.push('<section class="cat"><h3><span class="ce">'+c.emoji+'</span>'+
-      esc(c.nome.toUpperCase())+'</h3><table><thead><tr><th>Produto / Suprimento'+
-      '</th><th class="q">Quantidade</th></tr></thead><tbody>'+rows+
-      '</tbody></table></section>');
-  });
-  var tail='<section class="keep"><div class="dtotal">Total de itens: <strong>'+n+
-    '</strong></div><div class="dsign"><div class="line"></div>'+
-    '<div class="cap">Assinatura — responsável pelo pedido</div></div></section>';
-  var html='<div class="doc">';
-  if(blocks.length){
-    html+='<section class="keep">'+head+blocks[0]+'</section>';
-    for(var i=1;i<blocks.length;i++){ html+='<section class="keep">'+blocks[i]+'</section>'; }
-  }else{ html+=head; }
-  html+=tail+'</div>';
-  if(withFoot){
-    html+='<div class="sheet-foot"><span>Sítio Recanto da Limeira · Pedido de Suprimentos</span>'+
-      '<span>A4 · 210 × 297 mm</span></div>';
-  }
-  return html;
-}
-
-/* ============ PRÉ-VISUALIZAÇÃO ============ */
-function guardPdf(){
-  if(!state.iniciado){ toast('Inicie um pedido primeiro.','warn'); return true; }
-  if(!state.itens.length){ toast('Adicione pelo menos um item à lista.','warn'); return true; }
-  return false;
-}
-function fitPreview(){
-  if(!pv.classList.contains('open')) return;
-  var s=Math.min(1,(pvStage.clientWidth-24)/794);
-  pvSheet.style.transform='scale('+s+')';
-  pvWrap.style.width=(794*s)+'px';
-  pvWrap.style.height=(pvSheet.offsetHeight*s)+'px';
-}
-function abrirPreview(){
-  if(guardPdf()) return;
-  pvSheet.innerHTML=buildDocHTML(true);
-  pv.classList.add('open');
-  pv.setAttribute('aria-hidden','false');
-  document.body.classList.add('lock');
-  requestAnimationFrame(fitPreview);
-  pvStage.scrollTop=0;
-}
-function fecharPreview(){
-  pv.classList.remove('open');
-  pv.setAttribute('aria-hidden','true');
-  if(!document.querySelector('.modal.open')) document.body.classList.remove('lock');
-}
-
-/* ============ BIBLIOTECA PDF (local primeiro, CDN como reserva) ============ */
-var pdfLibPromise=null;
-function loadScript(src){
-  return new Promise(function(res,rej){
-    var s=document.createElement('script');
-    s.src=src; s.async=false;
-    s.onload=function(){ res(); };
-    s.onerror=function(){ rej(new Error('falha: '+src)); };
-    document.head.appendChild(s);
-  });
-}
-function ensurePdfLib(){
-  if(typeof html2pdf!=='undefined') return Promise.resolve(true);
-  if(!pdfLibPromise){
-    pdfLibPromise=(async function(){
-      try{ await loadScript('./html2pdf.bundle.min.js'); }catch(e){}
-      if(typeof html2pdf!=='undefined') return true;
-      try{ await loadScript('https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js'); }catch(e){}
-      return typeof html2pdf!=='undefined';
-    })();
-    pdfLibPromise.then(function(ok){ if(!ok) pdfLibPromise=null; });
-  }
-  return pdfLibPromise;
-}
-
-/* Rodapé (e cabeçalho de continuação) desenhados via jsPDF em TODAS as páginas */
-function decoratePages(pdf){
-  var total=pdf.internal.getNumberOfPages();
-  var urg=state.urgencia==='urgente';
-  for(var i=1;i<=total;i++){
-    pdf.setPage(i);
-    pdf.setDrawColor(206,216,208); pdf.setLineWidth(0.3);
-    pdf.line(12,287.2,198,287.2);
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(112,124,116);
-    pdf.text('Sítio Recanto da Limeira — Pedido de Suprimentos',12,291.8);
-    pdf.text('Página '+i+' de '+total,198,291.8,{align:'right'});
-    if(i>1){
-      pdf.setFontSize(8);
-      pdf.setTextColor(27,94,32);
-      pdf.text('SÍTIO RECANTO DA LIMEIRA — CONTINUAÇÃO',12,7.8);
-      pdf.setFont('helvetica','bold');
-      if(urg) pdf.setTextColor(198,40,40); else pdf.setTextColor(27,94,32);
-      pdf.text(urg?'URGENTE':'NORMAL',198,7.8,{align:'right'});
-      pdf.setFont('helvetica','normal');
-      pdf.setDrawColor(206,216,208);
-      pdf.line(12,9.6,198,9.6);
-    }
-  }
-}
-
-/* ============ GERAR PDF ============ */
-var pdfBusy=false;
-async function gerarPDF(){
-  if(pdfBusy) return;
-  if(guardPdf()) return;
-  if(typeof html2pdf==='undefined'){
-    var ok=await ensurePdfLib();
-    if(!ok){
-      toast('Gerador de PDF indisponível. Conecte-se à internet uma vez ou coloque o arquivo html2pdf.bundle.min.js na pasta do aplicativo.','err');
-      return;
-    }
-  }
-  pdfBusy=true;
-  var orig=btnPdf.innerHTML;
-  btnPdf.disabled=true;
-  btnPdf.textContent='GERANDO…';
-  try{
-    if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
-    pdfRender.innerHTML=buildDocHTML(false);
-    var opt={
-      margin:[12,12,18,12],
-      filename:'Pedido_Suprimentos_Recanto_da_Limeira.pdf',
-      image:{type:'jpeg',quality:0.98},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,windowWidth:704},
-      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-      pagebreak:{mode:['css','legacy']}
+    const OPCOES_PDF = {
+      margin: [10, 10, 10, 10],
+      filename: 'Pedido_Suprimentos_Recanto_da_Limeira.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] }
     };
-    var worker=html2pdf().set(opt).from(pdfRender)
-      .toPdf().get('pdf')
-      .then(function(pdf){ decoratePages(pdf); })
-      .save();
-    await worker;
-    toast('PDF gerado: Pedido_Suprimentos_Recanto_da_Limeira.pdf');
-  }catch(err){
-    toast('Falha ao gerar o PDF. Tente novamente.','err');
-  }finally{
-    pdfBusy=false;
-    btnPdf.disabled=false;
-    btnPdf.innerHTML=orig;
-  }
-}
 
-/* ============ FAVICON DINÂMICO (a mesma arte dos ícones PWA) ============ */
-function drawIconCanvas(ctx,S){
-  ctx.clearRect(0,0,S,S);
-  ctx.fillStyle='#1B5E20';
-  ctx.fillRect(0,0,S,S);
-  ctx.beginPath(); ctx.arc(S/2,S*0.58,S*0.47,0,Math.PI*2);
-  ctx.fillStyle='#27692C'; ctx.fill();
-  var r=S*0.13;
-  ctx.beginPath(); ctx.arc(S*0.38,S*0.68,r,0,Math.PI*2);
-  ctx.fillStyle='#9CCC65'; ctx.fill();
-  ctx.beginPath(); ctx.arc(S*0.345,S*0.645,r*0.42,0,Math.PI*2);
-  ctx.fillStyle='#C5E1A5'; ctx.fill();
-  var leafPath=new Path2D('M20 4C20 13 14 19 5 19C5 10 10 4 20 4Z');
-  var veinPath=new Path2D('M5 19C9 13.5 13 9.5 17.5 6.5');
-  ctx.save();
-  ctx.translate(S/2,S*0.42);
-  var sc=S*0.026;
-  ctx.scale(sc,sc);
-  ctx.translate(-12.5,-11.5);
-  ctx.fillStyle='#F1F7F1';
-  ctx.fill(leafPath);
-  ctx.strokeStyle='#1B5E20';
-  ctx.lineWidth=0.8;
-  ctx.lineCap='round';
-  ctx.stroke(veinPath);
-  ctx.restore();
-}
-function setFavicon(){
-  try{
-    var c=document.createElement('canvas');
-    c.width=64; c.height=64;
-    drawIconCanvas(c.getContext('2d'),64);
-    var l=document.querySelector('link[rel="icon"]');
-    if(l) l.href=c.toDataURL('image/png');
-  }catch(e){}
-}
+    /* ---------- Estado ---------- */
+    let state = { ...ESTADO_INICIAL };
+    let urgenciaSelecionada = null;   // seleção provisória dentro do modal "Novo pedido"
+    let novoPedidoISO = null;         // data/hora capturada ao abrir o modal
+    let itemEmEdicaoId = null;
+    let acaoConfirmada = null;        // callback pendente do modal de confirmação
+    let toastTimer = null;
 
-/* ============ CONECTIVIDADE ============ */
-function updNet(){
-  var on=navigator.onLine;
-  netDot.className='net-dot'+(on?' on':'');
-  netDot.setAttribute('aria-label',on?'Conectado à internet':'Sem conexão — o aplicativo continua funcionando offline');
-}
+    /* ---------- Utilitários ---------- */
+    function el(tag, classe, texto) {
+      const n = document.createElement(tag);
+      if (classe) n.className = classe;
+      if (texto !== undefined && texto !== null) n.textContent = texto;
+      return n;
+    }
+    function gerarId() {
+      return 'it_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    }
+    function textoItens(n) { return n === 1 ? 'item' : 'itens'; }
 
-/* ============ INSTALAÇÃO PWA ============ */
-var installPrompt=null;
-function isStandalone(){
-  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
-         window.navigator.standalone===true;
-}
-window.addEventListener('beforeinstallprompt',function(e){
-  e.preventDefault();
-  installPrompt=e;
-  if(!isStandalone()) btnInstall.hidden=false;
-});
-window.addEventListener('appinstalled',function(){
-  btnInstall.hidden=true;
-  toast('Aplicativo instalado no aparelho!');
-});
+    /* Data/hora: capturada com new Date() do aparelho, exibida em pt-BR (DD/MM/AAAA HH:MM). */
+    function formatarDataHora(iso) {
+      const d = new Date(iso);
+      if (isNaN(d)) return '—';
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const aa = d.getFullYear();
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mi = String(d.getMinutes()).padStart(2, '0');
+      return dd + '/' + mm + '/' + aa + ' ' + hh + ':' + mi;
+    }
 
-/* ============ EVENTOS ============ */
-function bind(){
-  [fCat,edCat].forEach(function(sel){
-    CATS.forEach(function(c){
-      var o=document.createElement('option');
-      o.value=c.id;
-      o.textContent=c.emoji+' '+c.nome;
-      sel.appendChild(o);
-    });
-  });
+    /* ---------- LocalStorage (persistência automática) ---------- */
+    function salvarState() {
+      try { localStorage.setItem(CHAVE_STORAGE, JSON.stringify(state)); } catch (e) { /* armazenamento indisponível */ }
+    }
+    function carregarState() {
+      try {
+        const raw = localStorage.getItem(CHAVE_STORAGE);
+        if (!raw) return;
+        const d = JSON.parse(raw);
+        if (d && typeof d === 'object' && Array.isArray(d.itens)) {
+          state = {
+            pedidoAtivo: !!d.pedidoAtivo,
+            urgencia: (d.urgencia === 'urgente') ? 'urgente' : (d.urgencia === 'normal' ? 'normal' : null),
+            dataHoraISO: (typeof d.dataHoraISO === 'string') ? d.dataHoraISO : null,
+            itens: d.itens.filter(i => i && typeof i.nome === 'string').map(i => ({
+              id: (typeof i.id === 'string' && i.id) ? i.id : gerarId(),
+              nome: String(i.nome),
+              quantidade: String(i.quantidade || ''),
+              categoria: CATEGORIAS.some(c => c.id === i.categoria) ? i.categoria : 'utilidades'
+            }))
+          };
+          if (state.pedidoAtivo && !state.dataHoraISO) state.pedidoAtivo = false;
+        }
+      } catch (e) { /* dados corrompidos: começa limpo, sem travar */ }
+    }
 
-  formAdd.addEventListener('submit',function(e){ e.preventDefault(); addItem(); });
-  fNome.addEventListener('input',function(){ fieldErr(wNome,false); });
-  fCat.addEventListener('change',function(){ fieldErr(wCat,false); });
+    /* ---------- Toast ---------- */
+    function toast(msg, erro) {
+      const t = $('toast');
+      t.textContent = msg;
+      t.classList.toggle('erro', !!erro);
+      t.classList.add('mostrar');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('mostrar'), 2800);
+    }
 
-  formEdit.addEventListener('submit',saveEdit);
-  edNome.addEventListener('input',function(){ fieldErr(wEdNome,false); });
-  edCat.addEventListener('change',function(){ fieldErr(wEdCat,false); });
+    /* ---------- Modais ---------- */
+    let ultimoFocado = null;
+    function abrirModal(overlay) {
+      ultimoFocado = document.activeElement;
+      overlay.hidden = false;
+      requestAnimationFrame(() => overlay.classList.add('aberto'));
+      const alvo = overlay.querySelector('[data-foco]');
+      if (alvo) setTimeout(() => alvo.focus(), 120);
+    }
+    function fecharModal(overlay) {
+      overlay.classList.remove('aberto');
+      setTimeout(() => { overlay.hidden = true; }, 180);
+      if (ultimoFocado && typeof ultimoFocado.focus === 'function') ultimoFocado.focus();
+    }
+    function confirmarAcao(o) {
+      $('conf-titulo').textContent = o.titulo;
+      $('conf-texto').textContent = o.texto || '';
+      const destaque = $('conf-destaque');
+      if (o.destaque) { destaque.hidden = false; destaque.textContent = o.destaque; } else destaque.hidden = true;
+      const nota = $('conf-nota');
+      if (o.nota) { nota.hidden = false; nota.textContent = o.nota; } else nota.hidden = true;
+      $('btn-conf-ok').textContent = o.rotuloOk || 'CONFIRMAR';
+      $('btn-conf-ok').className = 'btn ' + (o.classeOk || 'btn-perigo');
+      acaoConfirmada = o.onConfirm || null;
+      abrirModal($('modal-confirmar'));
+    }
 
-  lista.addEventListener('click',function(e){
-    var b=e.target.closest('[data-act]');
-    if(!b) return;
-    var row=b.closest('.item');
-    if(!row) return;
-    if(b.dataset.act==='edit') openEdit(row.dataset.id);
-    else openDel(row.dataset.id);
-  });
+    /* ---------- Validação ---------- */
+    function validarCampo(valor, input, msgEl, msg) {
+      if (valor) { input.classList.remove('invalido'); msgEl.hidden = true; return true; }
+      input.classList.add('invalido');
+      msgEl.textContent = msg;
+      msgEl.hidden = false;
+      return false;
+    }
 
-  btnNew.addEventListener('click',openNovo);
-  var opts=document.querySelectorAll('.urg-opt');
-  for(var i=0;i<opts.length;i++){
-    (function(btn){ btn.addEventListener('click',function(){ selectUrg(btn); }); })(opts[i]);
-  }
-  btnIniciar.addEventListener('click',function(){
-    if(!selectedUrg) return;
-    state={iniciado:true,ts:Date.now(),urgencia:selectedUrg,itens:[]};
-    save(); closeModal(mNovo); render();
-    try{ fNome.focus(); }catch(e){}
-    toast('Pedido iniciado. Bom trabalho!');
-  });
+    /* ---------- Renderização geral ---------- */
+    function renderTudo() {
+      const ativo = state.pedidoAtivo;
+      $('tela-inicio').hidden = ativo;
+      $('tela-pedido').hidden = !ativo;
+      $('barra-pdf').hidden = !ativo;
+      $('meta-pedido').hidden = !ativo;
+      if (ativo) {
+        $('meta-data').textContent = '📅 ' + formatarDataHora(state.dataHoraISO);
+        const urgente = state.urgencia === 'urgente';
+        const pill = $('meta-status');
+        pill.textContent = urgente ? '🔴 URGENTE' : '🟢 NORMAL';
+        pill.className = 'status-pill ' + (urgente ? 'urgente' : 'normal');
+      }
+      renderLista();
+    }
 
-  btnDelYes.addEventListener('click',function(){
-    state.itens=state.itens.filter(function(i){ return i.id!==delId; });
-    delId=null;
-    save(); render(); closeModal(mDel);
-    toast('Item excluído da lista.');
-  });
+    function renderLista() {
+      const container = $('lista-grupos');
+      container.innerHTML = '';
+      let total = 0;
 
-  btnClear.addEventListener('click',function(){
-    if(!state.itens.length){ toast('A lista já está vazia.','warn'); return; }
-    openModal(mClear);
-  });
-  btnClearYes.addEventListener('click',function(){
-    state.itens=[];
-    save(); render(); closeModal(mClear);
-    toast('Lista limpa. O pedido continua aberto.');
-  });
+      for (const cat of CATEGORIAS) {
+        const itens = state.itens.filter(i => i.categoria === cat.id);
+        if (!itens.length) continue;
+        total += itens.length;
 
-  btnEnd.addEventListener('click',function(){ openModal(mEnd); });
-  btnEndYes.addEventListener('click',function(){
-    state=defaultState();
-    save(); render(); closeModal(mEnd);
-    toast('Pedido encerrado. Você já pode iniciar um novo.');
-  });
+        const grupo = el('section', 'grupo');
+        const cab = el('header', 'grupo-cab');
+        cab.appendChild(el('span', 'grupo-nome', cat.emoji + ' ' + cat.nome.toUpperCase()));
+        cab.appendChild(el('span', 'grupo-cont', itens.length + ' ' + textoItens(itens.length)));
+        cab.querySelector('.grupo-cont').setAttribute('aria-label', itens.length + ' ' + textoItens(itens.length) + ' em ' + cat.nome);
 
-  chipN.addEventListener('click',function(){ setUrgencia('normal'); });
-  chipU.addEventListener('click',function(){ setUrgencia('urgente'); });
+        const ul = el('ul', 'grupo-lista');
+        itens.forEach(it => {
+          const li = el('li', 'item');
+          const info = el('div', 'item-info');
+          info.appendChild(el('span', 'item-nome', it.nome));
+          info.appendChild(el('span', 'item-qtd', it.quantidade));
+          const acoes = el('div', 'item-acoes');
+          const bE = el('button', 'btn-icone', '✏️');
+          bE.type = 'button';
+          bE.setAttribute('aria-label', 'Editar ' + it.nome);
+          bE.dataset.editar = it.id;
+          const bX = el('button', 'btn-icone perigo', '🗑️');
+          bX.type = 'button';
+          bX.setAttribute('aria-label', 'Excluir ' + it.nome);
+          bX.dataset.excluir = it.id;
+          acoes.append(bE, bX);
+          li.append(info, acoes);
+          ul.appendChild(li);
+        });
+        grupo.append(cab, ul);
+        container.appendChild(grupo);
+      }
 
-  btnPrev.addEventListener('click',abrirPreview);
-  btnPdf.addEventListener('click',gerarPDF);
-  pvBack.addEventListener('click',fecharPreview);
-  pvPdf.addEventListener('click',gerarPDF);
-  window.addEventListener('resize',fitPreview);
+      $('contador-total').textContent = total;
+      $('contador-texto').textContent = textoItens(total);
+      $('lista-vazia').hidden = total !== 0;
+      $('btn-limpar').disabled = total === 0;
+    }
 
-  btnInstall.addEventListener('click',async function(){
-    if(!installPrompt) return;
-    installPrompt.prompt();
-    try{ await installPrompt.userChoice; }catch(e){}
-    installPrompt=null;
-    btnInstall.hidden=true;
-  });
+    /* ---------- Novo pedido ---------- */
+    function solicitarNovoPedido() {
+      if (state.pedidoAtivo && state.itens.length) {
+        confirmarAcao({
+          titulo: 'Iniciar novo pedido?',
+          texto: 'Já existe um pedido em andamento com itens na lista. Ao iniciar um novo pedido, os itens atuais serão descartados.',
+          nota: 'Esta ação não pode ser desfeita.',
+          rotuloOk: 'INICIAR NOVO',
+          classeOk: 'btn-perigo',
+          onConfirm: abrirModalNovo
+        });
+      } else {
+        abrirModalNovo();
+      }
+    }
 
-  window.addEventListener('online',function(){ updNet(); toast('Conexão reestabelecida.'); });
-  window.addEventListener('offline',function(){
-    updNet();
-    toast('Sem internet — você pode continuar usando o aplicativo.','ok');
-  });
-}
-function setUrgencia(v){
-  if(!state.iniciado || state.urgencia===v) return;
-  state.urgencia=v;
-  save(); render();
-  toast('Urgência alterada para '+(v==='urgente'?'URGENTE':'NORMAL')+'.');
-}
+    function abrirModalNovo() {
+      novoPedidoISO = new Date().toISOString();          // data/hora do aparelho, capturada no ato
+      $('novo-data-hora').textContent = formatarDataHora(novoPedidoISO);
+      urgenciaSelecionada = null;
+      $('btn-iniciar').disabled = true;
+      document.querySelectorAll('.btn-urg').forEach(b => {
+        b.classList.remove('selecionada');
+        b.setAttribute('aria-pressed', 'false');
+      });
+      abrirModal($('modal-novo'));
+    }
 
-/* ============ INICIALIZAÇÃO ============ */
-bind();
-render();
-updNet();
-setFavicon();
-if(isStandalone()) btnInstall.hidden=true;
+    function iniciarPedido() {
+      if (!urgenciaSelecionada) return;                  // o botão só funciona após escolher a urgência
+      state = { pedidoAtivo: true, urgencia: urgenciaSelecionada, dataHoraISO: novoPedidoISO, itens: [] };
+      salvarState();
+      fecharModal($('modal-novo'));
+      renderTudo();
+      toast('Pedido iniciado. Adicione os itens.');
+    }
 
-if('serviceWorker' in navigator){
-  window.addEventListener('load',function(){
-    navigator.serviceWorker.register('./service-worker.js').catch(function(){});
-  });
-}
-ensurePdfLib(); /* pré-carrega a biblioteca em segundo plano quando há rede */
-})();
-</script>
+    /* ---------- Adicionar / editar / excluir / limpar ---------- */
+    function adicionarItem(e) {
+      e.preventDefault();
+      const nome = $('inp-nome').value.trim();
+      const qtd = $('inp-qtd').value.trim();
+      const cat = $('sel-cat').value;
+      let ok = validarCampo(nome, $('inp-nome'), $('erro-nome'), 'Informe o nome do item.');
+      ok = validarCampo(qtd, $('inp-qtd'), $('erro-qtd'), 'Informe a quantidade.') && ok;
+      ok = validarCampo(cat, $('sel-cat'), $('erro-cat'), 'Selecione uma categoria.') && ok;
+      if (!ok) return;
+
+      state.itens.push({ id: gerarId(), nome, quantidade: qtd, categoria: cat });
+      salvarState();
+      // Limpa os campos de texto; mantém a categoria para agilizar vários itens da mesma seção
+      $('inp-nome').value = '';
+      $('inp-qtd').value = '';
+      renderLista();
+      toast('Item adicionado à lista.');
+      $('inp-nome').focus();
+    }
+
+    function abrirEditar(id) {
+      const it = state.itens.find(i => i.id === id);
+      if (!it) return;
+      itemEmEdicaoId = id;
+      $('edt-nome').value = it.nome;
+      $('edt-qtd').value = it.quantidade;
+      $('edt-cat').value = it.categoria;
+      ['erro-edt-nome', 'erro-edt-qtd', 'erro-edt-cat'].forEach(e => { $(e).hidden = true; });
+      ['edt-nome', 'edt-qtd', 'edt-cat'].forEach(e => { $(e).classList.remove('invalido'); });
+      abrirModal($('modal-editar'));
+    }
+
+    function salvarEdicao() {
+      const it = state.itens.find(i => i.id === itemEmEdicaoId);
+      if (!it) { fecharModal($('modal-editar')); return; }
+      const nome = $('edt-nome').value.trim();
+      const qtd = $('edt-qtd').value.trim();
+      const cat = $('edt-cat').value;
+      let ok = validarCampo(nome, $('edt-nome'), $('erro-edt-nome'), 'Informe o nome do item.');
+      ok = validarCampo(qtd, $('edt-qtd'), $('erro-edt-qtd'), 'Informe a quantidade.') && ok;
+      ok = validarCampo(cat, $('edt-cat'), $('erro-edt-cat'), 'Selecione uma categoria.') && ok;
+      if (!ok) return;
+
+      it.nome = nome;
+      it.quantidade = qtd;
+      it.categoria = cat;
+      salvarState();
+      renderLista();
+      fecharModal($('modal-editar'));
+      toast('Alterações salvas.');
+    }
+
+    function pedirExclusao(id) {
+      const it = state.itens.find(i => i.id === id);
+      if (!it) return;
+      confirmarAcao({
+        titulo: '⚠️ Excluir item?',
+        texto: 'Deseja realmente excluir:',
+        destaque: it.nome.toUpperCase(),
+        nota: 'Esta ação não pode ser desfeita.',
+        rotuloOk: 'EXCLUIR',
+        classeOk: 'btn-perigo',
+        onConfirm: () => {
+          state.itens = state.itens.filter(i => i.id !== id);
+          salvarState();
+          renderLista();
+          toast('Item excluído.');
+        }
+      });
+    }
+
+    function pedirLimpeza() {
+      if (!state.itens.length) return;
+      confirmarAcao({
+        titulo: '⚠️ Limpar toda a lista?',
+        texto: 'Todos os itens serão removidos.',
+        nota: 'Esta ação não pode ser desfeita.',
+        rotuloOk: 'LIMPAR TUDO',
+        classeOk: 'btn-perigo',
+        onConfirm: () => {
+          state.itens = [];
+          salvarState();
+          renderLista();
+          toast('Lista limpa.');
+        }
+      });
+    }
+
+    /* ============================================================
+       TEMPLATE DO PDF — construção + paginação controlada
+       Cada "página" é um bloco de altura exata da área útil A4,
+       com cabeçalho (completo na 1ª, compacto nas seguintes) e
+       rodapé fixos dentro do bloco. Nada é cortado e nenhuma
+       página em branco é criada.
+       ============================================================ */
+
+    function montarCabecalhoPdf() {
+      const h = el('header', 'pdf-cabecalho');
+      const esq = el('div');
+      esq.appendChild(el('h2', 'pdf-titulo', 'SÍTIO RECANTO DA LIMEIRA'));
+      esq.appendChild(el('p', 'pdf-subtitulo', 'Controle de Suprimentos e Compras'));
+      const dir = el('div', 'pdf-cab-dir');
+      dir.appendChild(el('p', 'pdf-data', 'Data/Hora: ' + formatarDataHora(state.dataHoraISO)));
+      const urgente = state.urgencia === 'urgente';
+      dir.appendChild(el('span', 'pdf-status' + (urgente ? ' urgente' : ''), urgente ? 'STATUS: 🔴 URGENTE' : 'STATUS: 🟢 NORMAL'));
+      h.append(esq, dir);
+      return h;
+    }
+
+    function montarMiniCabecalhoPdf() {
+      const h = el('header', 'pdf-mini');
+      h.appendChild(el('span', 'pdf-mini-titulo', 'SÍTIO RECANTO DA LIMEIRA'));
+      const urgente = state.urgencia === 'urgente';
+      h.appendChild(el('span', 'pdf-mini-meta', formatarDataHora(state.dataHoraISO) + '  •  ' + (urgente ? 'STATUS: 🔴 URGENTE' : 'STATUS: 🟢 NORMAL')));
+      return h;
+    }
+
+    function montarRodapePdf() {
+      const f = el('footer', 'pdf-rodape');
+      f.appendChild(el('p', 'pdf-rodape-nome', 'Sítio Recanto da Limeira'));
+      f.appendChild(el('p', 'pdf-rodape-sub', 'Pedido de Suprimentos'));
+      return f;
+    }
+
+    function montarGrupoPdf(cat, itens, sufixo) {
+      const g = el('section', 'pdf-grupo');
+      g.appendChild(el('h3', 'pdf-cat-titulo', cat.emoji + '  ' + cat.nome.toUpperCase() + (sufixo || '')));
+      const table = el('table', 'pdf-tabela');
+      const thead = el('thead');
+      const trh = el('tr');
+      const th1 = el('th', 'col-produto', 'Produto / Suprimento');
+      const th2 = el('th', 'col-qtd', 'Quantidade');
+      trh.append(th1, th2);
+      thead.appendChild(trh);
+      const tbody = el('tbody');
+      itens.forEach(it => {
+        const tr = el('tr');
+        tr.appendChild(el('td', 'td-nome', it.nome));
+        tr.appendChild(el('td', 'td-qtd', it.quantidade));
+        tbody.appendChild(tr);
+      });
+      table.append(thead, tbody);
+      g.append(table);
+      return { node: g };
+    }
+
+    function construirTemplatePdf() {
+      const render = $('pdf-render');
+      const medidor = $('pdf-medidor');
+      render.innerHTML = '';
+      medidor.innerHTML = '';
+
+      /* 1) Mede os cabeçalhos */
+      const cab1 = montarCabecalhoPdf();
+      const cab2 = montarMiniCabecalhoPdf();
+      medidor.append(cab1, cab2);
+      const cab1H = cab1.offsetHeight;
+      const cab2H = cab2.offsetHeight;
+      medidor.innerHTML = '';
+
+      /* 2) Mede cada categoria (título, cabeçalho da tabela e cada linha) */
+      const grupos = [];
+      for (const cat of CATEGORIAS) {
+        const itens = state.itens.filter(i => i.categoria === cat.id);
+        if (!itens.length) continue;
+        const { node } = montarGrupoPdf(cat, itens, '');
+        medidor.appendChild(node);
+        grupos.push({
+          cat,
+          itens,
+          titulo: node.querySelector('.pdf-cat-titulo').offsetHeight,
+          thead: node.querySelector('thead').offsetHeight,
+          linhas: Array.from(node.querySelectorAll('tbody tr')).map(tr => tr.offsetHeight)
+        });
+        medidor.innerHTML = '';
+      }
+
+      /* 3) Distribui os grupos pelas páginas sem cortar linhas */
+      const paginas = [];
+      let conteudo = null, restante = 0, primeira = true, paginaVazia = true;
+
+      const alturaDaFatia = (p, ate) => {
+        let h = p.titulo + p.thead;
+        for (let i = p.idx; i < ate; i++) h += p.linhas[i];
+        return h + PDF_CFG.GAP_GRUPO;
+      };
+
+      const abrirPagina = () => {
+        const pag = el('section', 'pdf-pagina');
+        pag.appendChild(primeira ? cab1 : cab2.cloneNode(true));
+        conteudo = el('div', 'pdf-conteudo');
+        pag.appendChild(conteudo);
+        pag.appendChild(montarRodapePdf());
+        paginas.push(pag);
+        restante = PDF_CFG.ALT - (primeira ? cab1H : cab2H) - PDF_CFG.RESERVA;
+        primeira = false;
+        paginaVazia = true;
+      };
+
+      const anexar = (p, ate, sufixo) => {
+        const { node } = montarGrupoPdf(p.cat, p.itens.slice(p.idx, ate), sufixo);
+        conteudo.appendChild(node);
+        restante -= alturaDaFatia(p, ate);
+        paginaVazia = false;
+      };
+
+      abrirPagina();
+      const fila = grupos.map(g => ({ ...g, idx: 0 }));
+      let guardas = 0;
+      while (fila.length && guardas++ < 300) {
+        const p = fila.shift();
+        const fim = p.itens.length;
+
+        if (alturaDaFatia(p, fim) <= restante) {
+          anexar(p, fim, p.idx > 0 ? ' (continuação)' : '');
+          continue;
+        }
+
+        /* Não coube inteiro: tenta título + cabeçalho da tabela + N linhas inteiras */
+        let esp = restante - p.titulo - p.thead;
+        let n = 0;
+        while (p.idx + n < fim && esp - p.linhas[p.idx + n] >= 0) {
+          esp -= p.linhas[p.idx + n];
+          n++;
+        }
+
+        if (n === 0 && !paginaVazia) {        // página sem espaço: abre outra e tenta de novo
+          abrirPagina();
+          fila.unshift(p);
+          continue;
+        }
+        if (n === 0 && paginaVazia) n = 1;    // conteúdo maior que a página inteira (caso extremo): força e o overflow oculta
+
+        anexar(p, p.idx + n, p.idx > 0 ? ' (continuação)' : '');
+        p.idx += n;
+        if (p.idx < fim) {
+          abrirPagina();
+          fila.unshift(p);
+        }
+      }
+
+      /* 4) Montagem final com quebras explícitas entre as páginas */
+      paginas.forEach((pag, i) => {
+        if (i) render.appendChild(el('div', 'html2pdf__page-break'));
+        render.appendChild(pag);
+      });
+      return paginas.length;
+    }
+
+    /* ---------- Pré-visualização ---------- */
+    function abrirPrevia() {
+      if (!state.pedidoAtivo || !state.itens.length) {
+        toast('⚠️ Adicione pelo menos um item à lista.', true);
+        return;
+      }
+      const totalPaginas = construirTemplatePdf();
+      const alvo = $('previa-folhas');
+      alvo.innerHTML = '';
+      document.querySelectorAll('#pdf-render > .pdf-pagina').forEach((pag, i) => {
+        const box = el('div', 'folha-box');
+        const folha = el('div', 'folha');
+        folha.appendChild(pag.cloneNode(true));
+        box.appendChild(folha);
+        alvo.appendChild(box);
+        alvo.appendChild(el('p', 'pagina-rotulo', 'Página ' + (i + 1) + ' de ' + totalPaginas + ' — A4 · 210 × 297 mm'));
+      });
+      ajustarEscalaPrevia();
+      abrirModal($('modal-previa'));
+    }
+
+    function ajustarEscalaPrevia() {
+      const disp = $('previa-scroll').clientWidth - 28;
+      $('previa-folhas').style.setProperty('--escala', Math.min(1, disp / 794));
+    }
+
+    function fecharPrevia() { fecharModal($('modal-previa')); }
+
+    /* ---------- Geração do PDF ---------- */
+    let carregandoLib = null;
+    function garantirBibliotecaPdf() {
+      if (window.html2pdf) return Promise.resolve();
+      if (!carregandoLib) {
+        carregandoLib = new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+          s.onload = () => resolve();
+          s.onerror = () => {
+            carregandoLib = null;
+            reject(new Error('O arquivo html2pdf.bundle.min.js não foi encontrado na pasta do app (e não há internet para usar a cópia de reserva).'));
+          };
+          document.head.appendChild(s);
+        });
+      }
+      return carregandoLib;
+    }
+
+    async function gerarPdf() {
+      if (!state.pedidoAtivo || !state.itens.length) {
+        toast('⚠️ Adicione pelo menos um item à lista.', true);
+        return;
+      }
+      const botoes = [$('btn-gerar'), $('btn-previa-gerar')];
+      const originais = botoes.map(b => b.textContent);
+      botoes.forEach(b => { b.disabled = true; b.textContent = '⏳ GERANDO…'; });
+      try {
+        await garantirBibliotecaPdf();
+        construirTemplatePdf();
+        await html2pdf().set(OPCOES_PDF).from($('pdf-render')).save();
+        toast('📄 PDF gerado com sucesso.');
+        if (!$('modal-previa').hidden) fecharPrevia();
+      } catch (err) {
+        toast('Não foi possível gerar o PDF. ' + (err && err.message ? err.message : 'Tente novamente.'), true);
+      } finally {
+        botoes.forEach((b, i) => { b.disabled = false; b.textContent = originais[i]; });
+      }
+    }
+
+    /* ---------- Service Worker (PWA real, offline) ---------- */
+    function registrarServiceWorker() {
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.register('./service-worker.js')
+        .catch(() => { /* ex.: aberto via file:// — o app segue funcionando normalmente */ });
+    }
+
+    /* ---------- Inicialização ---------- */
+    function popularSelects() {
+      const opcoes = () => {
+        const frag = document.createDocumentFragment();
+        CATEGORIAS.forEach(c => {
+          const o = document.createElement('option');
+          o.value = c.id;
+          o.textContent = c.emoji + ' ' + c.nome;
+          frag.appendChild(o);
+        });
+        return frag;
+      };
+      $('sel-cat').appendChild(opcoes());
+      $('edt-cat').appendChild(opcoes());
+    }
+
+    function init() {
+      popularSelects();
+      carregarState();
+      renderTudo();
+
+      /* Navegação e pedido */
+      $('btn-abrir-novo').addEventListener('click', solicitarNovoPedido);
+      $('btn-novo-topo').addEventListener('click', solicitarNovoPedido);
+      $('btn-cancelar-novo').addEventListener('click', () => fecharModal($('modal-novo')));
+      $('btn-iniciar').addEventListener('click', iniciarPedido);
+      document.querySelectorAll('.btn-urg').forEach(b => {
+        b.addEventListener('click', () => {
+          urgenciaSelecionada = b.dataset.valor;
+          document.querySelectorAll('.btn-urg').forEach(x => {
+            x.classList.toggle('selecionada', x === b);
+            x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+          });
+          $('btn-iniciar').disabled = false;
+        });
+      });
+
+      /* Itens */
+      $('form-item').addEventListener('submit', adicionarItem);
+      $('lista-grupos').addEventListener('click', e => {
+        const bE = e.target.closest('[data-editar]');
+        if (bE) { abrirEditar(bE.dataset.editar); return; }
+        const bX = e.target.closest('[data-excluir]');
+        if (bX) pedirExclusao(bX.dataset.excluir);
+      });
+      $('btn-limpar').addEventListener('click', pedirLimpeza);
+
+      /* Edição */
+      $('btn-salvar-edicao').addEventListener('click', salvarEdicao);
+      $('btn-cancelar-edicao').addEventListener('click', () => fecharModal($('modal-editar')));
+
+      /* Confirmação */
+      $('btn-conf-ok').addEventListener('click', () => {
+        const fn = acaoConfirmada;
+        acaoConfirmada = null;
+        fecharModal($('modal-confirmar'));
+        if (fn) fn();
+      });
+      $('btn-conf-cancelar').addEventListener('click', () => {
+        acaoConfirmada = null;
+        fecharModal($('modal-confirmar'));
+      });
+
+      /* PDF */
+      $('btn-previa').addEventListener('click', abrirPrevia);
+      $('btn-previa-voltar').addEventListener('click', fecharPrevia);
+      $('btn-previa-gerar').addEventListener('click', gerarPdf);
+      $('btn-gerar').addEventListener('click', gerarPdf);
+
+      /* Limpa erros enquanto o usuário digita */
+      [['inp-nome', 'erro-nome'], ['inp-qtd', 'erro-qtd'], ['sel-cat', 'erro-cat'],
+       ['edt-nome', 'erro-edt-nome'], ['edt-qtd', 'erro-edt-qtd'], ['edt-cat', 'erro-edt-cat']]
+        .forEach(([inp, msg]) => {
+          $(inp).addEventListener('input', () => { $(inp).classList.remove('invalido'); $(msg).hidden = true; });
+        });
+
+      /* ESC cancela o modal aberto (nunca perde dados do formulário) */
+      document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        if (!$('modal-previa').hidden) { fecharPrevia(); return; }
+        if (!$('modal-confirmar').hidden) { acaoConfirmada = null; fecharModal($('modal-confirmar')); return; }
+        if (!$('modal-editar').hidden) { fecharModal($('modal-editar')); return; }
+        if (!$('modal-novo').hidden) { fecharModal($('modal-novo')); }
+      });
+
+      window.addEventListener('resize', () => {
+        if (!$('modal-previa').hidden) ajustarEscalaPrevia();
+      });
+
+      registrarServiceWorker();
+    }
+
+    init();
+  </script>
 </body>
 </html>
