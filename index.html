@@ -1,469 +1,1130 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Controle de Suprimentos e Compras do Sítio Recanto da Limeira. Monta a lista, pré-visualiza e gera PDF A4. Funciona offline.">
-  <meta name="theme-color" content="#1B5E20">
-  <title>Sítio Recanto da Limeira — Controle de Suprimentos e Compras</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sítio Recanto da Limeira — Suprimentos</title>
+<meta name="description" content="Controle de suprimentos e compras do Sítio Recanto da Limeira. Funciona offline e gera o pedido em PDF A4.">
+<meta name="theme-color" content="#1B5E20">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:,">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --verde:#2E7D32; --verde-esc:#1B5E20; --fundo:#F3F6F4; --branco:#fff;
+  --texto:#263238; --urgente:#C62828; --texto-2:#5B6B60; --borda:#DCE4DD;
+  --tinte:#E8F1E9; --radius:16px;
+  --shadow:0 2px 10px rgba(38,50,56,.06), 0 12px 28px rgba(38,50,56,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Atkinson Hyperlegible',-apple-system,'Segoe UI',Arial,sans-serif;
+  background:var(--fundo); color:var(--texto); min-height:100dvh;
+  padding-bottom:calc(112px + env(safe-area-inset-bottom));
+}
+body.lock{overflow:hidden}
+:focus-visible{outline:3px solid var(--verde);outline-offset:2px}
+button{font:inherit;-webkit-tap-highlight-color:transparent}
 
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%231B5E20'/%3E%3Cpath d='M5 19.5C12.5 18.5 17.8 13.4 19.4 4.6' fill='none' stroke='%23A5D6A7' stroke-width='1.6' stroke-linecap='round'/%3E%3Cpath d='M10.6 15.6c-2.9.3-5-.9-6.3-3.8 3-.3 5.1.9 6.3 3.8Z' fill='%23A5D6A7'/%3E%3Cpath d='M13.6 12c-.3-2.9.8-5 3.5-6.5.5 2.9-.6 5-3.5 6.5Z' fill='%2366BB6A'/%3E%3C/svg%3E">
+/* ============ BARRA SUPERIOR ============ */
+.appbar{position:sticky;top:0;z-index:40;background:var(--verde-esc);color:#fff;
+  padding:13px 16px 12px;box-shadow:0 4px 18px rgba(27,94,32,.35)}
+.appbar .row{display:flex;align-items:center;gap:12px;max-width:660px;margin:0 auto}
+.brand-stamp{width:42px;height:42px;flex:none;border:1.5px solid rgba(255,255,255,.55);
+  border-radius:50%;display:grid;place-items:center;color:#D7EBD7}
+.appbar h1{font-family:Fraunces,Georgia,serif;font-size:18.5px;font-weight:600;line-height:1.12}
+.appbar .sub{font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:#A7C9A8;font-weight:700;margin-top:3px}
+.net-dot{margin-left:auto;width:11px;height:11px;border-radius:50%;background:#93A798;flex:none}
+.net-dot.on{background:#8BC34A;box-shadow:0 0 0 3px rgba(139,195,74,.28)}
+.order-line{max-width:660px;margin:11px auto 0;display:flex;align-items:center;gap:10px;
+  flex-wrap:wrap;font-size:12.5px;color:#CFE6CF;font-weight:700}
+.ol-date{display:inline-flex;align-items:center;gap:6px}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:4px 11px;border-radius:999px;
+  font-size:11px;font-weight:700;letter-spacing:.09em}
+.badge .dot{width:9px;height:9px;border-radius:50%}
+.b-nor{background:rgba(255,255,255,.15);color:#D7EBD7}
+.b-nor .dot{background:#8BC34A}
+.b-urg{background:var(--urgente);color:#fff;animation:softPulse 2.4s ease-in-out infinite}
+.b-urg .dot{background:#fff}
+@keyframes softPulse{0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,.5)}50%{box-shadow:0 0 0 7px rgba(198,40,40,0)}}
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+main{max-width:660px;margin:0 auto;padding:16px 14px 10px}
+.card{background:var(--branco);border:1px solid var(--borda);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:16px}
+.card-title{display:flex;align-items:center;gap:9px;font-family:Fraunces,Georgia,serif;
+  font-size:18px;color:var(--verde-esc);margin-bottom:14px}
+.card-title svg{color:var(--verde);flex:none}
 
-  <style>
-    /* ==========================================================
-       TOKENS — paleta oficial do projeto
-       ========================================================== */
-    :root{
-      --verde:#2E7D32;
-      --verde-escuro:#1B5E20;
-      --verde-tinta:#E7F2E8;
-      --fundo:#F3F6F4;
-      --superficie:#FFFFFF;
-      --texto:#263238;
-      --texto-suave:#5B6B66;
-      --linha:#DDE5E1;
-      --urgente:#C62828;
-      --urgente-tinta:#FBEAE9;
-      --raio:16px;
-      --sombra:0 1px 2px rgba(38,50,56,.06), 0 8px 24px rgba(38,50,56,.08);
-      --sombra-forte:0 24px 60px rgba(0,0,0,.45);
-    }
+/* ============ BOTÕES ============ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:54px;
+  padding:0 18px;border:none;border-radius:14px;font-size:15px;font-weight:700;
+  letter-spacing:.03em;cursor:pointer;transition:transform .12s ease,background .18s;
+  user-select:none}
+.btn:active{transform:scale(.97)}
+.btn-pri{background:var(--verde);color:#fff;box-shadow:0 6px 16px rgba(46,125,50,.28)}
+.btn-pri:hover{background:#286f2c}
+.btn-danger{background:var(--urgente);color:#fff;box-shadow:0 6px 16px rgba(198,40,40,.25)}
+.btn-ghost{background:#fff;color:var(--verde-esc);border:1.5px solid var(--borda)}
+.btn-warn{background:#fff;color:var(--urgente);border:1.5px solid #EAC3C2}
+.btn-block{width:100%}
+.btn-lg{min-height:58px;font-size:16px}
+.btn-sm{min-height:40px;padding:0 13px;font-size:12.5px;border-radius:11px;gap:7px}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.iconbtn{width:42px;height:42px;flex:none;border-radius:11px;border:none;background:var(--tinte);
+  color:var(--verde-esc);display:grid;place-items:center;cursor:pointer;transition:.15s}
+.iconbtn:active{transform:scale(.92)}
+.iconbtn.del{background:#FDEBEA;color:var(--urgente)}
+.iconbtn.end{background:#EDF1EE;color:var(--texto-2)}
 
-    *{ box-sizing:border-box; margin:0; padding:0; }
-    html{ -webkit-text-size-adjust:100%; }
-    body{
-      font-family:'Archivo', Arial, sans-serif;
-      background:var(--fundo);
-      color:var(--texto);
-      min-height:100vh;
-      min-height:100dvh;
-      -webkit-font-smoothing:antialiased;
-    }
-    [hidden]{ display:none !important; }
-    button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
-    input, select{ font:inherit; color:inherit; }
-    svg{ display:block; }
+/* ============ CAMPOS ============ */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--texto-2);margin-bottom:6px}
+.field input,.field select{width:100%;height:52px;border:1.5px solid var(--borda);
+  border-radius:12px;background:#fff;padding:0 14px;font:inherit;font-size:16px;color:var(--texto)}
+.field input:focus,.field select:focus{border-color:var(--verde)}
+.field.err input,.field.err select{border-color:var(--urgente)}
+.err-msg{display:none;color:var(--urgente);font-size:12px;margin-top:5px;font-weight:700}
+.field.err .err-msg{display:block}
+.hint{font-size:11.5px;color:#7C8C82;margin-top:5px}
+.selwrap{position:relative}
+.selwrap select{appearance:none;-webkit-appearance:none;padding-right:46px;cursor:pointer}
+.chev{position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;
+  color:var(--texto-2);display:flex}
 
-    :focus-visible{ outline:3px solid rgba(46,125,50,.45); outline-offset:2px; border-radius:8px; }
+/* ============ TELA INICIAL ============ */
+.start{min-height:calc(100dvh - 150px);display:flex;align-items:center;justify-content:center;
+  padding:24px 16px 36px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Cg fill='none' stroke='%232E7D32' stroke-opacity='.08' stroke-width='1.5' stroke-linecap='round'%3E%3Cpath d='M40 34c0 13-8 21-20 21 0-12 7-21 20-21Z'/%3E%3Cpath d='M20 55c4-7 10-12 15-15'/%3E%3Cpath d='M112 108c0 13-8 21-20 21 0-12 7-21 20-21Z'/%3E%3Cpath d='M92 129c4-7 10-12 15-15'/%3E%3C/g%3E%3C/svg%3E")}
+.start-card{background:#fff;border:1px solid var(--borda);border-radius:24px;
+  box-shadow:var(--shadow);padding:36px 26px 24px;max-width:420px;width:100%;text-align:center}
+.big-stamp{width:84px;height:84px;border:2.5px solid var(--verde);border-radius:50%;
+  display:grid;place-items:center;color:var(--verde);margin:0 auto 16px}
+.start-card h2{font-family:Fraunces,Georgia,serif;font-size:31px;line-height:1.12;
+  color:var(--verde-esc);margin-bottom:10px}
+.start-sub{font-size:14px;color:var(--texto-2);line-height:1.5;margin-bottom:22px}
+.start-card .btn{margin-bottom:10px}
+.start-note{margin-top:12px;font-size:11.5px;color:#7C8C82;display:flex;align-items:center;
+  justify-content:center;gap:6px}
 
-    .sr-only{
-      position:absolute; width:1px; height:1px; overflow:hidden;
-      clip:rect(0 0 0 0); white-space:nowrap;
-    }
+/* ============ CARD DO PEDIDO ============ */
+.order-meta{padding:14px 16px;margin-bottom:14px}
+.om-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.om-lbl{font-size:10.5px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--texto-2);margin-bottom:4px}
+.om-date{display:flex;align-items:center;gap:7px;font-weight:700;font-size:15.5px}
+.om-date svg{color:var(--verde);flex:none}
+.om-row2{margin-top:13px;border-top:1px dashed var(--borda);padding-top:12px}
+.urg-toggle{display:flex;gap:8px;margin-top:7px}
+.uchip{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;
+  border-radius:12px;border:1.5px solid var(--borda);background:#fff;font-size:12.5px;
+  font-weight:700;letter-spacing:.06em;color:var(--texto-2);cursor:pointer;transition:.18s}
+.uchip .dot{width:10px;height:10px;border-radius:50%;background:#B9C6BC;transition:.18s}
+.uchip:active{transform:scale(.97)}
+.uchip.sel-nor.sel{border-color:var(--verde);background:var(--tinte);color:var(--verde-esc)}
+.uchip.sel-nor.sel .dot{background:var(--verde)}
+.uchip.sel-urg.sel{border-color:var(--urgente);background:#FDEBEA;color:var(--urgente)}
+.uchip.sel-urg.sel .dot{background:var(--urgente)}
 
-    /* ==========================================================
-       CABEÇALHO
-       ========================================================== */
-    .cab{
-      position:relative;
-      background:var(--verde-escuro);
-      color:#fff;
-      padding:22px 18px 58px;
-      overflow:hidden;
-    }
-    .cab-marca{
-      display:flex; align-items:center; gap:12px;
-      max-width:680px; margin:0 auto;
-    }
-    .marca-icone{ width:34px; height:34px; color:#A5D6A7; flex-shrink:0; }
-    .cab-titulo{
-      font-family:'Fraunces', Georgia, serif;
-      font-weight:700; font-size:21px; line-height:1.12; letter-spacing:.2px;
-    }
-    .cab-subtitulo{
-      margin-top:4px;
-      font-size:10.5px; font-weight:600;
-      letter-spacing:.18em; text-transform:uppercase;
-      color:#A5D6A7;
-    }
-    .colina{
-      position:absolute; left:0; right:0; bottom:-1px;
-      width:100%; height:42px; pointer-events:none;
-    }
+/* ============ LISTA ============ */
+.list-top{display:flex;align-items:center;gap:10px;margin:26px 0 12px;flex-wrap:wrap}
+.list-top h2{font-family:Fraunces,Georgia,serif;font-size:19px;color:var(--verde-esc);
+  display:flex;align-items:center;gap:10px}
+.list-top .btn{margin-left:auto}
+.pill{font-size:11.5px;font-weight:700;background:var(--tinte);color:var(--verde-esc);
+  padding:3px 10px;border-radius:999px;letter-spacing:.02em}
+.empty{background:#fff;border:1.5px dashed var(--borda);border-radius:var(--radius);
+  padding:36px 18px;text-align:center;color:var(--texto-2);font-size:14px;line-height:1.5}
+.empty svg{color:#A5BBA9;display:block;margin:0 auto 12px}
+.cat-grp{margin-bottom:18px}
+.cat-head{display:flex;align-items:baseline;gap:8px;margin-bottom:9px}
+.cat-head h3{font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--verde-esc);font-weight:700;display:flex;align-items:center;gap:7px}
+.cat-head .cnt{margin-left:auto;font-size:11.5px;color:var(--texto-2);font-weight:700}
+.item{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--borda);
+  border-radius:14px;padding:9px 9px 9px 14px;margin-bottom:8px;
+  box-shadow:0 1px 3px rgba(38,50,56,.05);animation:pop .25s ease}
+@keyframes pop{from{opacity:0;transform:translateY(7px)}}
+.item .info{flex:1;min-width:0}
+.item .nome{font-weight:700;font-size:15px;overflow-wrap:anywhere;line-height:1.3}
+.item .qtd{display:inline-block;margin-top:4px;font-size:12.5px;color:var(--verde-esc);
+  background:var(--tinte);padding:2px 10px;border-radius:999px;font-weight:700;overflow-wrap:anywhere}
+.item .acts{display:flex;gap:6px}
 
-    /* Cartão de status do pedido (data/hora + urgência) */
-    .cartao-status{
-      position:relative; z-index:2;
-      max-width:680px; margin:18px auto 0;
-      background:var(--superficie);
-      color:var(--texto);
-      border-radius:var(--raio);
-      box-shadow:var(--sombra);
-      padding:14px 16px;
-      display:flex; align-items:center; gap:12px;
-    }
-    .cartao-status .icone{ width:22px; height:22px; color:var(--verde); flex-shrink:0; }
-    .status-datahora{
-      flex:1; font-size:16px; font-weight:700;
-      font-variant-numeric:tabular-nums; letter-spacing:.2px;
-    }
-    .badge{
-      display:inline-flex; align-items:center; gap:8px;
-      font-size:11.5px; font-weight:800; letter-spacing:.1em;
-      padding:7px 13px; border-radius:999px;
-      background:var(--verde-tinta); color:var(--verde-escuro);
-    }
-    .badge .ponto{ width:9px; height:9px; border-radius:50%; background:currentColor; }
-    .badge-urgente{ background:var(--urgente-tinta); color:var(--urgente); }
-    .badge-urgente .ponto{ animation:pulsar 1.5s ease-in-out infinite; }
-    @keyframes pulsar{ 50%{ opacity:.3; } }
+/* ============ RODAPÉ FIXO ============ */
+.footbar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;
+  border-top:1px solid var(--borda);padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  display:flex;gap:10px}
+.footbar .btn{flex:1}
+.footbar .btn-pri2{background:var(--verde-esc);color:#fff}
+.footbar .btn-pri2:hover{background:#164f1a}
 
-    /* ==========================================================
-       ESTRUTURA / VISÕES
-       ========================================================== */
-    main{ padding:18px 16px 40px; }
-    body.com-pedido main{ padding-bottom:128px; }
-    .visao{ max-width:680px; margin:0 auto; }
+/* ============ MODAIS ============ */
+.modal{position:fixed;inset:0;z-index:60;background:rgba(20,32,24,.58);display:none;
+  align-items:flex-end;justify-content:center}
+.modal.open{display:flex}
+.dialog{background:#fff;width:100%;max-width:480px;border-radius:22px 22px 0 0;
+  padding:22px 20px 20px;max-height:88dvh;overflow:auto;
+  animation:sheetUp .3s cubic-bezier(.2,.9,.3,1);box-shadow:0 -12px 40px rgba(0,0,0,.25)}
+@keyframes sheetUp{from{transform:translateY(42px);opacity:0}}
+@media(min-width:540px){
+  .modal{align-items:center;padding:26px}
+  .dialog{border-radius:22px;animation:dpop .24s ease}
+}
+@keyframes dpop{from{transform:scale(.96);opacity:0}}
+.d-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.d-head h3{font-family:Fraunces,Georgia,serif;font-size:20px;color:var(--verde-esc)}
+.d-ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
+  background:var(--tinte);color:var(--verde-esc);flex:none}
+.d-lead{font-size:13px;color:var(--texto-2);margin-bottom:8px}
+.d-date{display:flex;align-items:center;gap:9px;background:var(--tinte);border-radius:12px;
+  padding:12px 14px;font-size:14.5px;color:var(--verde-esc);margin-bottom:16px}
+.d-date svg{color:var(--verde);flex:none}
+.d-date strong{font-size:16px}
+.urg-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.urg-opt{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;
+  column-gap:10px;align-items:center;text-align:left;border:1.5px solid var(--borda);
+  border-radius:14px;padding:12px;background:#fff;cursor:pointer;transition:.18s}
+.urg-opt .dot{grid-row:1/3;width:15px;height:15px;border-radius:50%;flex:none}
+.urg-opt[data-urg="normal"] .dot{background:var(--verde)}
+.urg-opt[data-urg="urgente"] .dot{background:var(--urgente)}
+.urg-opt .uo-t{font-weight:700;font-size:14.5px;color:var(--texto)}
+.urg-opt .uo-d{grid-column:2;font-size:11.5px;color:var(--texto-2);margin-top:2px;line-height:1.35}
+.urg-opt:active{transform:scale(.98)}
+.urg-opt.sel[data-urg="normal"]{border-color:var(--verde);background:var(--tinte)}
+.urg-opt.sel[data-urg="urgente"]{border-color:var(--urgente);background:#FDEBEA}
+.d-actions{display:flex;gap:10px;margin-top:6px}
+.d-actions .btn{flex:1}
+.warn-badge{width:54px;height:54px;border-radius:50%;background:#FDEBEA;color:var(--urgente);
+  display:grid;place-items:center;margin:0 auto 12px}
+.dlg-sm{text-align:center;max-width:400px}
+.d-name{font-size:19px;font-weight:700;margin:2px 0 6px;word-break:break-word}
+.d-warn{font-size:12.5px;color:var(--urgente);font-weight:700;margin-bottom:18px}
 
-    /* Cartão genérico */
-    .cartao{
-      background:var(--superficie);
-      border-radius:var(--raio);
-      box-shadow:var(--sombra);
-      padding:18px;
-    }
+/* ============ PRÉ-VISUALIZAÇÃO (FOLHA A4) ============ */
+.preview{position:fixed;inset:0;z-index:70;background:#13221A;display:none;flex-direction:column}
+.preview.open{display:flex}
+.pv-bar{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#0E1B13;color:#fff;
+  border-bottom:1px solid rgba(255,255,255,.08)}
+.pv-back{display:flex;align-items:center;gap:6px;background:none;border:none;color:#CFE6CF;
+  font-size:14px;font-weight:700;min-height:44px;cursor:pointer}
+.pv-back:active{opacity:.7}
+.pv-title{flex:1;text-align:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:#8FB491;font-weight:700}
+.pv-gen{display:flex;align-items:center;gap:8px;background:var(--verde);color:#fff;border:none;
+  border-radius:11px;min-height:44px;padding:0 14px;font-size:12.5px;font-weight:700;
+  letter-spacing:.04em;cursor:pointer}
+.pv-gen:active{transform:scale(.96)}
+.pv-stage{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:18px 10px 44px}
+.pv-wrap{position:relative;margin:0 auto;overflow:hidden}
+.pv-sheet{position:absolute;top:0;left:0;width:794px;min-height:1123px;background:#fff;
+  box-shadow:0 22px 55px rgba(0,0,0,.5);transform-origin:top left;padding:45px 45px 34px}
 
-    /* ==========================================================
-       HOME
-       ========================================================== */
-    .home-hero{ text-align:center; padding:34px 22px 30px; }
-    .home-hero .marca-icone{ width:52px; height:52px; margin:0 auto 14px; color:var(--verde); }
-    .home-hero h2{
-      font-family:'Fraunces', Georgia, serif;
-      font-size:24px; font-weight:700; color:var(--verde-escuro);
-    }
-    .home-hero p{ margin-top:8px; color:var(--texto-suave); font-size:15px; line-height:1.5; }
-    .home-hero .btn{ margin-top:22px; width:100%; max-width:340px; }
+/* ============ TEMPLATE DO DOCUMENTO (PDF / PREVIEW) ============ */
+.doc{width:704px;background:#fff;color:var(--texto);
+  font-family:'Atkinson Hyperlegible',Arial,sans-serif;font-size:13px;line-height:1.45}
+.keep{page-break-inside:avoid;break-inside:avoid}
+.dhead .brand{display:flex;align-items:center;gap:14px}
+.dstamp{width:54px;height:54px;flex:none;border:2.5px solid var(--verde-esc);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:var(--verde-esc)}
+.dhead h2{font-family:Fraunces,Georgia,serif;font-size:23px;font-weight:700;letter-spacing:.05em;
+  color:var(--verde-esc);line-height:1.1}
+.dhead .brand p{font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:#61756A;margin-top:4px}
+.drule{height:3px;background:var(--verde-esc);margin:14px 0 12px;border-radius:2px}
+.dmeta{display:flex;justify-content:space-between;align-items:center;font-size:13px;flex-wrap:wrap;gap:8px}
+.chipd{display:inline-flex;align-items:center;gap:7px;padding:5px 13px;border-radius:999px;
+  font-weight:700;font-size:11px;letter-spacing:.1em}
+.chipd .dot{width:9px;height:9px;border-radius:50%}
+.chip-nor{background:#E6F0E7;color:var(--verde-esc);border:1px solid #A5C8A7}
+.chip-nor .dot{background:var(--verde)}
+.chip-urg{background:#FBE9E8;color:var(--urgente);border:1.5px solid var(--urgente)}
+.chip-urg .dot{background:var(--urgente)}
+.cat{margin-top:14px}
+.cat h3{display:flex;align-items:center;gap:8px;font-size:12.5px;letter-spacing:.09em;
+  color:var(--verde-esc);border-bottom:2px solid var(--verde);padding-bottom:5px;margin:0}
+.cat .ce{font-size:15px}
+.doc table{width:100%;border-collapse:collapse;table-layout:fixed}
+.doc th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;text-align:left;color:#61756A;
+  background:#F3F6F4;padding:7px 12px;border-bottom:1px solid #C9D4CB;font-weight:700}
+.doc th.q,.doc td.q{width:170px;text-align:right}
+.doc td{padding:8px 12px;border-bottom:1px solid #E4EAE5;font-size:13px;
+  word-wrap:break-word;overflow-wrap:anywhere}
+.doc td.q{color:var(--verde-esc);font-weight:700}
+.doc tbody tr:nth-child(even) td{background:#F7FAF8}
+.dtotal{margin-top:18px;text-align:right;font-size:12.5px;color:#3E4F44;
+  border-top:1px solid #C9D4CB;padding-top:9px}
+.dtotal strong{color:var(--verde-esc);font-size:14px}
+.dsign{margin-top:30px}
+.dsign .line{width:260px;border-bottom:1.5px solid #90A296;margin-left:auto}
+.dsign .cap{font-size:10px;color:#7C8C82;text-align:right;width:260px;margin-left:auto;
+  margin-top:5px;letter-spacing:.05em}
+.sheet-foot{position:absolute;left:45px;right:45px;bottom:24px;display:flex;
+  justify-content:space-between;font-size:10px;color:#7C8C82;
+  border-top:1px solid #DFE7E1;padding-top:7px;letter-spacing:.03em}
 
-    /* ==========================================================
-       BOTÕES
-       ========================================================== */
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center; gap:10px;
-      min-height:54px; padding:0 20px;
-      border-radius:14px;
-      font-size:14px; font-weight:800; letter-spacing:.09em; text-transform:uppercase;
-      transition:transform .15s ease, background .15s ease, box-shadow .15s ease;
-      user-select:none;
-    }
-    .btn svg{ width:20px; height:20px; }
-    .btn:active{ transform:translateY(1px); }
-    .btn-primario{ background:var(--verde); color:#fff; box-shadow:0 6px 16px rgba(46,125,50,.28); }
-    .btn-primario:hover{ background:#27692B; }
-    .btn-perigo{ background:var(--urgente); color:#fff; box-shadow:0 6px 16px rgba(198,40,40,.25); }
-    .btn-perigo:hover{ background:#AB1F1F; }
-    .btn-fantasma{
-      background:var(--superficie); color:var(--verde-escuro);
-      box-shadow:inset 0 0 0 2px var(--linha);
-    }
-    .btn-fantasma:hover{ box-shadow:inset 0 0 0 2px var(--verde); }
-    .btn-fantasma-perigo{ background:var(--superficie); color:var(--urgente); box-shadow:inset 0 0 0 2px #F0D3D2; }
-    .btn-fantasma-perigo:hover{ box-shadow:inset 0 0 0 2px var(--urgente); }
-    .btn:disabled{
-      background:#CFD9D4; color:#8A9793; box-shadow:none; cursor:not-allowed; transform:none;
-    }
-    .btn-texto{
-      display:block; margin:14px auto 0;
-      color:var(--texto-suave); font-weight:700; font-size:13px;
-      letter-spacing:.06em; text-transform:uppercase;
-      padding:10px 16px; border-radius:10px;
-    }
-    .btn-texto:hover{ color:var(--texto); background:var(--fundo); }
-    .ocupado{ opacity:.65; pointer-events:none; }
+/* elemento usado exclusivamente pelo html2pdf (fora da tela) */
+#pdfRender{position:absolute;left:-20000px;top:0;width:704px;background:#fff}
 
-    /* ==========================================================
-       FORMULÁRIO DE ITEM
-       ========================================================== */
-    .form-item{ margin-bottom:14px; }
-    .form-titulo{
-      font-family:'Fraunces', Georgia, serif;
-      font-size:18px; font-weight:700; color:var(--verde-escuro);
-      margin-bottom:14px;
-    }
-    .campo{ margin-bottom:12px; }
-    .rotulo{
-      display:block; font-size:12.5px; font-weight:700;
-      letter-spacing:.04em; color:var(--texto-suave); margin-bottom:6px;
-    }
-    .campo input, .campo select{
-      width:100%; min-height:52px;
-      padding:12px 14px;
-      border:1.5px solid var(--linha); border-radius:12px;
-      background:var(--superficie); font-size:16px;
-      transition:border-color .15s ease, box-shadow .15s ease;
-    }
-    .campo input::placeholder{ color:#9FADA8; }
-    .campo input:focus, .campo select:focus{
-      outline:none; border-color:var(--verde);
-      box-shadow:0 0 0 3px rgba(46,125,50,.14);
-    }
-    .campo select{
-      appearance:none; -webkit-appearance:none;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B6B66' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-      background-repeat:no-repeat; background-position:right 14px center; background-size:17px;
-      padding-right:42px; cursor:pointer;
-    }
-    .linha-dupla{ display:grid; grid-template-columns:112px 1fr; gap:10px; }
-    .form-item .btn{ width:100%; margin-top:4px; }
+/* ============ TOASTS ============ */
+.toasts{position:fixed;left:0;right:0;bottom:calc(122px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;align-items:center;gap:8px;z-index:80;pointer-events:none}
+.toast{background:var(--texto);color:#fff;border-radius:12px;padding:11px 16px;font-size:13.5px;
+  font-weight:700;display:flex;gap:9px;align-items:center;max-width:90%;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);animation:pop .22s ease}
+.toast.t-ok{background:var(--verde-esc)}
+.toast.t-err{background:var(--urgente)}
+.toast.t-warn{background:#8D6E22}
+.toast.leave{opacity:0;transform:translateY(6px);transition:.32s}
 
-    /* ==========================================================
-       LISTA
-       ========================================================== */
-    .lista-topo{
-      display:flex; align-items:baseline; justify-content:space-between; gap:10px;
-      margin-bottom:6px;
-    }
-    .lista-topo h2{
-      font-family:'Fraunces', Georgia, serif;
-      font-size:18px; font-weight:700; color:var(--verde-escuro);
-    }
-    .contador-geral{
-      font-size:12.5px; font-weight:700; color:var(--texto-suave);
-      background:var(--fundo); padding:4px 11px; border-radius:999px;
-      white-space:nowrap;
-    }
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
 
-    .cat-bloco{ margin-top:12px; }
-    .cat-cab{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding:8px 2px 8px;
-      border-bottom:2px solid var(--verde);
-      margin-bottom:6px;
-    }
-    .cat-titulo{
-      font-size:12.5px; font-weight:800; letter-spacing:.09em;
-      text-transform:uppercase; color:var(--verde);
-    }
-    .cat-contador{
-      font-size:11.5px; font-weight:700; color:var(--texto-suave);
-      background:var(--fundo); padding:3px 9px; border-radius:999px; white-space:nowrap;
-    }
+<!-- ============ CABEÇALHO ============ -->
+<header class="appbar">
+  <div class="row">
+    <span class="brand-stamp" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4c0 9-6 16-16 16C4 11 10 4 20 4Z"/><path d="M4 20c4-6 9-11 15-14"/></svg>
+    </span>
+    <div>
+      <h1>Sítio Recanto da Limeira</h1>
+      <p class="sub">Controle de Suprimentos e Compras</p>
+    </div>
+    <span id="netDot" class="net-dot" role="status"></span>
+  </div>
+  <div id="orderLine" class="order-line" hidden>
+    <span class="ol-date">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+      <span id="hdrDate"></span>
+    </span>
+    <span id="hdrBadge" class="badge b-nor"></span>
+  </div>
+</header>
 
-    .item{
-      display:flex; align-items:center; gap:10px;
-      background:var(--superficie); border:1px solid var(--linha);
-      border-radius:14px; padding:11px 8px 11px 14px;
-      margin-bottom:8px;
-      animation:surgir .25s ease;
-    }
-    @keyframes surgir{ from{ opacity:0; transform:translateY(6px); } }
-    .item-info{ flex:1; min-width:0; }
-    .item-nome{ font-size:15.5px; font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
-    .item-qtd{
-      display:inline-block; margin-top:4px;
-      font-size:13px; font-weight:700; color:var(--texto-suave);
-      background:var(--fundo); padding:2px 9px; border-radius:999px;
-      font-variant-numeric:tabular-nums;
-    }
-    .item-acoes{ display:flex; gap:2px; flex-shrink:0; }
-    .acao{
-      width:44px; height:44px; border-radius:12px;
-      display:flex; align-items:center; justify-content:center;
-      color:var(--texto-suave); transition:background .15s ease, color .15s ease;
-    }
-    .acao svg{ width:20px; height:20px; }
-    .acao:hover{ background:var(--fundo); }
-    .acao-editar:hover{ color:var(--verde); }
-    .acao-excluir:hover{ background:var(--urgente-tinta); color:var(--urgente); }
+<main>
+  <!-- ============ TELA INICIAL ============ -->
+  <section id="screenStart" class="start">
+    <div class="start-card">
+      <div class="big-stamp" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4c0 9-6 16-16 16C4 11 10 4 20 4Z"/><path d="M4 20c4-6 9-11 15-14"/></svg>
+      </div>
+      <h2>Controle de<br>Suprimentos</h2>
+      <p class="start-sub">Monte a lista de compras do sítio e envie o pedido ao patrão em PDF — direto do celular.</p>
+      <button id="btnNew" type="button" class="btn btn-pri btn-block btn-lg">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        INICIAR NOVO PEDIDO
+      </button>
+      <button id="btnInstall" type="button" class="btn btn-ghost btn-block" hidden>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5M4 20h16"/></svg>
+        INSTALAR APLICATIVO
+      </button>
+      <p class="start-note">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4c0 9-6 16-16 16C4 11 10 4 20 4Z"/><path d="M4 20c4-6 9-11 15-14"/></svg>
+        Funciona offline — pode usar sem internet no sítio.
+      </p>
+    </div>
+  </section>
 
-    .lista-vazia{ text-align:center; padding:30px 14px 22px; color:var(--texto-suave); }
-    .lista-vazia svg{ width:54px; height:54px; margin:0 auto 12px; color:#B9C6C0; }
-    .lista-vazia p{ font-size:14.5px; line-height:1.5; }
+  <!-- ============ PEDIDO EM ANDAMENTO ============ -->
+  <section id="screenOrder" hidden>
 
-    .lista-acoes{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
-    .lista-acoes .btn{ min-height:50px; font-size:12.5px; }
+    <section class="card order-meta" aria-label="Dados do pedido">
+      <div class="om-row">
+        <div>
+          <p class="om-lbl">Pedido iniciado em</p>
+          <p class="om-date" id="omDate"></p>
+        </div>
+        <button id="btnEnd" type="button" class="iconbtn end" aria-label="Encerrar pedido" title="Encerrar pedido">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v8"/><path d="M6.3 6.5a8 8 0 1 0 11.4 0"/></svg>
+        </button>
+      </div>
+      <div class="om-row2">
+        <p class="om-lbl">Nível de urgência</p>
+        <div class="urg-toggle" role="radiogroup" aria-label="Nível de urgência do pedido">
+          <button id="chipN" type="button" class="uchip sel-nor" role="radio" aria-checked="true"><span class="dot"></span>NORMAL</button>
+          <button id="chipU" type="button" class="uchip sel-urg" role="radio" aria-checked="false"><span class="dot"></span>URGENTE</button>
+        </div>
+      </div>
+    </section>
 
-    /* ==========================================================
-       BARRA FIXA DE AÇÕES (rodapé)
-       ========================================================== */
-    .barra-acoes{
-      position:fixed; left:0; right:0; bottom:0; z-index:40;
-      display:flex; gap:10px;
-      padding:10px 14px calc(12px + env(safe-area-inset-bottom));
-      background:rgba(255,255,255,.94);
-      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-      border-top:1px solid var(--linha);
-    }
-    .barra-acoes .btn{ flex:1; min-height:52px; font-size:12.5px; }
-    .barra-acoes .btn-previa{ flex:.9; }
+    <section class="card">
+      <h2 class="card-title">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Adicionar item
+      </h2>
+      <form id="formAdd" novalidate>
+        <div class="field" id="wNome">
+          <label for="fNome">Nome do item</label>
+          <input id="fNome" type="text" placeholder="Ex.: Arroz" autocomplete="off" enterkeyhint="next">
+          <p class="err-msg">Informe o nome do item.</p>
+        </div>
+        <div class="field" id="wQtd">
+          <label for="fQtd">Quantidade</label>
+          <input id="fQtd" type="text" placeholder="Ex.: 5 kg, 1 saco, 3 unidades" autocomplete="off" enterkeyhint="next">
+          <p class="hint">Pode escrever do jeito que preferir: “2”, “5 kg”, “1 saco”…</p>
+        </div>
+        <div class="field" id="wCat">
+          <label for="fCat">Categoria</label>
+          <div class="selwrap">
+            <select id="fCat">
+              <option value="" selected disabled>Selecionar categoria</option>
+            </select>
+            <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+          </div>
+          <p class="err-msg">Selecione uma categoria.</p>
+        </div>
+        <button type="submit" class="btn btn-pri btn-block">
+          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          ADICIONAR ITEM
+        </button>
+      </form>
+    </section>
 
-    .rodape-app{ text-align:center; padding:6px 0 26px; }
-    .link-discreto{
-      color:#93A19B; font-size:12.5px; font-weight:600;
-      padding:8px 14px; border-radius:10px;
-    }
-    .link-discreto:hover{ color:var(--texto-suave); background:var(--superficie); }
+    <div class="list-top">
+      <h2>Lista do pedido <span id="cntItens" class="pill"></span></h2>
+      <button id="btnClear" type="button" class="btn btn-warn btn-sm">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 3l-6.5 6.5"/><path d="M11.5 7.5l5 5"/><path d="M9.5 8.5 4 14c-1.5 1.5-2 5-2 5s3.5-.5 5-2l5.5-5.5Z"/></svg>
+        LIMPAR LISTA
+      </button>
+    </div>
+    <div id="lista" aria-live="polite"></div>
+  </section>
+</main>
 
-    /* ==========================================================
-       MODAIS (bottom sheet)
-       ========================================================== */
-    body.modal-aberto{ overflow:hidden; }
-    .modal{
-      position:fixed; inset:0; z-index:60;
-      display:flex; align-items:flex-end; justify-content:center;
-    }
-    .modal-fundo{
-      position:absolute; inset:0;
-      background:rgba(16,26,18,.55);
-      opacity:0; transition:opacity .22s ease;
-    }
-    .modal.aberta .modal-fundo{ opacity:1; }
-    .folha-modal{
-      position:relative;
-      width:100%; max-width:560px;
-      background:var(--superficie);
-      border-radius:22px 22px 0 0;
-      padding:14px 20px calc(20px + env(safe-area-inset-bottom));
-      transform:translateY(100%);
-      transition:transform .26s cubic-bezier(.2,.8,.25,1);
-      max-height:88vh; max-height:88dvh; overflow-y:auto;
-    }
-    .modal.aberta .folha-modal{ transform:none; }
-    .alca{ width:34px; height:4px; border-radius:99px; background:var(--linha); margin:0 auto 14px; }
-    .modal-titulo{
-      font-family:'Fraunces', Georgia, serif;
-      font-size:20px; font-weight:700; color:var(--verde-escuro);
-      display:flex; align-items:center; gap:10px;
-    }
-    .modal-titulo svg{ width:22px; height:22px; color:var(--verde); flex-shrink:0; }
-    .modal-titulo.titulo-perigo{ color:var(--urgente); }
-    .modal-titulo.titulo-perigo svg{ color:var(--urgente); }
-    .modal-texto{ margin-top:8px; color:var(--texto-suave); font-size:14.5px; line-height:1.55; }
-    .modal-acoes{ display:flex; gap:10px; margin-top:20px; }
-    .modal-acoes .btn{ flex:1; }
+<!-- ============ RODAPÉ FIXO ============ -->
+<footer class="footbar">
+  <button id="btnPrev" type="button" class="btn btn-ghost">
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+    PRÉ-VISUALIZAR PDF
+  </button>
+  <button id="btnPdf" type="button" class="btn btn-pri2">
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v5h5"/><path d="M9 13h7M9 17h7"/></svg>
+    GERAR PDF
+  </button>
+</footer>
 
-    .captura-hora{
-      margin-top:16px;
-      display:flex; align-items:center; gap:12px;
-      background:var(--fundo); border:1px solid var(--linha);
-      border-radius:14px; padding:14px 16px;
-    }
-    .captura-hora svg{ width:24px; height:24px; color:var(--verde); flex-shrink:0; }
-    .captura-hora strong{
-      font-size:19px; font-weight:700; font-variant-numeric:tabular-nums;
-    }
-    .captura-hora small{ display:block; font-size:11.5px; color:var(--texto-suave); font-weight:600; margin-top:2px; }
+<!-- ============ MODAL: NOVO PEDIDO ============ -->
+<div id="mNovo" class="modal" role="dialog" aria-modal="true" aria-labelledby="tNovo">
+  <div class="dialog">
+    <div class="d-head">
+      <span class="d-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4c0 9-6 16-16 16C4 11 10 4 20 4Z"/><path d="M4 20c4-6 9-11 15-14"/></svg></span>
+      <h3 id="tNovo">Novo pedido</h3>
+    </div>
+    <p class="d-lead">Data e hora capturadas automaticamente:</p>
+    <p class="d-date">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+      <strong id="nvDate"></strong>
+    </p>
+    <p class="d-lead" style="margin-bottom:6px">Nível de urgência:</p>
+    <div class="urg-options" role="radiogroup" aria-label="Nível de urgência">
+      <button type="button" class="urg-opt" data-urg="normal" role="radio" aria-checked="false">
+        <span class="dot"></span>
+        <span class="uo-t">Normal</span>
+        <span class="uo-d">Compra programada, sem pressa</span>
+      </button>
+      <button type="button" class="urg-opt" data-urg="urgente" role="radio" aria-checked="false">
+        <span class="dot"></span>
+        <span class="uo-t">Urgente</span>
+        <span class="uo-d">O patrão precisa ver o quanto antes</span>
+      </button>
+    </div>
+    <div class="d-actions">
+      <button type="button" class="btn btn-ghost" data-close>CANCELAR</button>
+      <button type="button" id="btnIniciar" class="btn btn-pri" disabled>INICIAR PEDIDO</button>
+    </div>
+  </div>
+</div>
 
-    /* Cartões de urgência */
-    .urgentes{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
-    .urg-card{
-      position:relative;
-      display:block; padding:14px 14px 13px;
-      border:2px solid var(--linha); border-radius:14px;
-      cursor:pointer; transition:border-color .15s ease, background .15s ease;
-    }
-    .urg-card input{ position:absolute; opacity:0; pointer-events:none; }
-    .urg-card .urg-topo{ display:flex; align-items:center; gap:8px; }
-    .urg-card .bola{ width:13px; height:13px; border-radius:50%; flex-shrink:0; }
-    .urg-normal .bola{ background:var(--verde); }
-    .urg-urgente .bola{ background:var(--urgente); }
-    .urg-card b{ font-size:15px; font-weight:800; }
-    .urg-card small{ display:block; margin-top:4px; font-size:12px; color:var(--texto-suave); line-height:1.4; }
-    .urg-card.selecionada{ border-color:var(--verde); background:var(--verde-tinta); }
-    .urg-card.urg-urgente.selecionada{ border-color:var(--urgente); background:var(--urgente-tinta); }
-    .urg-card input:focus-visible ~ .urg-topo{ outline:3px solid rgba(46,125,50,.45); outline-offset:4px; border-radius:6px; }
+<!-- ============ MODAL: EDITAR ITEM ============ -->
+<div id="mEditar" class="modal" role="dialog" aria-modal="true" aria-labelledby="tEd">
+  <div class="dialog">
+    <div class="d-head">
+      <span class="d-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+      <h3 id="tEd">Editar item</h3>
+    </div>
+    <form id="formEdit" novalidate>
+      <div class="field" id="wEdNome">
+        <label for="edNome">Nome</label>
+        <input id="edNome" type="text" autocomplete="off" enterkeyhint="next">
+        <p class="err-msg">Informe o nome do item.</p>
+      </div>
+      <div class="field" id="wEdQtd">
+        <label for="edQtd">Quantidade</label>
+        <input id="edQtd" type="text" autocomplete="off" placeholder="Ex.: 5 kg" enterkeyhint="done">
+      </div>
+      <div class="field" id="wEdCat">
+        <label for="edCat">Categoria</label>
+        <div class="selwrap">
+          <select id="edCat"></select>
+          <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+        </div>
+        <p class="err-msg">Selecione uma categoria.</p>
+      </div>
+      <div class="d-actions">
+        <button type="button" class="btn btn-ghost" data-close>CANCELAR</button>
+        <button type="submit" class="btn btn-pri">SALVAR ALTERAÇÕES</button>
+      </div>
+    </form>
+  </div>
+</div>
 
-    .destaque-excluir{
-      margin:14px 0 4px;
-      font-size:19px; font-weight:800; letter-spacing:.04em;
-      text-transform:uppercase; color:var(--urgente);
-      background:var(--urgente-tinta); border-radius:12px;
-      padding:14px 16px; text-align:center;
-      overflow-wrap:anywhere;
-    }
-    .nota-pequena{ margin-top:10px; font-size:12.5px; color:var(--texto-suave); }
+<!-- ============ MODAL: EXCLUIR ITEM ============ -->
+<div id="mDel" class="modal" role="dialog" aria-modal="true" aria-labelledby="tDel">
+  <div class="dialog dlg-sm">
+    <div class="warn-badge" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 22 20H2L12 3Z"/><path d="M12 10v4"/><path d="M12 17.2v.01"/></svg>
+    </div>
+    <h3 id="tDel" style="font-family:Fraunces,Georgia,serif;font-size:20px;color:var(--verde-esc)">Excluir item?</h3>
+    <p class="d-lead" style="margin-top:12px">Deseja realmente excluir:</p>
+    <p class="d-name" id="delName"></p>
+    <p class="d-warn">Esta ação não pode ser desfeita.</p>
+    <div class="d-actions">
+      <button type="button" class="btn btn-ghost" data-close>CANCELAR</button>
+      <button type="button" id="btnDelYes" class="btn btn-danger">EXCLUIR</button>
+    </div>
+  </div>
+</div>
 
-    /* ==========================================================
-       PRÉ-VISUALIZAÇÃO (tela cheia)
-       ========================================================== */
-    .modal.tela{ align-items:stretch; }
-    .modal.tela .modal-fundo{ display:none; }
-    .modal.tela{ background:#15241A; opacity:0; transition:opacity .22s ease; }
-    .modal.tela.aberta{ opacity:1; }
-    .tela-conteudo{
-      position:relative; display:flex; flex-direction:column;
-      width:100%; height:100%;
-      opacity:0; transform:translateY(12px);
-      transition:opacity .24s ease, transform .24s ease;
-    }
-    .modal.tela.aberta .tela-conteudo{ opacity:1; transform:none; }
+<!-- ============ MODAL: LIMPAR LISTA ============ -->
+<div id="mClear" class="modal" role="dialog" aria-modal="true" aria-labelledby="tClear">
+  <div class="dialog dlg-sm">
+    <div class="warn-badge" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 22 20H2L12 3Z"/><path d="M12 10v4"/><path d="M12 17.2v.01"/></svg>
+    </div>
+    <h3 id="tClear" style="font-family:Fraunces,Georgia,serif;font-size:20px;color:var(--verde-esc)">Limpar toda a lista?</h3>
+    <p class="d-lead" style="margin-top:12px">Todos os itens serão removidos.</p>
+    <p class="d-warn">Esta ação não pode ser desfeita.</p>
+    <div class="d-actions">
+      <button type="button" class="btn btn-ghost" data-close>CANCELAR</button>
+      <button type="button" id="btnClearYes" class="btn btn-danger">LIMPAR TUDO</button>
+    </div>
+  </div>
+</div>
 
-    .previa-topo{
-      display:flex; align-items:center; gap:12px;
-      padding:14px 16px calc(10px + env(safe-area-inset-top));
-      color:#fff;
-    }
-    .previa-topo strong{ flex:1; font-size:15px; font-weight:700; }
-    .previa-info{ font-size:12px; color:#9DBBA2; font-weight:600; white-space:nowrap; }
-    .previa-fechar{
-      width:42px; height:42px; border-radius:12px; flex-shrink:0;
-      display:flex; align-items:center; justify-content:center;
-      color:#CFE2D3; background:rgba(255,255,255,.08);
-    }
-    .previa-fechar svg{ width:20px; height:20px; }
-    .previa-fechar:hover{ background:rgba(255,255,255,.16); }
+<!-- ============ MODAL: ENCERRAR PEDIDO ============ -->
+<div id="mEnd" class="modal" role="dialog" aria-modal="true" aria-labelledby="tEnd">
+  <div class="dialog dlg-sm">
+    <div class="warn-badge" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v8"/><path d="M6.3 6.5a8 8 0 1 0 11.4 0"/></svg>
+    </div>
+    <h3 id="tEnd" style="font-family:Fraunces,Georgia,serif;font-size:20px;color:var(--verde-esc)">Encerrar pedido atual?</h3>
+    <p class="d-lead" style="margin-top:12px">A lista e os dados do pedido serão apagados. Depois você poderá iniciar um novo pedido.</p>
+    <p class="d-warn">Esta ação não pode ser desfeita.</p>
+    <div class="d-actions">
+      <button type="button" class="btn btn-ghost" data-close>CANCELAR</button>
+      <button type="button" id="btnEndYes" class="btn btn-danger">ENCERRAR</button>
+    </div>
+  </div>
+</div>
 
-    .previa-area{
-      flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
-      padding:8px 16px 26px;
-      display:flex; flex-direction:column; align-items:center; gap:22px;
-    }
-    .previa-slot{ flex-shrink:0; }
-    .previa-papel{
-      width:794px; min-height:1123px; /* A4 em 96dpi: 210×297mm */
-      background:#fff; border-radius:3px;
-      box-shadow:var(--sombra-forte);
-      padding:38px;                   /* margem de 10mm do PDF real */
-      display:flex; flex-direction:column;
-      transform-origin:top left;
-    }
-    .previa-conteudo{ flex:0 0 auto; }
-    .previa-rodape{
-      margin-top:auto; padding-top:8px;
-      border-top:1px solid #D2DBD6;
-      display:flex; justify-content:space-between; gap:12px;
-      font-size:10.5px; font-weight:500; color:#60706A;
-    }
-    .previa-rodape-barra{
-      display:flex; gap:10px;
-      padding:12px 16px calc(14px + env(safe-area-inset-bottom));
-      background:rgba(255,255,255,.06);
-    }
-    .previa-rodape-barra .btn{ flex:1; min-height:52px; font-size:12.5px; }
-    .btn-claro{ background:rgba(255,255,255,.12); color:#fff; }
-    .btn-claro:hover{ background:rgba(255,255,255,.2); }
+<!-- ============ PRÉ-VISUALIZAÇÃO DO PDF ============ -->
+<section id="pv" class="preview" aria-hidden="true" aria-label="Pré-visualização do PDF">
+  <nav class="pv-bar">
+    <button id="pvBack" type="button" class="pv-back">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>
+      <span>Voltar</span>
+    </button>
+    <span class="pv-title">Pré-visualização · A4</span>
+    <button id="pvPdf" type="button" class="pv-gen">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v5h5"/><path d="M9 13h7M9 17h7"/></svg>
+      GERAR PDF
+    </button>
+  </nav>
+  <div id="pvStage" class="pv-stage">
+    <div id="pvWrap" class="pv-wrap">
+      <div id="pvSheet" class="pv-sheet"></div>
+    </div>
+  </div>
+</section>
 
-    /* ==========================================================
-       MODAL DE ÍCONES DO PWA
-       ========================================================== */
-    .icones-preview{
-      display:flex; gap:18px; justify-content:center;
-      margin:18px 0 6px;
-    }
-    .icones-preview figure{ text-align:center; }
-    .icones-preview canvas{
-      width:76px; height:76px; border-radius:18px;
-      box-shadow:var(--sombra);
-    }
-    .icones-preview figcaption{ margin-top:8px; font-size:11.5px; font-weight:700; color:var(--texto-suave); }
-    .icones-acoes{ display:grid; gap:10px; margin-top:16px; }
+<!-- Container de avisos -->
+<div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
 
-    /* ==========================================================
-       TOASTS
-       ========================================================== */
-    .toasts{
-      position:fixed; left:0; right:0; z-index:90;
-      bottom:calc(96px + env(safe-area-inset-bottom));
-      display:flex; flex-direction:column; align-items:center; gap:8px;
-      pointer-events:none; padding:0 16px;
+<!-- Template usado EXCLUSIVAMENTE para gerar o PDF (fora da tela) -->
+<div id="pdfRender" aria-hidden="true"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============ ÍCONES SVG (inline, funcionam offline) ============ */
+var ICONS={
+  pencil:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  trash:'<path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>',
+  leaf:'<path d="M20 4c0 9-6 16-16 16C4 11 10 4 20 4Z"/><path d="M4 20c4-6 9-11 15-14"/>',
+  check:'<path d="m4 12 5 5L20 6"/>',
+  alert:'<path d="M12 3 22 20H2L12 3Z"/><path d="M12 10v4"/><path d="M12 17.2v.01"/>'
+};
+function icon(n,s){
+  s=s||20;
+  return '<svg viewBox="0 0 24 24" width="'+s+'" height="'+s+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICONS[n]+'</svg>';
+}
+
+/* ============ CATEGORIAS FIXAS ============ */
+var CATS=[
+  {id:'mercearia',   nome:'Mercearia & Alimentos',      emoji:'🛒'},
+  {id:'limpeza',     nome:'Limpeza & Lavanderia',       emoji:'🧼'},
+  {id:'ferramentas', nome:'Ferramentas & Manutenção',   emoji:'🪚'},
+  {id:'horta',       nome:'Horta, Pomar & Animais',     emoji:'🌱'},
+  {id:'utilidades',  nome:'Utilidades & Diversos',      emoji:'🪵'}
+];
+function catById(id){ for(var i=0;i<CATS.length;i++){ if(CATS[i].id===id) return CATS[i]; } return null; }
+
+/* ============ ESTADO + LOCALSTORAGE ============ */
+var KEY='recanto-limeira-pedido-v1';
+function defaultState(){ return {iniciado:false, ts:0, urgencia:null, itens:[]}; }
+function loadState(){
+  try{
+    var raw=localStorage.getItem(KEY);
+    if(raw){
+      var s=JSON.parse(raw);
+      if(s && typeof s==='object' && Array.isArray(s.itens)) return Object.assign(defaultState(),s);
     }
-    body:not(.com-pedido) .toasts{ bottom:24px; }
-    .toast{
-      display:flex; align-items:center; gap:9px;
-      max-width:420px;
-      background:var(--te
+  }catch(e){}
+  return defaultState();
+}
+var state=loadState();
+function save(){
+  try{ localStorage.setItem(KEY,JSON.stringify(state)); }
+  catch(e){ toast('Não foi possível salvar no armazenamento do aparelho.','err'); }
+}
+function uid(){ return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8); }
+
+/* ============ UTILITÁRIOS ============ */
+function esc(s){
+  return String(s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function fmtData(ts){
+  var d=new Date(ts);
+  return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+function fmtDataLong(ts){
+  var d=new Date(ts);
+  return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+function $(id){ return document.getElementById(id); }
+
+var hdrDate=$('hdrDate'), hdrBadge=$('hdrBadge'), orderLine=$('orderLine'),
+    screenStart=$('screenStart'), screenOrder=$('screenOrder'),
+    btnNew=$('btnNew'), btnInstall=$('btnInstall'), omDate=$('omDate'), btnEnd=$('btnEnd'),
+    chipN=$('chipN'), chipU=$('chipU'),
+    formAdd=$('formAdd'), fNome=$('fNome'), fQtd=$('fQtd'), fCat=$('fCat'),
+    wNome=$('wNome'), wQtd=$('wQtd'), wCat=$('wCat'),
+    cntItens=$('cntItens'), lista=$('lista'), btnClear=$('btnClear'),
+    mNovo=$('mNovo'), nvDate=$('nvDate'), btnIniciar=$('btnIniciar'),
+    mEditar=$('mEditar'), formEdit=$('formEdit'), edNome=$('edNome'), edQtd=$('edQtd'), edCat=$('edCat'),
+    wEdNome=$('wEdNome'), wEdQtd=$('wEdQtd'), wEdCat=$('wEdCat'),
+    mDel=$('mDel'), delName=$('delName'), btnDelYes=$('btnDelYes'),
+    mClear=$('mClear'), btnClearYes=$('btnClearYes'),
+    mEnd=$('mEnd'), btnEndYes=$('btnEndYes'),
+    pv=$('pv'), pvStage=$('pvStage'), pvWrap=$('pvWrap'), pvSheet=$('pvSheet'),
+    pvBack=$('pvBack'), pvPdf=$('pvPdf'),
+    btnPrev=$('btnPrev'), btnPdf=$('btnPdf'),
+    toasts=$('toasts'), pdfRender=$('pdfRender'), netDot=$('netDot');
+
+/* ============ TOAST ============ */
+function toast(msg,tipo){
+  tipo=tipo||'ok';
+  var t=document.createElement('div');
+  t.className='toast t-'+tipo;
+  t.innerHTML=icon(tipo==='ok'?'check':'alert',18)+'<span>'+esc(msg)+'</span>';
+  toasts.appendChild(t);
+  setTimeout(function(){ t.classList.add('leave'); setTimeout(function(){ t.remove(); },340); },2800);
+}
+
+/* ============ MODAIS ============ */
+var lastFocus=null;
+function openModal(m){
+  lastFocus=document.activeElement;
+  m.classList.add('open');
+  document.body.classList.add('lock');
+  var f=m.querySelector('input,select,button');
+  setTimeout(function(){ if(f) f.focus(); },80);
+}
+function closeModal(m){
+  m.classList.remove('open');
+  if(!document.querySelector('.modal.open') && !pv.classList.contains('open')){
+    document.body.classList.remove('lock');
+  }
+  if(lastFocus && lastFocus.focus){ try{ lastFocus.focus(); }catch(e){} }
+  lastFocus=null;
+}
+document.addEventListener('click',function(e){
+  var c=e.target.closest ? e.target.closest('[data-close]') : null;
+  if(c){ var m=c.closest('.modal'); if(m) closeModal(m); return; }
+  if(e.target.classList && e.target.classList.contains('modal')) closeModal(e.target);
+});
+document.addEventListener('keydown',function(e){
+  var m=document.querySelector('.modal.open');
+  if(e.key==='Escape' && m){ closeModal(m); return; }
+  if(e.key==='Tab' && m){
+    var f=m.querySelectorAll('button,input,select,textarea,[href]');
+    if(!f.length) return;
+    var first=f[0], last=f[f.length-1];
+    if(e.shiftKey && document.activeElement===first){ last.focus(); e.preventDefault(); }
+    else if(!e.shiftKey && document.activeElement===last){ first.focus(); e.preventDefault(); }
+  }
+});
+
+/* ============ RENDER ============ */
+function setChip(el,sel){
+  el.classList.toggle('sel',sel);
+  el.setAttribute('aria-checked',sel?'true':'false');
+}
+function render(){
+  var on=state.iniciado;
+  screenStart.hidden=on;
+  screenOrder.hidden=!on;
+  if(on){
+    orderLine.hidden=false;
+    hdrDate.textContent=fmtData(state.ts);
+    var urg=state.urgencia==='urgente';
+    hdrBadge.className='badge '+(urg?'b-urg':'b-nor');
+    hdrBadge.innerHTML='<span class="dot"></span>'+(urg?'URGENTE':'NORMAL');
+    omDate.innerHTML='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg><span>'+esc(fmtDataLong(state.ts))+'</span>';
+    var n=state.itens.length;
+    cntItens.textContent=n===0?'nenhum item':(n===1?'1 item':n+' itens');
+    setChip(chipN, state.urgencia==='normal');
+    setChip(chipU, state.urgencia==='urgente');
+  }
+  renderLista();
+}
+function renderLista(){
+  if(!state.iniciado){ lista.innerHTML=''; return; }
+  var n=state.itens.length;
+  if(n===0){
+    lista.innerHTML='<div class="empty">'+icon('leaf',28)+
+      '<p><strong>Sua lista está vazia.</strong><br>Adicione o primeiro item no formulário acima.</p></div>';
+    return;
+  }
+  var html='';
+  CATS.forEach(function(c){
+    var its=state.itens.filter(function(i){ return i.categoria===c.id; });
+    if(its.length===0) return;
+    html+='<div class="cat-grp"><div class="cat-head"><h3><span class="ce">'+c.emoji+'</span>'+
+      esc(c.nome)+'</h3><span class="cnt">'+(its.length===1?'1 item':its.length+' itens')+
+      '</span></div>';
+    its.forEach(function(it){
+      html+='<div class="item" data-id="'+it.id+'"><div class="info"><p class="nome">'+
+        esc(it.nome)+'</p>'+(it.qtd?'<span class="qtd">'+esc(it.qtd)+'</span>':'')+
+        '</div><div class="acts">'+
+        '<button type="button" class="iconbtn" data-act="edit" aria-label="Editar '+esc(it.nome)+'">'+icon('pencil',19)+'</button>'+
+        '<button type="button" class="iconbtn del" data-act="del" aria-label="Excluir '+esc(it.nome)+'">'+icon('trash',19)+'</button>'+
+        '</div></div>';
+    });
+    html+='</div>';
+  });
+  lista.innerHTML=html;
+}
+
+/* ============ ADICIONAR ITEM ============ */
+function fieldErr(w,show){ w.classList.toggle('err',show); }
+function addItem(){
+  var nome=fNome.value.trim(), qtd=fQtd.value.trim(), cat=fCat.value;
+  fieldErr(wNome,!nome);
+  fieldErr(wCat,!cat);
+  if(!nome||!cat){ if(!nome) fNome.focus(); else fCat.focus(); return; }
+  state.itens.push({id:uid(),nome:nome,qtd:qtd,categoria:cat});
+  save(); render();
+  fNome.value=''; fQtd.value=''; fNome.focus();
+  toast('“'+nome+'” adicionado à lista.');
+}
+
+/* ============ EDITAR ITEM ============ */
+var editingId=null;
+function findItem(id){
+  for(var i=0;i<state.itens.length;i++){ if(state.itens[i].id===id) return state.itens[i]; }
+  return null;
+}
+function openEdit(id){
+  var it=findItem(id); if(!it) return;
+  editingId=id;
+  edNome.value=it.nome; edQtd.value=it.qtd; edCat.value=it.categoria;
+  fieldErr(wEdNome,false); fieldErr(wEdCat,false);
+  openModal(mEditar);
+}
+function saveEdit(e){
+  e.preventDefault();
+  var it=findItem(editingId);
+  if(!it){ closeModal(mEditar); return; }
+  var nome=edNome.value.trim(), qtd=edQtd.value.trim(), cat=edCat.value;
+  fieldErr(wEdNome,!nome); fieldErr(wEdCat,!cat);
+  if(!nome||!cat) return;
+  it.nome=nome; it.qtd=qtd; it.categoria=cat;
+  save(); render(); closeModal(mEditar);
+  toast('Item atualizado.');
+}
+
+/* ============ EXCLUIR ITEM ============ */
+var delId=null;
+function openDel(id){
+  var it=findItem(id); if(!it) return;
+  delId=id;
+  delName.textContent=it.nome.toUpperCase();
+  openModal(mDel);
+}
+
+/* ============ NOVO PEDIDO ============ */
+var selectedUrg=null;
+function openNovo(){
+  nvDate.textContent=fmtData(Date.now());
+  selectedUrg=null;
+  var opts=document.querySelectorAll('.urg-opt');
+  for(var i=0;i<opts.length;i++){
+    opts[i].classList.remove('sel');
+    opts[i].setAttribute('aria-checked','false');
+  }
+  btnIniciar.disabled=true;
+  openModal(mNovo);
+}
+function selectUrg(btn){
+  selectedUrg=btn.dataset.urg;
+  var opts=document.querySelectorAll('.urg-opt');
+  for(var i=0;i<opts.length;i++){
+    var on=(opts[i]===btn);
+    opts[i].classList.toggle('sel',on);
+    opts[i].setAttribute('aria-checked',on?'true':'false');
+  }
+  btnIniciar.disabled=false;
+}
+
+/* ============ TEMPLATE DO DOCUMENTO (PDF / PREVIEW) ============ */
+function buildDocHTML(withFoot){
+  var urg=state.urgencia==='urgente';
+  var n=state.itens.length;
+  var head='<header class="dhead"><div class="brand">'+
+    '<span class="dstamp">'+icon('leaf',28)+'</span>'+
+    '<div><h2>SÍTIO RECANTO DA LIMEIRA</h2><p>Controle de Suprimentos e Compras</p></div></div>'+
+    '<div class="drule"></div>'+
+    '<div class="dmeta"><span><strong>Data/Hora:</strong> '+esc(fmtData(state.ts))+'</span>'+
+    '<span class="chipd '+(urg?'chip-urg':'chip-nor')+'"><span class="dot"></span>'+
+    (urg?'URGENTE':'NORMAL')+'</span></div></header>';
+  var blocks=[];
+  CATS.forEach(function(c){
+    var its=state.itens.filter(function(i){ return i.categoria===c.id; });
+    if(!its.length) return;
+    var rows='';
+    its.forEach(function(i){
+      rows+='<tr><td>'+esc(i.nome)+'</td><td class="q">'+esc(i.qtd||'—')+'</td></tr>';
+    });
+    blocks.push('<section class="cat"><h3><span class="ce">'+c.emoji+'</span>'+
+      esc(c.nome.toUpperCase())+'</h3><table><thead><tr><th>Produto / Suprimento'+
+      '</th><th class="q">Quantidade</th></tr></thead><tbody>'+rows+
+      '</tbody></table></section>');
+  });
+  var tail='<section class="keep"><div class="dtotal">Total de itens: <strong>'+n+
+    '</strong></div><div class="dsign"><div class="line"></div>'+
+    '<div class="cap">Assinatura — responsável pelo pedido</div></div></section>';
+  var html='<div class="doc">';
+  if(blocks.length){
+    html+='<section class="keep">'+head+blocks[0]+'</section>';
+    for(var i=1;i<blocks.length;i++){ html+='<section class="keep">'+blocks[i]+'</section>'; }
+  }else{ html+=head; }
+  html+=tail+'</div>';
+  if(withFoot){
+    html+='<div class="sheet-foot"><span>Sítio Recanto da Limeira · Pedido de Suprimentos</span>'+
+      '<span>A4 · 210 × 297 mm</span></div>';
+  }
+  return html;
+}
+
+/* ============ PRÉ-VISUALIZAÇÃO ============ */
+function guardPdf(){
+  if(!state.iniciado){ toast('Inicie um pedido primeiro.','warn'); return true; }
+  if(!state.itens.length){ toast('Adicione pelo menos um item à lista.','warn'); return true; }
+  return false;
+}
+function fitPreview(){
+  if(!pv.classList.contains('open')) return;
+  var s=Math.min(1,(pvStage.clientWidth-24)/794);
+  pvSheet.style.transform='scale('+s+')';
+  pvWrap.style.width=(794*s)+'px';
+  pvWrap.style.height=(pvSheet.offsetHeight*s)+'px';
+}
+function abrirPreview(){
+  if(guardPdf()) return;
+  pvSheet.innerHTML=buildDocHTML(true);
+  pv.classList.add('open');
+  pv.setAttribute('aria-hidden','false');
+  document.body.classList.add('lock');
+  requestAnimationFrame(fitPreview);
+  pvStage.scrollTop=0;
+}
+function fecharPreview(){
+  pv.classList.remove('open');
+  pv.setAttribute('aria-hidden','true');
+  if(!document.querySelector('.modal.open')) document.body.classList.remove('lock');
+}
+
+/* ============ BIBLIOTECA PDF (local primeiro, CDN como reserva) ============ */
+var pdfLibPromise=null;
+function loadScript(src){
+  return new Promise(function(res,rej){
+    var s=document.createElement('script');
+    s.src=src; s.async=false;
+    s.onload=function(){ res(); };
+    s.onerror=function(){ rej(new Error('falha: '+src)); };
+    document.head.appendChild(s);
+  });
+}
+function ensurePdfLib(){
+  if(typeof html2pdf!=='undefined') return Promise.resolve(true);
+  if(!pdfLibPromise){
+    pdfLibPromise=(async function(){
+      try{ await loadScript('./html2pdf.bundle.min.js'); }catch(e){}
+      if(typeof html2pdf!=='undefined') return true;
+      try{ await loadScript('https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.2/dist/html2pdf.bundle.min.js'); }catch(e){}
+      return typeof html2pdf!=='undefined';
+    })();
+    pdfLibPromise.then(function(ok){ if(!ok) pdfLibPromise=null; });
+  }
+  return pdfLibPromise;
+}
+
+/* Rodapé (e cabeçalho de continuação) desenhados via jsPDF em TODAS as páginas */
+function decoratePages(pdf){
+  var total=pdf.internal.getNumberOfPages();
+  var urg=state.urgencia==='urgente';
+  for(var i=1;i<=total;i++){
+    pdf.setPage(i);
+    pdf.setDrawColor(206,216,208); pdf.setLineWidth(0.3);
+    pdf.line(12,287.2,198,287.2);
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(112,124,116);
+    pdf.text('Sítio Recanto da Limeira — Pedido de Suprimentos',12,291.8);
+    pdf.text('Página '+i+' de '+total,198,291.8,{align:'right'});
+    if(i>1){
+      pdf.setFontSize(8);
+      pdf.setTextColor(27,94,32);
+      pdf.text('SÍTIO RECANTO DA LIMEIRA — CONTINUAÇÃO',12,7.8);
+      pdf.setFont('helvetica','bold');
+      if(urg) pdf.setTextColor(198,40,40); else pdf.setTextColor(27,94,32);
+      pdf.text(urg?'URGENTE':'NORMAL',198,7.8,{align:'right'});
+      pdf.setFont('helvetica','normal');
+      pdf.setDrawColor(206,216,208);
+      pdf.line(12,9.6,198,9.6);
+    }
+  }
+}
+
+/* ============ GERAR PDF ============ */
+var pdfBusy=false;
+async function gerarPDF(){
+  if(pdfBusy) return;
+  if(guardPdf()) return;
+  if(typeof html2pdf==='undefined'){
+    var ok=await ensurePdfLib();
+    if(!ok){
+      toast('Gerador de PDF indisponível. Conecte-se à internet uma vez ou coloque o arquivo html2pdf.bundle.min.js na pasta do aplicativo.','err');
+      return;
+    }
+  }
+  pdfBusy=true;
+  var orig=btnPdf.innerHTML;
+  btnPdf.disabled=true;
+  btnPdf.textContent='GERANDO…';
+  try{
+    if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+    pdfRender.innerHTML=buildDocHTML(false);
+    var opt={
+      margin:[12,12,18,12],
+      filename:'Pedido_Suprimentos_Recanto_da_Limeira.pdf',
+      image:{type:'jpeg',quality:0.98},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,windowWidth:704},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+      pagebreak:{mode:['css','legacy']}
+    };
+    var worker=html2pdf().set(opt).from(pdfRender)
+      .toPdf().get('pdf')
+      .then(function(pdf){ decoratePages(pdf); })
+      .save();
+    await worker;
+    toast('PDF gerado: Pedido_Suprimentos_Recanto_da_Limeira.pdf');
+  }catch(err){
+    toast('Falha ao gerar o PDF. Tente novamente.','err');
+  }finally{
+    pdfBusy=false;
+    btnPdf.disabled=false;
+    btnPdf.innerHTML=orig;
+  }
+}
+
+/* ============ FAVICON DINÂMICO (a mesma arte dos ícones PWA) ============ */
+function drawIconCanvas(ctx,S){
+  ctx.clearRect(0,0,S,S);
+  ctx.fillStyle='#1B5E20';
+  ctx.fillRect(0,0,S,S);
+  ctx.beginPath(); ctx.arc(S/2,S*0.58,S*0.47,0,Math.PI*2);
+  ctx.fillStyle='#27692C'; ctx.fill();
+  var r=S*0.13;
+  ctx.beginPath(); ctx.arc(S*0.38,S*0.68,r,0,Math.PI*2);
+  ctx.fillStyle='#9CCC65'; ctx.fill();
+  ctx.beginPath(); ctx.arc(S*0.345,S*0.645,r*0.42,0,Math.PI*2);
+  ctx.fillStyle='#C5E1A5'; ctx.fill();
+  var leafPath=new Path2D('M20 4C20 13 14 19 5 19C5 10 10 4 20 4Z');
+  var veinPath=new Path2D('M5 19C9 13.5 13 9.5 17.5 6.5');
+  ctx.save();
+  ctx.translate(S/2,S*0.42);
+  var sc=S*0.026;
+  ctx.scale(sc,sc);
+  ctx.translate(-12.5,-11.5);
+  ctx.fillStyle='#F1F7F1';
+  ctx.fill(leafPath);
+  ctx.strokeStyle='#1B5E20';
+  ctx.lineWidth=0.8;
+  ctx.lineCap='round';
+  ctx.stroke(veinPath);
+  ctx.restore();
+}
+function setFavicon(){
+  try{
+    var c=document.createElement('canvas');
+    c.width=64; c.height=64;
+    drawIconCanvas(c.getContext('2d'),64);
+    var l=document.querySelector('link[rel="icon"]');
+    if(l) l.href=c.toDataURL('image/png');
+  }catch(e){}
+}
+
+/* ============ CONECTIVIDADE ============ */
+function updNet(){
+  var on=navigator.onLine;
+  netDot.className='net-dot'+(on?' on':'');
+  netDot.setAttribute('aria-label',on?'Conectado à internet':'Sem conexão — o aplicativo continua funcionando offline');
+}
+
+/* ============ INSTALAÇÃO PWA ============ */
+var installPrompt=null;
+function isStandalone(){
+  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+         window.navigator.standalone===true;
+}
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  installPrompt=e;
+  if(!isStandalone()) btnInstall.hidden=false;
+});
+window.addEventListener('appinstalled',function(){
+  btnInstall.hidden=true;
+  toast('Aplicativo instalado no aparelho!');
+});
+
+/* ============ EVENTOS ============ */
+function bind(){
+  [fCat,edCat].forEach(function(sel){
+    CATS.forEach(function(c){
+      var o=document.createElement('option');
+      o.value=c.id;
+      o.textContent=c.emoji+' '+c.nome;
+      sel.appendChild(o);
+    });
+  });
+
+  formAdd.addEventListener('submit',function(e){ e.preventDefault(); addItem(); });
+  fNome.addEventListener('input',function(){ fieldErr(wNome,false); });
+  fCat.addEventListener('change',function(){ fieldErr(wCat,false); });
+
+  formEdit.addEventListener('submit',saveEdit);
+  edNome.addEventListener('input',function(){ fieldErr(wEdNome,false); });
+  edCat.addEventListener('change',function(){ fieldErr(wEdCat,false); });
+
+  lista.addEventListener('click',function(e){
+    var b=e.target.closest('[data-act]');
+    if(!b) return;
+    var row=b.closest('.item');
+    if(!row) return;
+    if(b.dataset.act==='edit') openEdit(row.dataset.id);
+    else openDel(row.dataset.id);
+  });
+
+  btnNew.addEventListener('click',openNovo);
+  var opts=document.querySelectorAll('.urg-opt');
+  for(var i=0;i<opts.length;i++){
+    (function(btn){ btn.addEventListener('click',function(){ selectUrg(btn); }); })(opts[i]);
+  }
+  btnIniciar.addEventListener('click',function(){
+    if(!selectedUrg) return;
+    state={iniciado:true,ts:Date.now(),urgencia:selectedUrg,itens:[]};
+    save(); closeModal(mNovo); render();
+    try{ fNome.focus(); }catch(e){}
+    toast('Pedido iniciado. Bom trabalho!');
+  });
+
+  btnDelYes.addEventListener('click',function(){
+    state.itens=state.itens.filter(function(i){ return i.id!==delId; });
+    delId=null;
+    save(); render(); closeModal(mDel);
+    toast('Item excluído da lista.');
+  });
+
+  btnClear.addEventListener('click',function(){
+    if(!state.itens.length){ toast('A lista já está vazia.','warn'); return; }
+    openModal(mClear);
+  });
+  btnClearYes.addEventListener('click',function(){
+    state.itens=[];
+    save(); render(); closeModal(mClear);
+    toast('Lista limpa. O pedido continua aberto.');
+  });
+
+  btnEnd.addEventListener('click',function(){ openModal(mEnd); });
+  btnEndYes.addEventListener('click',function(){
+    state=defaultState();
+    save(); render(); closeModal(mEnd);
+    toast('Pedido encerrado. Você já pode iniciar um novo.');
+  });
+
+  chipN.addEventListener('click',function(){ setUrgencia('normal'); });
+  chipU.addEventListener('click',function(){ setUrgencia('urgente'); });
+
+  btnPrev.addEventListener('click',abrirPreview);
+  btnPdf.addEventListener('click',gerarPDF);
+  pvBack.addEventListener('click',fecharPreview);
+  pvPdf.addEventListener('click',gerarPDF);
+  window.addEventListener('resize',fitPreview);
+
+  btnInstall.addEventListener('click',async function(){
+    if(!installPrompt) return;
+    installPrompt.prompt();
+    try{ await installPrompt.userChoice; }catch(e){}
+    installPrompt=null;
+    btnInstall.hidden=true;
+  });
+
+  window.addEventListener('online',function(){ updNet(); toast('Conexão reestabelecida.'); });
+  window.addEventListener('offline',function(){
+    updNet();
+    toast('Sem internet — você pode continuar usando o aplicativo.','ok');
+  });
+}
+function setUrgencia(v){
+  if(!state.iniciado || state.urgencia===v) return;
+  state.urgencia=v;
+  save(); render();
+  toast('Urgência alterada para '+(v==='urgente'?'URGENTE':'NORMAL')+'.');
+}
+
+/* ============ INICIALIZAÇÃO ============ */
+bind();
+render();
+updNet();
+setFavicon();
+if(isStandalone()) btnInstall.hidden=true;
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./service-worker.js').catch(function(){});
+  });
+}
+ensurePdfLib(); /* pré-carrega a biblioteca em segundo plano quando há rede */
+})();
+</script>
+</body>
+</html>
