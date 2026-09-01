@@ -1,94 +1,97 @@
-/* Sítio Recanto da Limeira - Service Worker Offline */
-const CACHE_NAME = 'recanto-limeira-v1';
-const URL_CDN_PDF = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+/* ============================================================
+   Sítio Recanto da Limeira — Service Worker (arquivo real)
+   Cache-first para os arquivos do app.
+   Runtime cache (stale-while-revalidate) para fontes e para a
+   biblioteca de PDF via CDN — garantindo offline total depois
+   da primeira visita com internet.
+   ============================================================ */
+const CACHE = 'recanto-limeira-v1';
 
-const PRECACHE = [
+const CORE = [
   './',
   './index.html',
   './manifest.json',
-  './html2pdf.bundle.min.js',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './gerar-icones.html'
 ];
 
-// Instalação: guarda o essencial
+const RUNTIME_HOSTS = [
+  'https://fonts.googleapis.com',
+  'https://fonts.gstatic.com',
+  'https://cdn.jsdelivr.net'
+];
+
+/* Instalar: gravar no cache o que existir (itens individuais
+   não bloqueiam a instalação, caso um ícone ainda não exista) */
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE.map(url => new Request(url, {cache: 'reload'})))
-        .catch(() => cache.add('./index.html')); // ignora erro se os ícones ainda não existem
-    })
-  );
-  self.skipWaiting();
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    await Promise.allSettled(CORE.map(async (asset) => {
+      try { await cache.add(asset); } catch (e) { /* arquivo opcional ausente */ }
+    }));
+    await self.skipWaiting();
+  })());
 });
 
-// Ativação: limpa caches antigos
+/* Ativar: limpar caches antigos e assumir o controle */
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
-    })
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys.filter((k) => k.indexOf('recanto-limeira-') === 0 && k !== CACHE)
+          .map((k) => caches.delete(k))
+    );
+    await self.clients.claim();
+  })());
 });
 
-// Estratégia de fetch
+/* Buscar: cache quando offline, rede como atualização */
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
-  const url = new URL(req.url);
+  let url;
+  try { url = new URL(req.url); } catch (e) { return; }
 
-  // 1. html2pdf: tenta local, se falhar busca do CDN e guarda em cache
-  if (url.pathname.endsWith('html2pdf.bundle.min.js')) {
-    event.respondWith(
-      caches.match(req).then((cached) => {
-        if (cached) return cached;
-        return fetch(req).catch(() => fetch(URL_CDN_PDF)).then((res) => {
-          if (res && res.ok) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then(c => c.put(req, clone));
-          }
-          return res;
-        });
-      })
-    );
-    return;
-  }
+  const sameOrigin = url.origin === self.location.origin;
+  const isRuntime  = RUNTIME_HOSTS.some((h) => url.origin === h);
+  if (!sameOrigin && !isRuntime) return;
 
-  // 2. Google Fonts: Stale-While-Revalidate
-  if (url.origin.includes('fonts.googleapis.com') || url.origin.includes('fonts.gstatic.com')) {
-    event.respondWith(
-      caches.open(CACHE_NAME).then((cache) => {
-        return cache.match(req).then((cached) => {
-          const fetched = fetch(req).then((res) => {
-            if (res.ok) cache.put(req, res.clone());
-            return res;
-          }).catch(() => cached);
-          return cached || fetched;
-        });
-      })
-    );
-    return;
-  }
-
-  // 3. Todo o resto do mesmo domínio: Cache First com fallback para index.html (offline)
-  if (url.origin === location.origin) {
-    event.respondWith(
-      caches.match(req).then((cached) => {
-        if (cached) return cached;
-        return fetch(req).then((res) => {
-          if (res.ok) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then(c => c.put(req, clone));
-          }
-          return res;
-        }).catch(() => {
-          if (req.headers.get('accept')?.includes('text/html')) {
-            return caches.match('./index.html');
-          }
-        });
-      })
-    );
+  if (sameOrigin) {
+    event.respondWith(cacheFirst(req));
+  } else {
+    event.respondWith(staleWhileRevalidate(req));
   }
 });
+
+async function cacheFirst(req) {
+  const cache = await caches.open(CACHE);
+  const cached = await cache.match(req, { ignoreSearch: true });
+  if (cached) return cached;
+  try {
+    const res = await fetch(req);
+    if (res && res.ok) cache.put(req, res.clone());
+    return res;
+  } catch (err) {
+    /* Sem rede e sem cache: se for navegação, entrega o app do cache */
+    if (req.mode === 'navigate') {
+      const fallback = await cache.match('./index.html');
+      if (fallback) return fallback;
+    }
+    throw err;
+  }
+}
+
+async function staleWhileRevalidate(req) {
+  const cache = await caches.open(CACHE);
+  const cached = await cache.match(req);
+  const network = fetch(req).then((res) => {
+    if (res && res.ok) cache.put(req, res.clone());
+    return res;
+  }).catch(() => undefined);
+  if (cached) return cached;
+  const fresh = await network;
+  if (fresh) return fresh;
+  throw new Error('Offline e sem cache: ' + req.url);
+}
