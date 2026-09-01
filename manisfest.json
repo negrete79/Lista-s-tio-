@@ -1,20 +1,25 @@
 {
-  "id": "recanto-da-limeira",
-  "name": "Sítio Recanto da Limeira — Suprimentos e Compras",
+  "name": "Sítio Recanto da Limeira",
   "short_name": "Recanto Limeira",
-  "description": "Controle de Suprimentos e Compras do Sítio Recanto da Limeira. Monte a lista do pedido, pré-visualize e gere o PDF. Funciona offline.",
-  "lang": "pt-BR",
-  "dir": "ltr",
+  "description": "Controle de Suprimentos e Compras para o Sítio Recanto da Limeira",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#1B5E20",
+  "theme_color": "#2E7D32",
   "background_color": "#F3F6F4",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'><rect width='192' height='192' rx='30' fill='%232E7D32'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='90'>🌿</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%232E7D32'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-size='240'>🌿</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }
