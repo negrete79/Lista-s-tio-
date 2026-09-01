@@ -9,10 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Limeira">
   <title>Sítio Recanto da Limeira — Controle de Suprimentos</title>
 
-  <!-- PWA Manifest embutido diretamente no HTML -->
-  <link rel="manifest" href='data:application/manifest+json,{"name":"Sítio Recanto da Limeira","short_name":"Limeira","start_url":".","display":"standalone","background_color":"#F4F6F8","theme_color":"#2E7D32","icons":[{"src":"data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22><rect width=%22512%22 height=%22512%22 fill=%22%232E7D32%22/><text x=%2250%%22 y=%2255%%22 font-size=%22280%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22>🌿</text></svg>","sizes":"512x512","type":"image/svg+xml","purpose":"any maskable"}]}'>
-
-  <!-- Script PDF -->
+  <link rel="manifest" href="manifest.json">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
@@ -127,7 +124,6 @@
     <button id="btn-generate-pdf" type="button" class="btn btn-primary">📥 GERAR PDF / IMPRIMIR</button>
   </div>
 
-  <!-- MODAL INICIAR PEDIDO -->
   <div id="modal-start" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">🌿 Novo Pedido</div>
@@ -142,7 +138,6 @@
     </div>
   </div>
 
-  <!-- MODAL EDITAR ITEM -->
   <div id="modal-edit" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">✏️ Editar Item</div>
@@ -164,7 +159,6 @@
     </div>
   </div>
 
-  <!-- TEMPLATE OCULTO PARA GERAR PDF -->
   <div id="pdf-container-wrapper">
     <div id="pdf-box-render" class="pdf-box">
       <div class="pdf-header">
@@ -190,20 +184,16 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    // Registro Dinâmico de Service Worker Inline (exigido para instalação PWA)
     if ('serviceWorker' in navigator) {
-      var swCode = "self.addEventListener('fetch', function(e) { e.respondWith(fetch(e.request).catch(function() { return caches.match(e.request); })); });";
-      var blob = new Blob([swCode], { type: 'text/javascript' });
-      var swUrl = URL.createObjectURL(blob);
-      navigator.serviceWorker.register(swUrl).catch(function() {});
+      navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.log('Erro ao registrar SW:', err);
+      });
     }
 
     var state = { datetime: '', urgency: '', items: [] };
     var tempUrgency = '';
 
-    window.onload = function() {
-      initApp();
-    };
+    window.onload = function() { initApp(); };
 
     function showToast(msg) {
       var toast = document.getElementById('toast');
@@ -217,15 +207,8 @@
       if (saved) {
         try { state = JSON.parse(saved); } catch (e) { state = { datetime: '', urgency: '', items: [] }; }
       }
-
       if (!state.items) state.items = [];
-
-      if (!state.datetime || !state.urgency) {
-        openStartModal();
-      } else {
-        updateUI();
-      }
-
+      if (!state.datetime || !state.urgency) { openStartModal(); } else { updateUI(); }
       setupEvents();
     }
 
@@ -273,12 +256,9 @@
         var qtyInput = document.getElementById('item-qty');
         var name = nameInput.value.trim();
         var qty = qtyInput.value.trim();
-
         if (!name || !qty) return;
-
         state.items.push({ id: String(Date.now()), name: name, qty: qty });
         saveState();
-
         nameInput.value = '';
         qtyInput.value = '';
         nameInput.focus();
@@ -317,7 +297,6 @@
       var urgEl = document.getElementById('display-urgency');
       urgEl.textContent = state.urgency || 'NORMAL';
       urgEl.className = 'badge ' + (state.urgency === 'URGENTE' ? 'badge-urgente' : 'badge-normal');
-
       document.getElementById('total-count').textContent = state.items ? state.items.length : 0;
       var container = document.getElementById('items-container');
       container.innerHTML = '';
@@ -371,19 +350,15 @@
         showToast('⚠️ Adicione itens antes de gerar o PDF!');
         return;
       }
-
       document.getElementById('pdf-datetime').textContent = state.datetime;
       document.getElementById('pdf-urgency').textContent = state.urgency;
-
       var tbody = document.getElementById('pdf-table-body');
       tbody.innerHTML = '';
-
       for (var i = 0; i < state.items.length; i++) {
         var tr = document.createElement('tr');
         tr.innerHTML = '<td>' + escapeHTML(state.items[i].name) + '</td><td style="font-weight: bold;">' + escapeHTML(state.items[i].qty) + '</td>';
         tbody.appendChild(tr);
       }
-
       var wrapper = document.getElementById('pdf-container-wrapper');
       wrapper.style.display = 'block';
 
@@ -397,7 +372,6 @@
           html2canvas: { scale: 2 },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
-
         html2pdf().set(opt).from(element).save().then(function() {
           wrapper.style.display = 'none';
           showToast('PDF baixado!');
