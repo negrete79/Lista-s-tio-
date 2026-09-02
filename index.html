@@ -356,4 +356,561 @@ function casaSVG(o){
   const d = () => c.animate ? ` class="dw" style="--i:${i++}"` : '';
   const f = () => c.animate ? ` class="dwf" style="--i:${i++}"` : '';
   const pl = c.animate ? ' pathLength="1"' : '';
-  const tuft = x => `<path${d()}${pl} d="M${x}
+  const tuft = x => `<path${d()}${pl} d="M${x} 84c-1.6-2.6-3.2-3.6-3.2-3.6M${x} 84c1.6-2.6 3.2-3.6 3.2-3.6"/>`;
+  return `<svg viewBox="0 0 128 104" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g stroke="${c.stroke}" stroke-width="${c.sw}" stroke-linecap="round" stroke-linejoin="round">`
+    + `<circle${d()}${pl} cx="111" cy="17" r="6.5"/>`
+    + `<path${d()}${pl} d="M111 4.5v4M111 25.5v4M98.5 17h4M119.5 17h4M102.2 8.2l2.8 2.8M119.8 8.2l-2.8 2.8M102.2 25.8l2.8-2.8M119.8 25.8l-2.8-2.8"/>`
+    + `<path${d()}${pl} d="M22 84V50h44v34"/><path${d()}${pl} d="M15 50L44 24l29 26"/>`
+    + `<path${d()}${pl} d="M50 30V22h8v14.5"/><path${d()}${pl} d="M54 17c2.5-2 .5-4.5 2.5-6.5" stroke-width="${c.sw*0.75}"/>`
+    + `<path${d()}${pl} d="M31 84V67c0-2.2 1.8-4 4-4h4c2.2 0 4 1.8 4 4v17"/>`
+    + `<rect${d()}${pl} x="50" y="60" width="13" height="11" rx="1.5"/><path${d()}${pl} d="M56.5 60v11M50 65.5h13"/>`
+    + `<path${d()}${pl} d="M96 84V63M105 84V66"/>`
+    + `<circle${d()}${pl} cx="92" cy="52" r="10"/><circle${d()}${pl} cx="106" cy="53" r="9"/><circle${d()}${pl} cx="99" cy="43" r="10.5"/>`
+    + `<path${d()} d="M10 84h108" stroke="${c.ground}" stroke-dasharray="0.01 7.5"/>`
+    + tuft(16) + tuft(80) + tuft(120)
+    + `</g><g fill="${c.stroke}" stroke="none"><circle${f()} cx="40.2" cy="75" r="1.1"/></g>`
+    + `<g fill="${c.fruit}" stroke="none"><circle${f()} cx="91.5" cy="51" r="2.4"/><circle${f()} cx="103" cy="49.5" r="2.4"/><circle${f()} cx="97" cy="58" r="2.4"/></g></svg>`;
+}
+function casaToPNG(px, opts){
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const cv = document.createElement('canvas'); cv.width = px; cv.height = Math.round(px*104/128);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      res(cv.toDataURL('image/png'));
+    };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(casaSVG(opts));
+  });
+}
+function iconPNG(size, maskable){
+  const cv = document.createElement('canvas'); cv.width = cv.height = size;
+  const x = cv.getContext('2d');
+  x.fillStyle = '#2F4222';
+  if (maskable) x.fillRect(0,0,size,size);
+  else {
+    const r = size*0.22;
+    x.beginPath(); x.moveTo(r,0); x.lineTo(size-r,0); x.arcTo(size,0,size,r,r);
+    x.lineTo(size,size-r); x.arcTo(size,size,size-r,size,r); x.lineTo(r,size); x.arcTo(0,size,0,size-r,r);
+    x.lineTo(0,r); x.arcTo(0,0,r,0,r); x.closePath(); x.fill();
+  }
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const h = size*(maskable?0.56:0.68), w = h*128/104;
+      x.drawImage(img,(size-w)/2,(size-h)/2,w,h);
+      res(cv.toDataURL('image/png'));
+    };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(casaSVG({stroke:'#F4EEDF', fruit:'#C9DB6A', ground:'rgba(244,238,223,.65)', sw:4.2}));
+  });
+}
+
+/* ============ PWA: manifest gerado em tempo real ============ */
+async function setupPWA(){
+  const fav = await iconPNG(64);
+  $('#faviconLink').href = fav;
+  const apple = await iconPNG(180);
+  $('#appleIconLink').href = apple;
+  const [i192, i512, iM] = await Promise.all([iconPNG(192), iconPNG(512), iconPNG(512,true)]);
+  const start = location.href.split('#')[0];
+  const manifest = {
+    name: 'Sítio Recanto da Limeira — Lista de Compras',
+    short_name: 'Recanto da Limeira',
+    description: 'Gerador de lista de compras em PDF do Sítio Recanto da Limeira.',
+    id: start, start_url: start, scope: start,
+    display: 'standalone', background_color: '#F3EDDD', theme_color: '#F3EDDD',
+    icons: [
+      {src:i192, sizes:'192x192', type:'image/png'},
+      {src:i512, sizes:'512x512', type:'image/png'},
+      {src:iM,   sizes:'512x512', type:'image/png', purpose:'maskable'}
+    ]
+  };
+  $('#manifestLink').href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+}
+setupPWA();
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  fetch('sw.js', {method:'HEAD'}).then(r => { if (r.ok) navigator.serviceWorker.register('sw.js').catch(()=>{}); }).catch(()=>{});
+}
+
+/* ============ catálogo da feira (usado para reconhecer sessão e unidade) ============ */
+const CATS = {
+  horti:'Hortifrúti', pad:'Padaria', acou:'Açougue & Peixaria', frios:'Frios & Laticínios',
+  merc:'Mercearia', beb:'Bebidas', limp:'Limpeza & Higiene', outros:'Outros'
+};
+const CATS_ORDEM = ['horti','pad','acou','frios','merc','beb','limp','outros'];
+const DB_RAW = [
+  ['tomate','horti','kg'],['cebola','horti','kg'],['alho','horti','un'],['batata','horti','kg'],['cenoura','horti','kg'],
+  ['alface','horti','un'],['couve','horti','maço'],['rúcula','horti','maço'],['abobrinha','horti','kg'],['berinjela','horti','kg'],
+  ['pimentão','horti','kg'],['limão','horti','kg'],['laranja','horti','kg'],['maracujá','horti','kg'],['banana','horti','dz'],
+  ['maçã','horti','kg'],['mamão','horti','un'],['melancia','horti','un'],['morango','horti','cx'],['uva','horti','kg'],
+  ['mandioca','horti','kg'],['macaxeira','horti','kg'],['milho','horti','un'],['repolho','horti','un'],['brócolis','horti','un'],
+  ['vagem','horti','kg'],['quiabo','horti','kg'],['pepino','horti','kg'],['cheiro-verde','horti','maço'],['coentro','horti','maço'],
+  ['abóbora','horti','kg'],['chuchu','horti','kg'],['beterraba','horti','kg'],['goiaba','horti','kg'],['coco','horti','un'],['inhame','horti','kg'],
+  ['pão francês','pad','kg'],['pão de forma','pad','pct'],['pão de queijo','pad','pct'],['broa de milho','pad','un'],
+  ['bolo','pad','un'],['biscoito','pad','pct'],['tapioca','pad','kg'],['sonho','pad','un'],['bolo caseiro','pad','un'],
+  ['carne moída','acou','kg'],['frango','acou','kg'],['coxa de frango','acou','kg'],['asa de frango','acou','kg'],
+  ['costela','acou','kg'],['linguiça','acou','kg'],['bisteca de porco','acou','kg'],['picanha','acou','kg'],
+  ['fígado','acou','kg'],['peixe','acou','kg'],['tilápia','acou','kg'],['sardinha','acou','kg'],['camarão','acou','kg'],['bacon','acou','pct'],
+  ['ovo','frios','dz'],['leite','frios','L'],['queijo','frios','kg'],['queijo minas','frios','kg'],['manteiga','frios','pct'],
+  ['requeijão','frios','un'],['iogurte','frios','un'],['margarina','frios','pct'],
+  ['arroz','merc','kg'],['feijão','merc','kg'],['açúcar','merc','kg'],['café','merc','pct'],['sal','merc','kg'],
+  ['óleo','merc','L'],['óleo de soja','merc','L'],['farinha de trigo','merc','kg'],['farinha de mandioca','merc','kg'],
+  ['fubá','merc','kg'],['macarrão','merc','pct'],['molho de tomate','merc','cx'],['vinagre','merc','un'],['mel','merc','un'],
+  ['goiabada','merc','un'],['rapadura','merc','un'],['açúcar mascavo','merc','kg'],['polvilho','merc','kg'],
+  ['fermento','merc','pct'],['leite de coco','merc','cx'],['tempero completo','merc','pct'],['milho para canjica','merc','pct'],
+  ['água mineral','beb','cx'],['refrigerante','beb','un'],['suco','beb','un'],['guaraná','beb','un'],['cerveja','beb','un'],['vinho','beb','un'],
+  ['detergente','limp','un'],['sabão em pó','limp','pct'],['água sanitária','limp','un'],['desinfetante','limp','un'],
+  ['amaciante','limp','un'],['esponja','limp','un'],['papel toalha','limp','un'],['papel higiênico','limp','pct'],
+  ['sabonete','limp','un'],['creme dental','limp','un'],['saco de lixo','limp','pct']
+];
+const DB_MAP = {};
+DB_RAW.forEach(([n,cat,unit]) => { DB_MAP[norm(n)] = {name:n, cat, unit}; });
+
+/* ============ parser: "2 kg de tomate", "meia dúzia de limões" ============ */
+const NUMWORD = {um:1, uma:1, dois:2, duas:2, tres:3, 'três':3, quatro:4, cinco:5, seis:6, sete:7, oito:8, nove:9, dez:10, onze:11, doze:12, meio:.5, meia:.5};
+const UNITS = {kg:'kg', kgs:'kg', kilo:'kg', kilos:'kg', quilo:'kg', quilos:'kg', k:'kg',
+  g:'g', gr:'g', grama:'g', gramas:'g', l:'L', litro:'L', litros:'L', ml:'ml',
+  un:'un', und:'un', unidade:'un', unidades:'un', dz:'dz', duzia:'dz', 'dúzia':'dz', duzias:'dz', 'dúzias':'dz',
+  pct:'pct', pcte:'pct', pacote:'pct', pacotes:'pct', cx:'cx', cxs:'cx', caixa:'cx', caixas:'cx',
+  'maço':'maço', 'maços':'maço', maco:'maço', macos:'maço'};
+const RE_NUM = String.raw`(\d+(?:[.,]\d+)?|uma|um|duas|dois|três|tres|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|meia|meio)`;
+const RE_UN  = String.raw`(kgs?|kilos?|quilos?|gramas?|gr|g|litros?|l|ml|unidades?|und|un|dúzias?|duzias?|dz|pacotes?|pcts?|caixas?|cxs?|maços?|macos?)`;
+const RE_PRE = new RegExp(`^${RE_NUM}(?:\\s*${RE_UN})?(?=\\s|$)\\s*(?:de\\s+)?(.+)$`, 'i');
+const RE_SUF = new RegExp(`^(.+?)\\s+${RE_NUM}(?:\\s*${RE_UN})?(?=\\s|$)`, 'i');
+
+function parseEntry(raw){
+  let s = String(raw).trim().replace(/\s+/g,' ');
+  let name = s, qty = null, unit = null, m;
+  const toNum = t => /^\d/.test(t) ? parseFloat(t.replace(',','.')) : NUMWORD[norm(t)];
+  const toUnit = t => t ? (UNITS[norm(t)] || null) : null;
+  if ((m = s.match(RE_PRE))) { qty = toNum(m[1]); unit = toUnit(m[2]); name = m[3]; }
+  else if ((m = s.match(RE_SUF))) { name = m[1]; qty = toNum(m[2]); unit = toUnit(m[3]); }
+  if (qty != null && (!isFinite(qty) || qty < 0)) qty = null;
+  if (unit === 'dz' && qty === .5) qty = 6; // meia dúzia
+  return {name: name.trim(), qty, unit};
+}
+
+/* ============ estado ============ */
+const KEY = 'recanto-limeira-lista';
+let items = [];
+try { items = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ items = []; }
+const save = () => localStorage.setItem(KEY, JSON.stringify(items));
+let editingId = null;
+
+/* ============ referências de DOM ============ */
+const listaEl = $('#lista'),
+      inNome = $('#inNome'), inQty = $('#inQty'), inUn = $('#inUn'),
+      stConta = $('#stConta'), stBar = $('#stBar'), stData = $('#stData');
+
+/* ============ toasts ============ */
+function toast(msg, opts = {}){
+  const t = document.createElement('div'); t.className = 'toast';
+  const span = document.createElement('span'); span.textContent = msg; t.appendChild(span);
+  if (opts.action){
+    const b = document.createElement('button'); b.textContent = opts.actionLabel || 'Desfazer';
+    b.onclick = () => { opts.action(); dismiss(); };
+    t.appendChild(b);
+  }
+  $('#toasts').appendChild(t);
+  requestAnimationFrame(() => t.classList.add('on'));
+  const dismiss = () => { t.classList.remove('on'); setTimeout(() => t.remove(), 300); };
+  setTimeout(dismiss, opts.dur || 4500);
+}
+
+/* ============ render ============ */
+function agrupar(){
+  const g = {};
+  for (const it of items) (g[it.cat] = g[it.cat] || []).push(it);
+  return CATS_ORDEM.filter(c => g[c] && g[c].length).map(c => ({cat:c, label:CATS[c], its:g[c]}));
+}
+function fmtQtdItem(it){
+  return `${fmtQty(it.qty)} ${it.unit}`;
+}
+function render(){
+  listaEl.innerHTML = '';
+  if (!items.length){
+    listaEl.appendChild(estadoVazio());
+  } else {
+    for (const g of agrupar()){
+      const sec = document.createElement('section'); sec.className = 'sessao';
+      sec.dataset.cat = g.cat;
+      const todos = g.its.every(i => i.done);
+      sec.innerHTML = `<div class="sessao-t"><h3>${esc(g.label)}</h3><span class="n">${g.its.filter(i=>i.done).length}/${g.its.length}</span><span class="traco"></span>${todos?'<span class="stamp">pronto</span>':''}</div>`;
+      const ul = document.createElement('ul');
+      g.its.forEach(it => ul.appendChild(linhaItem(it)));
+      sec.appendChild(ul);
+      listaEl.appendChild(sec);
+    }
+    const bt = document.createElement('button');
+    bt.className = 'limpar-tudo'; bt.textContent = 'esvaziar lista';
+    bt.onclick = () => {
+      if (bt.dataset.conf){ items = []; save(); render(); toast('Lista esvaziada.'); return; }
+      bt.dataset.conf = '1'; bt.classList.add('confirmar'); bt.textContent = 'apagar tudo? toque de novo';
+      setTimeout(() => { delete bt.dataset.conf; bt.classList.remove('confirmar'); bt.textContent = 'esvaziar lista'; }, 3000);
+    };
+    listaEl.appendChild(bt);
+  }
+  updateStatus(); refreshIcons();
+}
+function linhaItem(it){
+  const li = document.createElement('li');
+  li.className = 'item' + (it.done ? ' done' : '');
+  li.dataset.id = it.id;
+  if (it._novo){ li.classList.add('enter'); delete it._novo; }
+
+  if (editingId === it.id){
+    li.innerHTML = `
+      <div class="edit-grid">
+        <input type="text" class="e-nome" value="${esc(it.name)}" aria-label="Nome do item">
+        <input type="text" class="e-qty" inputmode="decimal" value="${esc(fmtQty(it.qty))}" aria-label="Quantidade">
+        <select class="e-un" aria-label="Unidade">${['un','kg','g','L','ml','pct','dz','cx','maço'].map(u=>`<option${u===it.unit?' selected':''}>${u}</option>`).join('')}</select>
+        <select class="e-cat" aria-label="Sessão">${CATS_ORDEM.map(c=>`<option value="${c}"${c===it.cat?' selected':''}>${CATS[c]}</option>`).join('')}</select>
+        <button type="button" class="ok" aria-label="Salvar edição"><i data-lucide="check"></i></button>
+        <button type="button" class="no" aria-label="Cancelar edição"><i data-lucide="x"></i></button>
+      </div>`;
+    li.querySelector('.ok').onclick = () => {
+      const nome = li.querySelector('.e-nome').value.trim();
+      if (!nome){ toast('O item precisa de um nome.'); return; }
+      let q = parseFloat(li.querySelector('.e-qty').value.replace(',','.'));
+      if (!isFinite(q) || q <= 0) q = 1;
+      it.name = nome; it.qty = q;
+      it.unit = li.querySelector('.e-un').value;
+      it.cat  = li.querySelector('.e-cat').value;
+      editingId = null; save(); render();
+    };
+    li.querySelector('.no').onclick = () => { editingId = null; render(); };
+    const inp = li.querySelector('.e-nome');
+    inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') li.querySelector('.ok').click(); });
+    return li;
+  }
+
+  li.innerHTML = `
+    <button type="button" class="chk" aria-pressed="${it.done}" aria-label="${it.done?'Desmarcar':'Marcar'} ${esc(it.name)}">
+      <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19.5 6.5"/></svg>
+    </button>
+    <span class="item-nome"><span class="txt">${esc(it.name)}</span>
+      <svg class="strike" viewBox="0 0 100 12" preserveAspectRatio="none"><path d="M2 7 C 18 4, 32 10, 50 6 C 66 3, 82 9, 98 5"/></svg>
+    </span>
+    <span class="item-q">${esc(fmtQtdItem(it))}</span>
+    <span class="acts">
+      <button type="button" class="edt" aria-label="Editar ${esc(it.name)}"><i data-lucide="pencil"></i></button>
+      <button type="button" class="del" aria-label="Remover ${esc(it.name)}"><i data-lucide="x"></i></button>
+    </span>`;
+  return li;
+}
+function estadoVazio(){
+  const d = document.createElement('div');
+  d.className = 'vazio';
+  d.innerHTML = `
+    <span class="casa">${casaSVG({stroke:'#B7B08D', fruit:'#B9C86B', ground:'#C6BE9C', sw:4})}</span>
+    <h2>A lista está em branco</h2>
+    <p>Escreva no campo abaixo como se falasse: <em>“2 kg de tomate”</em>, <em>“meia dúzia de limão”</em> — ou vários de uma vez, separados por vírgula. A quantidade e a sessão são reconhecidas sozinhas.</p>`;
+  return d;
+}
+function updateStatus(){
+  const total = items.length, done = items.filter(i => i.done).length;
+  stData.textContent = new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'short'})
+    .replace('.', '').replace(/^(\w)/, c => c.toUpperCase());
+  stConta.textContent = `${total} ${total === 1 ? 'item' : 'items'}` + (done ? ` · ${done} na sacola` : '');
+  stBar.style.width = total ? (done/total*100) + '%' : '0';
+  document.title = (total - done ? `(${total - done}) ` : '') + 'Recanto da Limeira — Lista de Compras';
+  $('#btnClearDone').hidden = !done;
+}
+
+/* ============ adicionar itens ============ */
+function addItem(p){
+  const it = {id:uid(), name:p.name, qty:p.qty, unit:p.unit, cat:p.cat, done:false, _novo:true};
+  items.push(it); save(); render();
+}
+ $('#composer').addEventListener('submit', e => {
+  e.preventDefault();
+  const raw = inNome.value.trim().replace(/\s+/g,' ');
+  if (!raw){ inNome.focus(); return; }
+  // vírgula adiciona vários itens de uma vez
+  const parts = raw.split(',').map(t => t.trim()).filter(Boolean);
+  const manualQty = (() => { const q = parseFloat(inQty.value.replace(',','.')); return isFinite(q) && q > 0 ? q : null; })();
+  const manualUnit = inUn.value || null; // unidade escolhida vale só para este envio
+  const unico = parts.length === 1;
+  let added = 0;
+  parts.forEach(part => {
+    const p = parseEntry(part);
+    if (!p.name) return;
+    const db = DB_MAP[norm(p.name)];
+    const qty = p.qty ?? (unico ? manualQty : null) ?? 1;
+    const unit = p.unit || (unico ? manualUnit : null) || (db && db.unit) || 'un';
+    const cat = (db && db.cat) || 'outros';
+    addItem({name: db ? db.name : p.name, qty, unit, cat});
+    added++;
+  });
+  if (!added){ inNome.focus(); return; }
+  if (added > 1) toast(`${added} itens adicionados de uma vez.`);
+  inNome.value = ''; inQty.value = ''; inUn.value = ''; // volta para "auto"
+  inNome.focus();
+});
+
+/* ============ interações da lista ============ */
+listaEl.addEventListener('click', e => {
+  const li = e.target.closest('.item'); if (!li || li.dataset.id == null) return;
+  const it = items.find(i => i.id === li.dataset.id); if (!it) return;
+  if (e.target.closest('.chk')){
+    it.done = !it.done; save();
+    li.classList.toggle('done', it.done);
+    li.querySelector('.chk').setAttribute('aria-pressed', it.done);
+    const sec = li.closest('.sessao');
+    if (sec){
+      const secItems = items.filter(x => x.cat === sec.dataset.cat);
+      const doneSec = secItems.filter(x => x.done).length;
+      sec.querySelector('.n').textContent = `${doneSec}/${secItems.length}`;
+      const temStamp = !!sec.querySelector('.stamp');
+      if (doneSec === secItems.length && !temStamp){
+        const st = document.createElement('span'); st.className = 'stamp'; st.textContent = 'pronto';
+        sec.querySelector('.sessao-t').appendChild(st);
+      } else if (doneSec < secItems.length && temStamp){
+        sec.querySelector('.stamp').remove();
+      }
+    }
+    updateStatus(); return;
+  }
+  if (e.target.closest('.edt')){ editingId = it.id; render(); return; }
+  if (e.target.closest('.del')){
+    const idx = items.indexOf(it);
+    li.classList.add('leaving');
+    setTimeout(() => {
+      items.splice(idx, 1); save(); render();
+      toast(`“${it.name}” removido.`, {actionLabel:'Desfazer', dur:5000, action(){
+        items.splice(Math.min(idx, items.length), 0, it); save(); render();
+      }});
+    }, 220);
+  }
+});
+ $('#btnClearDone').onclick = () => {
+  const n = items.filter(i => i.done).length;
+  items = items.filter(i => !i.done); save(); render();
+  toast(`${n} ${n===1?'item comprado removido':'itens comprados removidos'} da lista.`);
+};
+
+/* ============ compartilhar ============ */
+function textoLista(){
+  const linhas = ['LISTA DE COMPRAS — Sítio Recanto da Limeira', ''];
+  agrupar().forEach(g => {
+    linhas.push(g.label.toUpperCase());
+    g.its.forEach(i => linhas.push(`- ${fmtQty(i.qty)} ${i.unit === 'un' && i.qty === 1 ? '' : i.unit} ${i.name}`.replace(/\s+/g,' ').replace('-  ','- ')));
+    linhas.push('');
+  });
+  return linhas.join('\n').trim();
+}
+ $('#btnShare').onclick = async () => {
+  if (!items.length){ toast('A lista está vazia — adicione itens primeiro.'); return; }
+  const txt = textoLista();
+  if (navigator.share){
+    try { await navigator.share({title:'Lista de compras — Recanto da Limeira', text:txt}); } catch(e){}
+  } else {
+    try { await navigator.clipboard.writeText(txt); toast('Lista copiada para a área de transferência.'); }
+    catch(e){ toast('Não consegui copiar automaticamente.'); }
+  }
+};
+
+/* ============ geração do PDF ============ */
+// obs NÃO é salva entre sessões: vale só para a lista atual
+const pdfOpts = Object.assign({titulo:'Lista de compras', data:true, grupo:true, preco:false, obs:''},
+  (()=>{ try { return JSON.parse(localStorage.getItem('rl-pdfopts')) || {}; } catch(e){ return {}; } })());
+function lerOpts(){
+  pdfOpts.titulo = $('#pdfTitulo').value.trim() || 'Lista de compras';
+  pdfOpts.data = $('#pdfData').checked;
+  pdfOpts.grupo = $('#pdfGrupo').checked;
+  pdfOpts.preco = $('#pdfPreco').checked;
+  pdfOpts.obs = $('#pdfObs').value.trim();
+  const {obs, ...salvar} = pdfOpts; // observação fica de fora do armazenamento
+  localStorage.setItem('rl-pdfopts', JSON.stringify(salvar));
+}
+function dashed(doc, x1, y, x2, cor){
+  doc.setDrawColor(...cor); doc.setLineWidth(.3);
+  doc.setLineDashPattern([1,1.6], 0); doc.line(x1, y, x2, y);
+  doc.setLineDashPattern([], 0);
+}
+async function gerarPDF(){
+  if (!window.jspdf){ toast('Não consegui carregar o gerador de PDF — verifique a conexão.'); return; }
+  lerOpts();
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a4'});
+  const W = 210, M = 18;
+  const INK = [39,51,28], SOFT = [92,99,73], LINE = [196,186,148];
+
+  const casa = await casaToPNG(720, {stroke:'#28331C', fruit:'#8FAE3C', ground:'#8A8266', sw:4});
+  const casaW = 30, casaH = casaW*104/128;
+  doc.addImage(casa, 'PNG', M, 13, casaW, casaH);
+  const tx = M + casaW + 8;
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...INK);
+  doc.text('Sítio Recanto da Limeira', tx, 21);
+  doc.setFont('helvetica','italic'); doc.setFontSize(11.5); doc.setTextColor(...SOFT);
+  doc.text(pdfOpts.titulo, tx, 27.5);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  let subInfo = `${items.length} ${items.length===1?'item':'itens'}`;
+  if (pdfOpts.data) subInfo = new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long', year:'numeric'}) + '  ·  ' + subInfo;
+  doc.text(subInfo, tx, 32.5);
+  dashed(doc, M, 40, W-M, LINE);
+
+  let y = 50;
+  const novoBloco = () => {
+    doc.addPage(); y = 26;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...INK);
+    doc.text(pdfOpts.titulo + ' — Recanto da Limeira', M, 20);
+    dashed(doc, M, 23.5, W-M, LINE);
+  };
+  const item = (it) => {
+    const temPreco = pdfOpts.preco;
+    const nomeX = M + 7, qtyRight = temPreco ? W-M-26 : W-M;
+    const avail = qtyRight - nomeX - 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10.5); doc.setTextColor(...INK);
+    const linhas = doc.splitTextToSize(it.name, avail);
+    const h = linhas.length*4.6 + 2.6;
+    if (y + h > 272) novoBloco(); // nunca deixa o item quebrar no meio da página
+    doc.setDrawColor(...INK); doc.setLineWidth(.35);
+    doc.circle(M + 2.2, y - 1.4, 1.5, 'S');
+    linhas.forEach((ln, i) => doc.text(ln, nomeX, y + i*4.6));
+    const nomeW = doc.getTextWidth(linhas[0]);
+    doc.setFontSize(9.5);
+    const qTxt = `${fmtQty(it.qty)} ${it.unit}`;
+    const x1 = nomeX + Math.min(nomeW, avail) + 2;
+    const x2 = qtyRight - doc.getTextWidth(qTxt) - 3;
+    if (x2 > x1 + 4){
+      doc.setDrawColor(160,155,130); doc.setLineWidth(.25);
+      doc.setLineDashPattern([.25,1.4], 0);
+      doc.line(x1, y - 1.1, x2, y - 1.1);
+      doc.setLineDashPattern([], 0);
+    }
+    doc.setTextColor(...SOFT);
+    doc.text(qTxt, qtyRight, y, {align:'right'});
+    if (temPreco){
+      doc.setFontSize(8); doc.text('R$', W-M-23, y);
+      doc.setDrawColor(120,120,105); doc.setLineWidth(.3);
+      doc.line(W-M-19, y, W-M-1, y);
+    }
+    y += h;
+  };
+  const sessao = (label, n) => {
+    if (y > 250) novoBloco();
+    y += 4;
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(47,66,34);
+    doc.text(label.toUpperCase(), M, y, {charSpace:.8});
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(...SOFT);
+    doc.text(`${n} ${n===1?'item':'itens'}`, W-M, y, {align:'right'});
+    y += 2.5; dashed(doc, M, y, W-M, LINE);
+    y += 6.5;
+  };
+
+  if (pdfOpts.grupo){
+    agrupar().forEach(g => { sessao(g.label, g.its.length); g.its.forEach(item); });
+  } else {
+    items.forEach(item);
+  }
+
+  // observações: bloco único, no fim, com quebra de página protegida linha a linha
+  if (pdfOpts.obs){
+    const quebrou = y > 240;
+    if (quebrou) novoBloco();
+    if (!quebrou){ y += 3; dashed(doc, M, y, W-M, LINE); y += 7; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(47,66,34);
+    doc.text('OBSERVAÇÕES', M, y, {charSpace:.8}); y += 5.5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...INK);
+    doc.splitTextToSize(pdfOpts.obs, W - M*2).forEach(l => {
+      if (y > 276) novoBloco();
+      doc.text(l, M, y); y += 5;
+    });
+  }
+
+  const n = doc.getNumberOfPages();
+  for (let i = 1; i <= n; i++){
+    doc.setPage(i);
+    dashed(doc, M, 284, W-M, LINE);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...SOFT);
+    doc.text('Sítio Recanto da Limeira — bom mercado e boa colheita', M, 289);
+    doc.text(`${i} de ${n}`, W-M, 289, {align:'right'});
+  }
+  doc.save(`recanto-da-limeira-${new Date().toISOString().slice(0,10)}.pdf`);
+  toast('PDF gerado. Boas compras!');
+}
+
+/* ============ sheet: opções + prévia ============ */
+function abrirSheet(){
+  if (!items.length){ toast('A lista está vazia — adicione itens antes de gerar o PDF.'); return; }
+  $('#pdfTitulo').value = pdfOpts.titulo;
+  $('#pdfData').checked = pdfOpts.data;
+  $('#pdfGrupo').checked = pdfOpts.grupo;
+  $('#pdfPreco').checked = pdfOpts.preco;
+  $('#pdfObs').value = pdfOpts.obs; // na primeira vez, vem vazio
+  renderPreview();
+  $('#velo').hidden = false;
+  document.body.style.overflow = 'hidden';
+  refreshIcons();
+}
+function fecharSheet(){
+  $('#velo').hidden = true;
+  document.body.style.overflow = '';
+}
+function renderPreview(){
+  lerOpts();
+  const p = $('#prevPapel');
+  let html = `<div class="p-top"><span class="casa">${casaSVG({stroke:'#28331C', fruit:'#8FAE3C', ground:'#8A8266', sw:5})}</span>
+    <div><div class="p-t1">${esc(pdfOpts.titulo)}</div><div class="p-t2">Sítio Recanto da Limeira${pdfOpts.data ? ' · ' + new Date().toLocaleDateString('pt-BR') : ''}</div></div></div>`;
+  let mostradas = 0;
+  const bloco = (label, its) => {
+    let s = pdfOpts.grupo ? `<div class="p-cat">${esc(label)}</div>` : '';
+    its.forEach(it => {
+      if (mostradas >= 13) return;
+      mostradas++;
+      s += `<div class="p-item"><span class="p-dot"></span><span class="p-n">${esc(it.name)}</span><span class="p-pts"></span><span class="p-q">${esc(fmtQty(it.qty)+' '+it.unit)}</span>${pdfOpts.preco?'<span class="p-preco">R$</span>':''}</div>`;
+    });
+    return s;
+  };
+  html += pdfOpts.grupo
+    ? agrupar().map(g => bloco(g.label, g.its)).join('')
+    : bloco('', items);
+  const total = items.length;
+  if (total > mostradas) html += `<div class="p-mais">… + ${total - mostradas} itens</div>`;
+  if (pdfOpts.obs) html += `<div class="p-obs"><div class="p-cat">OBSERVAÇÕES</div>${esc(pdfOpts.obs)}</div>`;
+  p.innerHTML = html;
+}
+ $('#btnPDF').onclick = abrirSheet;
+ $('#btnFecharSheet').onclick = fecharSheet;
+ $('#velo').addEventListener('click', e => { if (e.target === $('#velo')) fecharSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#velo').hidden) fecharSheet(); });
+document.addEventListener('input', e => {
+  if (['pdfTitulo','pdfData','pdfGrupo','pdfPreco','pdfObs'].includes(e.target.id)) renderPreview();
+});
+ $('#btnBaixar').onclick = async () => {
+  const b = $('#btnBaixar'); b.disabled = true;
+  try { await gerarPDF(); } finally { b.disabled = false; }
+};
+
+/* ============ instalação PWA ============ */
+let deferredPrompt = null;
+const btnInstall = $('#btnInstall');
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  btnInstall.hidden = false;
+});
+btnInstall.onclick = async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const {outcome} = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') toast('App instalado! Procure o Recanto da Limeira na sua tela inicial.');
+  deferredPrompt = null; btnInstall.hidden = true;
+};
+window.addEventListener('appinstalled', () => { btnInstall.hidden = true; });
+if (!matchMedia('(display-mode: standalone)').matches && !navigator.standalone
+    && /iphone|ipad|ipod/i.test(navigator.userAgent)
+    && !localStorage.getItem('rl-ios-hint')){
+  $('#iosHint').hidden = false;
+  refreshIcons();
+}
+ $('#iosFechar').onclick = () => { $('#iosHint').hidden = true; localStorage.setItem('rl-ios-hint','1'); };
+
+/* ============ início ============ */
+ $('#casaMarca').innerHTML = casaSVG({animate:true});
+stData.textContent = '';
+render();
+</script>
+</body>
+</html>
