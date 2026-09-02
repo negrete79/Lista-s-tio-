@@ -2,62 +2,358 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sítio Recanto da Limeira - Controle de Suprimentos</title>
-<meta name="theme-color" content="#1b5e20">
-<link id="favicon" rel="icon" href="">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Recanto da Limeira — Lista de Compras</title>
+<meta name="description" content="Gerador de lista de compras em PDF do Sítio Recanto da Limeira.">
+<meta name="theme-color" content="#F3EDDD">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Recanto da Limeira">
+<link id="manifestLink" rel="manifest">
+<link id="faviconLink" rel="icon">
+<link id="appleIconLink" rel="apple-touch-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Sora:wght@400;500;600;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 <style>
-:root{--verde:#1b5e20;--verde-claro:#e8f5e9;--borda:#c8e6c9}
-*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial;background:#f6faf6}
-header{background:#1b5e20;color:#fff;padding:14px 16px;position:sticky;top:0;display:flex;gap:12px;align-items:center}
-.card{background:#fff;border:1px solid var(--borda);border-radius:16px;padding:14px;margin:12px;box-shadow:0 2px 12px rgba(0,0,0,.05)}
-.row{display:flex;gap:8px;flex-wrap:wrap} input,select{padding:11px;border:1px solid #cbd5cb;border-radius:10px;flex:1}
-.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}
-.btn-primary{background:#1b5e20;color:#fff}.btn-ghost{background:#e8f5e9;color:#1b5e20}
-.item{display:flex;justify-content:space-between;padding:10px;border:1px solid #e0e0e0;border-radius:12px;margin-bottom:6px}
+  :root{
+    --paper:#F3EDDD; --paper2:#FAF6EA; --ink:#28331C; --soft:#5C6349;
+    --green:#2F4222; --green2:#3E5A2C; --lime:#9DB63B; --line:#D8CDA9; --line2:#C4B78E;
+    --terra:#B4552D; --r:14px; --hard:3px 3px 0 rgba(40,51,28,.10);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  [hidden]{display:none!important}
+  html{color-scheme:light}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:'Sora',sans-serif; font-size:15px; line-height:1.45;
+    -webkit-font-smoothing:antialiased; min-height:100dvh;
+  }
+  body::after{
+    content:''; position:fixed; inset:0; z-index:999; pointer-events:none;
+    background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2"/><feColorMatrix type="saturate" values="0"/></filter><rect width="180" height="180" filter="url(%23n)" opacity="0.045"/></svg>');
+  }
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  input,select,textarea{font:inherit;color:inherit}
+  :focus-visible{outline:2.5px solid var(--lime); outline-offset:2px; border-radius:6px}
+  em{font-family:'Fraunces',serif; font-style:italic}
+
+  /* ---------- cabeçalho ---------- */
+  .topo{
+    display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap;
+    gap:10px 16px; max-width:760px; margin:0 auto; padding:22px 18px 16px;
+    border-bottom:1.5px solid rgba(40,51,28,.85);
+  }
+  .marca{display:flex; align-items:center; gap:14px}
+  .marca .casa{width:60px; flex:none}
+  .marca .rotulo{font-size:10px; font-weight:700; letter-spacing:2.6px; color:var(--green2)}
+  .marca h1{font-family:'Fraunces',serif; font-weight:600; font-size:clamp(23px,5.6vw,29px); line-height:1.05; letter-spacing:-.3px}
+  .marca .sub{font-family:'Caveat',cursive; font-weight:600; font-size:16px; color:var(--soft); margin-top:1px}
+  .status{text-align:right}
+  .status .data{font-size:11px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--soft)}
+  .status .conta{font-family:'Caveat',cursive; font-weight:700; font-size:19px; color:var(--green2); line-height:1.2}
+  .prog{width:82px; height:6px; margin:5px 0 0 auto; border:1.2px solid var(--ink); border-radius:99px; background:var(--paper2); overflow:hidden}
+  .prog i{display:block; height:100%; width:0; background:var(--lime); border-radius:99px; transition:width .4s ease}
+
+  /* traço da casinha se desenhando */
+  .dw{stroke-dasharray:1; stroke-dashoffset:1; animation:draw .75s ease forwards; animation-delay:calc(var(--i)*.09s)}
+  .dwf{opacity:0; animation:fade .5s ease forwards; animation-delay:calc(var(--i)*.09s + .25s)}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  @keyframes fade{to{opacity:1}}
+
+  main{max-width:760px; margin:0 auto; padding:18px 18px 40px}
+
+  /* ---------- composer ---------- */
+  .composer{
+    position:relative; display:flex; gap:8px; align-items:center;
+    background:var(--paper2); border:1.5px solid var(--ink); border-radius:var(--r);
+    padding:9px; box-shadow:var(--hard);
+  }
+  #inNome{flex:1; min-width:0; border:0; background:none; font-size:16.5px; padding:10px 6px}
+  #inNome::placeholder{color:#9a9a7f}
+  .c-qty{width:64px; text-align:center; border:1.5px solid var(--line2); border-radius:10px; background:var(--paper); font-size:16px; padding:9px 2px}
+  .c-un{width:88px; border:1.5px solid var(--line2); border-radius:10px; background:var(--paper); font-size:16px; padding:9px 5px}
+  .c-add{
+    width:46px; height:46px; flex:none; display:grid; place-items:center;
+    background:var(--green); color:#F3EDDD; border:1.5px solid #1D2A14; border-radius:12px;
+    transition:transform .12s ease, background .15s;
+  }
+  .c-add:hover{background:var(--green2)}
+  .c-add:active{transform:translate(1.5px,1.5px)}
+  .c-add svg{width:22px;height:22px}
+
+  /* ---------- ações ---------- */
+  .acoes{display:flex; flex-wrap:wrap; gap:9px; margin:16px 0 6px}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    font-weight:600; font-size:14px; padding:10px 15px;
+    background:var(--paper2); border:1.5px solid var(--ink); border-radius:12px;
+    box-shadow:2.5px 2.5px 0 rgba(40,51,28,.12); transition:transform .12s ease, background .15s;
+  }
+  .btn:hover{background:#F0E9D3}
+  .btn:active{transform:translate(1.5px,1.5px); box-shadow:1px 1px 0 rgba(40,51,28,.12)}
+  .btn.prim{background:var(--green); border-color:#1D2A14; color:#F3EDDD}
+  .btn.prim:hover{background:var(--green2)}
+  .btn.ghost{border-style:dashed; box-shadow:none; color:var(--soft)}
+  .btn.ghost:hover{color:var(--ink); background:#EFE8D0}
+  .btn:disabled{opacity:.55; pointer-events:none}
+  .btn svg{width:17px; height:17px}
+
+  /* ---------- lista ---------- */
+  .sessao{margin-top:22px}
+  .sessao-t{
+    position:sticky; top:0; z-index:10; display:flex; align-items:baseline; gap:9px;
+    background:var(--paper); padding:8px 0 6px;
+  }
+  .sessao-t h3{font-size:11px; font-weight:700; letter-spacing:1.8px; text-transform:uppercase; color:var(--green)}
+  .sessao-t .n{font-family:'Caveat',cursive; font-weight:600; font-size:15px; color:var(--soft)}
+  .sessao-t .traco{flex:1; border-top:1.5px dashed var(--line2); transform:translateY(-3px)}
+  .stamp{
+    font-family:'Caveat',cursive; font-weight:700; font-size:14px; color:var(--green);
+    border:1.5px solid var(--green); border-radius:7px; padding:0 7px; line-height:1.4;
+    transform:rotate(-3deg); animation:stamp .35s cubic-bezier(.2,1.6,.4,1);
+  }
+  @keyframes stamp{from{transform:rotate(-14deg) scale(1.6); opacity:0}}
+
+  .sessao ul{list-style:none}
+  .item{display:flex; align-items:center; gap:11px; padding:9px 2px; border-bottom:1px dashed var(--line)}
+  .item.enter{animation:sobe .3s ease}
+  @keyframes sobe{from{opacity:0; transform:translateY(7px)}}
+  .item.leaving{opacity:0; transform:translateX(14px); transition:.22s ease}
+
+  .chk{
+    width:23px; height:23px; flex:none; border:1.7px solid var(--ink); border-radius:50%;
+    display:grid; place-items:center; background:var(--paper2); transition:background .18s, border-color .18s;
+  }
+  .chk svg{width:15px; height:15px; stroke:#F3EDDD; stroke-width:2.6; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  /* o visto só aparece de verdade quando o item está marcado */
+  .chk svg path{stroke-dasharray:20 20; stroke-dashoffset:20; transition:stroke-dashoffset .25s ease .05s}
+  .item.done .chk{background:var(--green); border-color:var(--green)}
+  .item.done .chk svg path{stroke-dashoffset:0}
+
+  .item-nome{position:relative; flex:1; min-width:0; font-weight:500; font-size:15px}
+  .item-nome .txt{display:inline; overflow-wrap:anywhere}
+  /* o risco vermelho: dupla proteção (opacity + traço escondido) — só existe marcado */
+  .strike{
+    position:absolute; inset:0; width:100%; height:100%; pointer-events:none;
+    opacity:0; transition:opacity .18s ease;
+  }
+  .item.done .strike{opacity:1}
+  .strike path{
+    stroke:var(--terra); stroke-width:1.3; fill:none; stroke-linecap:round;
+    stroke-dasharray:120 120; stroke-dashoffset:120; transition:stroke-dashoffset .35s ease;
+  }
+  .item.done .strike path{stroke-dashoffset:0}
+  .item.done .item-nome{color:var(--soft)}
+  .item-q{flex:none; font-family:'Caveat',cursive; font-weight:700; font-size:18px; color:var(--green2); min-width:44px; text-align:right}
+  .acts{display:flex; gap:2px; opacity:.35; transition:opacity .15s}
+  .item:hover .acts, .item:focus-within .acts{opacity:1}
+  @media (hover:none){.acts{opacity:.55}}
+  .acts button{width:32px; height:32px; display:grid; place-items:center; border-radius:9px}
+  .acts button:hover{background:#E9E1C6}
+  .acts .del:hover{color:var(--terra)}
+  .acts svg{width:16px; height:16px}
+
+  /* edição inline */
+  .edit-grid{display:flex; flex-wrap:wrap; gap:6px; flex:1; align-items:center}
+  .edit-grid input[type=text]{flex:1; min-width:120px; border:1.5px solid var(--ink); border-radius:9px; padding:8px 9px; background:var(--paper2); font-size:16px}
+  .edit-grid .e-qty{flex:0 0 66px; min-width:0; text-align:center}
+  .edit-grid select{border:1.5px solid var(--line2); border-radius:9px; padding:8px 4px; background:var(--paper2); font-size:16px}
+  .edit-grid .ok{width:34px;height:34px;display:grid;place-items:center;background:var(--green);color:#F3EDDD;border-radius:9px}
+  .edit-grid .no{width:34px;height:34px;display:grid;place-items:center;border:1.5px dashed var(--line2);border-radius:9px;color:var(--soft)}
+
+  /* vazio */
+  .vazio{text-align:center; padding:40px 10px 20px; color:var(--soft)}
+  .vazio .casa{width:130px; opacity:.75; margin-bottom:6px}
+  .vazio h2{font-family:'Fraunces',serif; font-weight:600; font-size:23px; color:var(--ink); margin-bottom:5px}
+  .vazio p{font-size:14px; max-width:360px; margin:0 auto}
+
+  .limpar-tudo{margin:26px auto 0; display:block; font-size:12.5px; font-weight:600; color:var(--soft); text-decoration:underline dashed; text-underline-offset:3px}
+  .limpar-tudo:hover{color:var(--terra)}
+  .limpar-tudo.confirmar{color:var(--terra)}
+
+  /* ---------- sheet do PDF ---------- */
+  .velo{position:fixed; inset:0; z-index:80; background:rgba(30,36,18,.46); display:flex; align-items:flex-end; justify-content:center; animation:fade .2s ease}
+  .sheet{
+    width:100%; max-width:660px; max-height:90dvh; overflow-y:auto;
+    background:var(--paper); border:1.5px solid var(--ink); border-bottom:0; border-radius:20px 20px 0 0;
+    padding:10px 20px calc(22px + env(safe-area-inset-bottom)); animation:subir .3s cubic-bezier(.2,.9,.3,1);
+  }
+  @keyframes subir{from{transform:translateY(40px); opacity:.4}}
+  .grip{width:44px; height:5px; border-radius:99px; background:var(--line2); margin:4px auto 12px}
+  .sheet h2{font-family:'Fraunces',serif; font-weight:600; font-size:22px; margin-bottom:14px}
+  .sheet-body{display:grid; gap:20px}
+  .campo label{display:block; font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--soft); margin:0 0 5px}
+  .campo input[type=text], .campo textarea{
+    width:100%; border:1.5px solid var(--ink); border-radius:10px; background:var(--paper2); padding:9px 11px; font-size:16px;
+  }
+  .campo textarea{resize:vertical; min-height:56px}
+  .chkline{display:flex; align-items:center; gap:9px; font-size:14px; font-weight:500; padding:5px 0; cursor:pointer}
+  .chkline input{width:17px; height:17px; accent-color:var(--green)}
+  .prev{display:grid; place-items:start center; padding:10px 0}
+  .papel{
+    width:200px; max-width:100%; aspect-ratio:210/297; background:#FDFCF7;
+    border:1px solid #DAD3BC; box-shadow:5px 7px 18px rgba(30,36,18,.28);
+    transform:rotate(-1.4deg); padding:12px 11px; overflow:hidden; font-size:7.6px;
+  }
+  .papel .p-top{display:flex; gap:6px; align-items:center; border-bottom:1px dashed #B9B193; padding-bottom:6px; margin-bottom:7px}
+  .papel .p-top .casa{width:26px; flex:none}
+  .papel .p-t1{font-family:'Fraunces',serif; font-weight:700; font-size:9.6px; line-height:1.15}
+  .papel .p-t2{font-size:6.8px; color:#77775f}
+  .papel .p-cat{font-size:6.2px; font-weight:700; letter-spacing:1.1px; color:#3E5A2C; margin:6px 0 2px}
+  .papel .p-item{display:flex; align-items:baseline; gap:3px; padding:1.6px 0}
+  .papel .p-dot{width:4.5px; height:4.5px; flex:none; border:1px solid #28331C; border-radius:50%; transform:translateY(-1px)}
+  .papel .p-n{max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .papel .p-pts{flex:1; border-bottom:1px dotted #A9A486; transform:translateY(-2px)}
+  .papel .p-q{font-family:'Caveat',cursive; font-weight:700; font-size:8.6px; color:#3E5A2C}
+  .papel .p-preco{flex:none; width:26px; border-bottom:1px solid #B9B193; text-align:right; font-size:6px; color:#999}
+  .papel .p-mais{color:#999; font-style:italic; margin-top:4px}
+  .papel .p-obs{margin-top:7px; padding-top:5px; border-top:1px dashed #B9B193; color:#55544a; line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere}
+  .papel .p-obs .p-cat{margin:0 0 2px}
+  .sheet-acts{display:flex; justify-content:flex-end; gap:9px; margin-top:18px}
+
+  /* ---------- toasts ---------- */
+  .toasts{position:fixed; left:0; right:0; bottom:24px; z-index:120; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; padding:0 14px}
+  .toast{
+    pointer-events:auto; display:flex; align-items:center; gap:14px;
+    background:var(--ink); color:#F3EDDD; border-radius:12px; padding:11px 16px;
+    font-size:14px; font-weight:500; box-shadow:0 8px 22px rgba(20,26,10,.35);
+    opacity:0; transform:translateY(12px); transition:.28s ease; max-width:440px;
+  }
+  .toast.on{opacity:1; transform:none}
+  .toast button{font-weight:700; color:#D6E38B; text-decoration:underline; text-underline-offset:3px; flex:none}
+
+  /* ---------- dica iOS ---------- */
+  .ios-hint{
+    position:fixed; left:12px; right:12px; bottom:calc(88px + env(safe-area-inset-bottom)); z-index:70;
+    display:flex; gap:11px; align-items:flex-start;
+    background:var(--paper2); border:1.5px solid var(--ink); border-radius:14px;
+    box-shadow:var(--hard); padding:12px 14px; animation:sobe .35s ease;
+  }
+  .ios-hint svg{width:20px; height:20px; flex:none; margin-top:2px; color:var(--green)}
+  .ios-hint p{font-size:13px; flex:1}
+  .ios-hint .fechar{width:28px; height:28px; display:grid; place-items:center; flex:none; border-radius:8px}
+  .ios-hint .fechar:hover{background:#E9E1C6}
+
+  /* ---------- mobile: composer vira barra inferior em duas linhas ---------- */
+  @media (max-width:700px){
+    body{padding-bottom:150px}
+    .composer{flex-wrap:wrap; row-gap:9px}
+    #inNome{flex:1 1 100%; font-size:17px}
+    .c-qty{width:64px}
+    .c-un{flex:1; width:auto; min-width:0}
+    .c-add{margin-left:auto}
+    .toasts{bottom:calc(150px + env(safe-area-inset-bottom))}
+  }
+  @media (min-width:640px){
+    .velo{align-items:center; padding:20px}
+    .sheet{border-radius:18px; border-bottom:1.5px solid var(--ink); padding-bottom:20px}
+    .sheet-body{grid-template-columns:1fr 230px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important; transition:none!important}
+    .dw,.dwf{stroke-dashoffset:0; opacity:1}
+  }
 </style>
 </head>
 <body>
-<header><div id="logoTxt">SL</div><div><b>SÍTIO RECANTO DA LIMEIRA</b><br><small>Controle de Suprimentos • PWA Offline</small></div><button id="btnInstall" style="display:none;margin-left:auto">📲 Instalar</button></header>
+
+<header class="topo">
+  <div class="marca">
+    <span class="casa" id="casaMarca"></span>
+    <div>
+      <div class="rotulo">SÍTIO</div>
+      <h1>Recanto <em>da Limeira</em></h1>
+      <div class="sub">lista de compras do sítio</div>
+    </div>
+  </div>
+  <div class="status" aria-live="polite">
+    <div class="data" id="stData"></div>
+    <div class="conta" id="stConta">0 itens</div>
+    <div class="prog"><i id="stBar"></i></div>
+  </div>
+</header>
+
 <main>
-<div class="card">
-<div class="row"><input id="inpProduto" placeholder="Produto"><input id="inpQtd" type="number" value="1" style="max-width:80px"><select id="inpStatus"><option>NORMAL</option><option>URGENTE</option><option>CRÍTICO</option></select><button class="btn btn-primary" id="btnAdd">+ Add</button></div>
-<div class="row" style="margin-top:8px"><input id="busca" placeholder="🔎 Buscar"><button class="btn btn-ghost" id="btnModelo">Modelo PDF</button><button class="btn btn-ghost" id="btnLimpar">Limpar</button></div>
-<small>Data: <span id="dtAgora"></span> • Itens: <span id="totalItens"></span></small>
-</div>
-<div class="card"><div id="lista"></div></div>
-<div class="card"><button class="btn btn-primary" id="btnPDF">📄 GERAR PDF ELABORADO</button> <button class="btn btn-ghost" id="btnWhats">WhatsApp</button></div>
+  <form class="composer" id="composer" autocomplete="off">
+    <input type="text" id="inNome" placeholder="Ex.: 2 kg de tomate, meio quilo de café…" enterkeyhint="done" aria-label="Item da lista">
+    <input type="text" id="inQty" class="c-qty" inputmode="decimal" placeholder="qtd" aria-label="Quantidade">
+    <select id="inUn" class="c-un" aria-label="Unidade">
+      <option value="">auto</option>
+      <option value="un">un</option><option value="kg">kg</option><option value="g">g</option>
+      <option value="L">L</option><option value="ml">ml</option><option value="pct">pct</option>
+      <option value="dz">dz</option><option value="cx">cx</option><option value="maço">maço</option>
+    </select>
+    <button class="c-add" type="submit" aria-label="Adicionar item"><i data-lucide="plus"></i></button>
+  </form>
+
+  <div class="acoes">
+    <button class="btn prim" id="btnPDF"><i data-lucide="file-down"></i>Gerar PDF</button>
+    <button class="btn" id="btnShare"><i data-lucide="share-2"></i>Compartilhar</button>
+    <button class="btn" id="btnInstall" hidden><i data-lucide="download"></i>Instalar app</button>
+    <button class="btn ghost" id="btnClearDone" hidden><i data-lucide="eraser"></i>Limpar comprados</button>
+  </div>
+
+  <div id="lista"></div>
 </main>
+
+<!-- painel de geração de PDF -->
+<div class="velo" id="velo" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitulo">
+    <div class="grip"></div>
+    <h2 id="sheetTitulo">Gerar PDF da lista</h2>
+    <div class="sheet-body">
+      <div>
+        <div class="campo">
+          <label for="pdfTitulo">Título da lista</label>
+          <input type="text" id="pdfTitulo" value="Lista de compras">
+        </div>
+        <div style="margin-top:12px">
+          <label class="chkline"><input type="checkbox" id="pdfData" checked> Mostrar a data</label>
+          <label class="chkline"><input type="checkbox" id="pdfGrupo" checked> Agrupar por sessão</label>
+          <label class="chkline"><input type="checkbox" id="pdfPreco"> Coluna de preço em branco</label>
+        </div>
+        <div class="campo" style="margin-top:12px">
+          <label for="pdfObs">Observações (opcional)</label>
+          <textarea id="pdfObs" placeholder="Ex.: passar na feira antes das 10h"></textarea>
+        </div>
+      </div>
+      <div class="prev"><div class="papel" id="prevPapel"></div></div>
+    </div>
+    <div class="sheet-acts">
+      <button class="btn ghost" id="btnFecharSheet">Fechar</button>
+      <button class="btn prim" id="btnBaixar"><i data-lucide="file-down"></i>Baixar PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="ios-hint" id="iosHint" hidden>
+  <i data-lucide="smartphone"></i>
+  <p><strong>Instale o app:</strong> toque no botão <strong>Compartilhar</strong> do Safari e depois em <strong>“Adicionar à Tela de Início”</strong>.</p>
+  <button class="fechar" id="iosFechar" aria-label="Fechar dica"><i data-lucide="x"></i></button>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.min.js"></script>
 <script>
-// ÍCONE GERADO (corrige ícone Google)
-function genIcon(s){const c=document.createElement('canvas');c.width=s;c.height=s;const x=c.getContext('2d');x.fillStyle='#1b5e20';x.fillRect(0,0,s,s);x.fillStyle='#fff';x.beginPath();x.arc(s/2,s/2,s*0.38,0,7);x.fill();x.fillStyle='#81c784';x.beginPath();x.arc(s/2,s/2,s*0.32,0,7);x.fill();x.fillStyle='#1b5e20';x.font=`bold ${s*0.22}px Arial`;x.textAlign='center';x.textBaseline='middle';x.fillText('SL',s/2,s/2);return c.toDataURL()}
-const i192=genIcon(192),i512=genIcon(512);document.getElementById('favicon').href=i192;
-const manifest={name:"Sítio Recanto da Limeira",short_name:"Recanto Limeira",start_url:".",display:"standalone",background_color:"#1b5e20",theme_color:"#1b5e20",icons:[{src:i192,sizes:"192x192",type:"image/png",purpose:"any maskable"},{src:i512,sizes:"512x512",type:"image/png",purpose:"any maskable"}]};
-const mBlob=new Blob([JSON.stringify(manifest)],{type:'application/json'});const link=document.createElement('link');link.rel='manifest';link.href=URL.createObjectURL(mBlob);document.head.appendChild(link);
-let aLink=document.createElement('link');aLink.rel='apple-touch-icon';aLink.href=i192;document.head.appendChild(aLink);
+'use strict';
+/* ============ utilidades ============ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const fmtQty = n => String(Math.round(n*100)/100).replace('.', ',');
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id'+Date.now()+Math.random().toString(16).slice(2));
+const refreshIcons = () => { if (window.lucide) lucide.createIcons(); };
 
-// DADOS DO SEU PDF
-const modelo=[["Ração cachorro tufão 25kl",1],["Gás cozinha",2],["Algicida manutenção",3],["Algicida de choque",3],["Pastilhas de cloro",6],["Cloro Balde",1],["Sacos de lixo 100L",1],["Detergente",5],["Sabão barra",1],["Sabão em pó",1],["Veneno de rato pastilhas",2],["Veneno formiga",10],["Flutuador de pastilhas de cloro",2],["Carretel nylon roçadeira",1],["Desenfetante 5L",1],["Limpa pedra 5l",1],["Elevador de PH",4],["Esponja de aço (Bombril)",2],["Esponja louças kit 4 uni",1],["Fósforo caixinha maço",1],["Aromatizador ambiente",1],["Rodo de passar pano medio",1],["Papel Higiênico",1],["Elevador de alcalinidade",3]];
-let itens=JSON.parse(localStorage.getItem('limeira_itens')||'null')||modelo.map((m,i)=>({id:Date.now()+i,nome:m[0],qtd:m[1]}));
-let statusCompra=localStorage.getItem('limeira_status')||'NORMAL';
-function save(){localStorage.setItem('limeira_itens',JSON.stringify(itens));localStorage.setItem('limeira_status',statusCompra);render()}
-function render(){document.getElementById('totalItens').textContent=itens.length;document.getElementById('dtAgora').textContent=new Date().toLocaleString('pt-BR');const b=(document.getElementById('busca').value||'').toLowerCase();const l=document.getElementById('lista');l.innerHTML='';itens.filter(it=>!b||it.nome.toLowerCase().includes(b)).forEach(it=>{const d=document.createElement('div');d.className='item';d.innerHTML=`<b>${it.nome}</b><span><button onclick="altQtd(${it.id},-1)">-</button> ${it.qtd} <button onclick="altQtd(${it.id},1)">+</button> <button onclick="rem(${it.id})">✕</button></span>`;l.appendChild(d)})}
-window.altQtd=(id,d)=>{const it=itens.find(x=>x.id===id);it.qtd=Math.max(1,it.qtd+d);save()};window.rem=id=>{itens=itens.filter(x=>x.id!==id);save()};
-document.getElementById('btnAdd').onclick=()=>{const n=document.getElementById('inpProduto').value.trim();if(!n)return;itens.push({id:Date.now(),nome:n,qtd:parseInt(document.getElementById('inpQtd').value)||1});save();document.getElementById('inpProduto').value=''};
-document.getElementById('btnLimpar').onclick=()=>{if(confirm('Limpar?')){itens=[];save()}};document.getElementById('btnModelo').onclick=()=>{itens=modelo.map((m,i)=>({id:Date.now()+i,nome:m[0],qtd:m[1]}));save()};
-document.getElementById('busca').oninput=render;document.getElementById('inpStatus').onchange=e=>{statusCompra=e.target.value;save()};
-
-function gerarPDF(){const{jsPDF}=window.jspdf;const doc=new jsPDF({unit:'pt',format:'a4'});const W=doc.internal.pageSize.getWidth();doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(27,94,32);doc.text('SÍTIO RECANTO DA LIMEIRA',W/2,38,{align:'center'});doc.setFontSize(11);doc.setTextColor(40,40,40);doc.setFont('helvetica','normal');doc.text('Controle de Suprimentos e Compras',W/2,54,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(27,94,32);doc.text(`Data/Hora: ${new Date().toLocaleString('pt-BR')}`,40,78);doc.text(`Status: ${statusCompra}`,W-40,78,{align:'right'});doc.setDrawColor(27,94,32);doc.line(40,84,W-40,84);doc.autoTable({startY:92,head:[['Produto / Suprimento','Quantidade']],body:itens.map(i=>[i.nome,i.qtd.toString()]),headStyles:{fillColor:[232,245,233],textColor:[27,94,32]},columnStyles:{1:{halign:'center',fontStyle:'bold',cellWidth:80}},margin:{left:40,right:40}});return doc}
-document.getElementById('btnPDF').onclick=()=>{gerarPDF().save(`Recanto_Limeira_${new Date().toISOString().slice(0,10)}.pdf`)};
-document.getElementById('btnWhats').onclick=()=>{const t=itens.map(i=>`• ${i.nome} - ${i.qtd}`).join('\n');window.open(`https://wa.me/?text=${encodeURIComponent(`*SÍTIO RECANTO DA LIMEIRA*\n${t}`)}`)};
-
-// PWA OFFLINE
-const sw=`const C='limeira-v3';self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(['.'])).then(()=>self.skipWaiting()))});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{if(e.request.url.includes('cdnjs'))caches.open(C).then(c=>c.put(e.request,res.clone()));return res})).catch(()=>caches.match('.')))});`;
-const swB=new Blob([sw],{type:'text/javascript'});if('serviceWorker' in navigator)navigator.serviceWorker.register(URL.createObjectURL(swB));
-let dp;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;document.getElementById('btnInstall').style.display='block'});document.getElementById('btnInstall').onclick=async()=>{dp.prompt();await dp.userChoice;dp=null};
-render();
-</script>
-</body>
-</html>
+/* ============ a casinha com a limeira (arte única: header, ícone e PDF) ============ */
+function casaSVG(o){
+  const c = Object.assign({stroke:'#28331C', fruit:'#8FAE3C', ground:'#8A8266', sw:4, animate:false}, o || {});
+  let i = 0;
+  const d = () => c.animate ? ` class="dw" style="--i:${i++}"` : '';
+  const f = () => c.animate ? ` class="dwf" style="--i:${i++}"` : '';
+  const pl = c.animate ? ' pathLength="1"' : '';
+  const tuft = x => `<path${d()}${pl} d="M${x}
